@@ -9,7 +9,6 @@
 1. [Metodología de Desarrollo y Ciclo de Vida](#1-metodología-de-desarrollo-y-ciclo-de-vida)
 2. [Recursos de Software de Desarrollo](#2-recursos-de-software-de-desarrollo)
 3. [Organización del Equipo de Trabajo](#3-organización-del-equipo-de-trabajo)
-4. [Herramientas de Comunicación](#4-herramientas-de-comunicación)
 5. [Relaciones con el Cliente](#5-relaciones-con-el-cliente)
 6. [Estándares de Documentación](#6-estándares-de-documentación)
 7. [Estándares de Código](#7-estándares-de-código)
