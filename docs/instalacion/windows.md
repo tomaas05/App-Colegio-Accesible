@@ -44,7 +44,21 @@ git config --global core.autocrlf input
 
 > **Por qué `core.autocrlf input`:** si Git convierte los archivos a CRLF, `docker/entrypoint.sh` deja de funcionar dentro del contenedor (`sh: 1: set: Illegal option -`). El `.gitattributes` del repositorio ya lo fuerza, pero así te evitas sorpresas en otros proyectos.
 
-### 0.2 Clonar
+### 0.2 Descargar el repositorio
+
+**Si ya lo tienes** (eres colaborador y lo clonaste antes), no vuelvas a clonarlo. Entra en tu carpeta y actualízalo:
+
+```powershell
+cd ruta\a\App-Colegio-Accesible
+git status                 # si sale algún cambio tuyo sin subir, haz commit antes
+git switch main
+git pull
+Copy-Item .env.example .env
+```
+
+Al actualizar, la carpeta `Bocetos\` y el `README.md` antiguo «desaparecen»: no se han borrado, se han movido a `docs\iteracion-1\bocetos\` y `docs\manual-coordinacion.md`.
+
+**Si todavía no lo tienes:**
 
 ```powershell
 cd $HOME\Documents
@@ -52,6 +66,8 @@ git clone https://github.com/tomaas05/App-Colegio-Accesible.git
 cd App-Colegio-Accesible
 Copy-Item .env.example .env
 ```
+
+El archivo `.env` no está en GitHub (lleva contraseñas), por eso cada uno crea el suyo a partir de `.env.example`.
 
 ### 0.3 Editor
 
