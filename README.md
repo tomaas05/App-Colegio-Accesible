@@ -35,6 +35,7 @@ Guías paso a paso (al principio de cada una hay una tabla para saber qué camin
 Resumen con Docker:
 
 ```bash
+# Si ya tienes el repositorio: git switch main && git pull   (en lugar de clonar)
 git clone https://github.com/tomaas05/App-Colegio-Accesible.git
 cd App-Colegio-Accesible
 cp .env.example .env

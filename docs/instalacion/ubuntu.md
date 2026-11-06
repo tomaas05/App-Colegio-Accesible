@@ -47,7 +47,21 @@ git config --global user.name "Tu Nombre"
 git config --global user.email "tu-correo@correo.ugr.es"
 ```
 
-Clona el repositorio (si ya lo tenías, haz `git pull` en su lugar):
+### Si ya tienes el repositorio (eres colaborador y lo clonaste antes)
+
+No vuelvas a clonarlo. Entra en tu carpeta y actualízalo:
+
+```bash
+cd ruta/a/App-Colegio-Accesible
+git status                 # si sale algún cambio tuyo sin subir, haz commit antes
+git switch main
+git pull
+cp .env.example .env
+```
+
+Al actualizar, la carpeta `Bocetos/` y el `README.md` antiguo «desaparecen»: no se han borrado, se han movido a `docs/iteracion-1/bocetos/` y `docs/manual-coordinacion.md`.
+
+### Si todavía no lo tienes
 
 ```bash
 cd ~/Documentos/4oCARRERA
@@ -55,6 +69,8 @@ git clone https://github.com/tomaas05/App-Colegio-Accesible.git
 cd App-Colegio-Accesible
 cp .env.example .env
 ```
+
+El archivo `.env` no está en GitHub (lleva contraseñas), por eso cada uno crea el suyo a partir de `.env.example`.
 
 ---
 
