@@ -1,11 +1,25 @@
 # Instalación en Windows
 
-Para Windows 10 (22H2) y Windows 11. Hay dos caminos:
+Hay dos caminos:
 
-- **A. Con Docker Desktop (recomendado).** Mismo entorno que el resto del equipo, sin instalar Python ni PostgreSQL.
-- **B. Sin Docker.** Python y PostgreSQL instalados en Windows.
+- **A. Con Docker Desktop.** Mismo entorno que el resto del equipo, sin instalar Python ni PostgreSQL.
+- **B. Sin Docker.** Python y PostgreSQL instalados directamente en Windows. Funciona en Windows 10 y 11.
 
 Las órdenes son para **PowerShell**. La comprobación final en los dos caminos: abrir <http://localhost:8000> y ver «El entorno de desarrollo funciona».
+
+## ¿Qué camino elijo?
+
+Mira tu versión: pulsa `Win + R`, escribe `winver` e Intro.
+
+| Tu Windows | Camino |
+| --- | --- |
+| **Windows 11 23H2 o posterior** (compilación 22631 o mayor) | **A**, Docker Desktop |
+| **Windows 11 22H2 o anterior** | Actualiza Windows (*Configuración → Windows Update*) y usa **A**; si no puedes, **B** |
+| **Windows 10** | **B**, sin Docker |
+
+**Por qué Windows 10 va sin Docker:** Windows 10 ya no recibe soporte de Microsoft y Docker Desktop está dejando de funcionar en él (las versiones nuevas piden Windows 11 23H2). El camino B no tiene ese problema: Python 3.12 y PostgreSQL 16 se instalan sin complicaciones en Windows 10.
+
+Si en Windows 10 quieres usar Docker de todas formas, la alternativa es instalar Ubuntu dentro de Windows (`wsl --install -d Ubuntu-24.04` como administrador), abrir esa terminal de Ubuntu y seguir la [guía de Ubuntu](ubuntu.md) completa. Docker Engine funciona dentro de WSL sin necesidad de Docker Desktop.
 
 ---
 
@@ -46,6 +60,8 @@ VS Code: `winget install --id Microsoft.VisualStudioCode -e`. Al abrir la carpet
 ---
 
 ## A. Con Docker Desktop
+
+> Solo para Windows 11 23H2 o posterior. En Windows 10, ve al [camino B](#b-sin-docker).
 
 ### A.1 Activar WSL 2
 
@@ -187,6 +203,7 @@ pre-commit install
 
 | Síntoma | Solución |
 | --- | --- |
+| El instalador de Docker Desktop dice que tu versión de Windows no es compatible | Usa el camino B. Docker Desktop pide Windows 11 23H2 o posterior. |
 | `sh: 1: set: Illegal option -` o `exec format error` al arrancar `web` | `docker/entrypoint.sh` tiene finales CRLF. `git config --global core.autocrlf input`, borra la carpeta y vuelve a clonar. |
 | `docker: error during connect` / `Cannot connect to the Docker daemon` | Docker Desktop no está abierto o sigue arrancando. |
 | `WSL 2 installation is incomplete` | Ejecuta `wsl --update` como administrador y reinicia. |

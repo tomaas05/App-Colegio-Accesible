@@ -1,11 +1,40 @@
 # Instalación en Ubuntu
 
-Probado para Ubuntu 22.04 y 24.04. Hay dos caminos:
+Hay dos caminos:
 
 - **A. Con Docker (recomendado).** No instalas Python ni PostgreSQL en tu equipo; todos tenemos exactamente el mismo entorno.
 - **B. Sin Docker.** Útil si tu portátil va justo de memoria o quieres depurar con el IDE más cómodamente.
 
 Elige uno. En los dos, la comprobación final es la misma: abrir <http://localhost:8000> y ver «El entorno de desarrollo funciona».
+
+## ¿Qué versión de Ubuntu tengo?
+
+```bash
+lsb_release -d
+```
+
+| Versión | Camino A (Docker) | Camino B (sin Docker) |
+| --- | --- | --- |
+| **24.04** | Sí | Sí, lo más sencillo: Python 3.12 y PostgreSQL 16 vienen de serie |
+| **22.04** | Sí | Sí, añadiendo dos repositorios (se explica en B.1 y B.2) |
+| **20.04** | Probablemente, sin garantía | No recomendado |
+
+### Si tienes Ubuntu 20.04
+
+Ubuntu 20.04 dejó de tener soporte en mayo de 2025, y eso se nota en este proyecto:
+
+- Docker ya no lo incluye entre las versiones soportadas, aunque los comandos del camino A deberían seguir instalando la última versión que publicaron para 20.04.
+- El repositorio *deadsnakes* retiró los paquetes de 20.04, así que no hay una forma sencilla con `apt` de instalar Python 3.12.
+- Trae PostgreSQL 12, y Django 5.2 necesita PostgreSQL 14 o superior.
+
+**Lo recomendado es actualizar a 22.04** (haz copia de seguridad antes; tarda en torno a una hora):
+
+```bash
+sudo apt update && sudo apt full-upgrade -y
+sudo do-release-upgrade
+```
+
+Si no puedes actualizar, prueba el camino A tal cual. Si el `apt install` de A.1 falla, avisa al coordinador antes de seguir: no merece la pena perder la tarde peleándote con la instalación.
 
 ---
 
