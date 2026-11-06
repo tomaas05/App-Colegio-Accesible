@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Django
+staticfiles/
+media/
+*.sqlite3
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Resultados de pruebas de accesibilidad
+informe/
+test-results/
+playwright-report/
+.lighthouseci/
+
+# Editores y sistema
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*

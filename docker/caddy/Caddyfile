@@ -1,0 +1,13 @@
+# HTTPS para la demostración en la Wi-Fi del aula (Propuesta Técnica, 5.2).
+# "tls internal" crea una autoridad de certificación local; su certificado raíz
+# se instala en las tablets y móviles de la demo (ver docs/demo-https.md).
+{$DESPEGA_HOST} {
+	tls internal
+
+	handle_path /static/* {
+		root * /srv/static
+		file_server
+	}
+
+	reverse_proxy web:8000
+}

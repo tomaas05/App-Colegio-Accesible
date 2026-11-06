@@ -1,0 +1,13 @@
+# Finales de línea LF en el repositorio para todos, también en Windows.
+# Imprescindible: un .sh con CRLF rompe el contenedor de Docker.
+* text=auto eol=lf
+
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+*.woff2 binary
+*.png   binary
+*.jpg   binary
+*.svg   text
+*.pdf   binary
+*.docx  binary

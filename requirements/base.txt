@@ -1,0 +1,8 @@
+# Dependencias de ejecución (Propuesta Técnica, apartado 5.2)
+Django~=5.2.19                 # 5.2 LTS
+djangorestframework~=3.18      # solo para los pocos endpoints JSON
+django-htmx~=1.29
+django-axes~=9.0               # bloqueo tras intentos fallidos (RNF1.2.3)
+argon2-cffi~=25.1              # hash de contraseñas (RNF1.1.4)
+psycopg[binary]~=3.3           # PostgreSQL 16+
+django-environ~=0.14           # configuración por variables de entorno (.env)

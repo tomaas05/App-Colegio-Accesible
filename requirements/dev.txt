@@ -1,0 +1,11 @@
+-r base.txt
+
+# Pruebas
+pytest~=9.2
+pytest-django~=4.14
+pytest-playwright~=0.10        # pruebas en navegador (después: playwright install chromium)
+axe-playwright-python~=0.1.8   # axe-core dentro de Playwright (WCAG 2.2 AA)
+
+# Calidad
+ruff~=0.17
+pre-commit~=4.7
