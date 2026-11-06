@@ -1,0 +1,29 @@
+[project]
+name = "despega"
+version = "0.1.0"
+description = "Despega – agenda accesible para el Colegio Purísima Concepción"
+requires-python = ">=3.12,<3.13"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations/*.py"]
+
+[tool.ruff.lint]
+# E/F: errores básicos, I: orden de imports, B: fallos frecuentes,
+# DJ: buenas prácticas de Django, UP: sintaxis moderna de Python
+select = ["E", "F", "I", "B", "DJ", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+testpaths = ["tests", "apps"]
+# Las pruebas de navegador (e2e) son más lentas y necesitan Chromium:
+# se lanzan aparte con  pytest -m e2e
+addopts = "-m 'not e2e' --strict-markers"
+markers = [
+    "e2e: pruebas en navegador con Playwright y axe-core",
+]

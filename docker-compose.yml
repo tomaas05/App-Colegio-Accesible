@@ -1,0 +1,53 @@
+# Desarrollo:      docker compose up --build
+# Demo con HTTPS:  docker compose --profile demo up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-despega}
+      POSTGRES_USER: ${POSTGRES_USER:-despega}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-despega}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    # Descomenta para conectar con DBeaver/pgAdmin desde tu equipo:
+    # ports:
+    #   - "5432:5432"
+
+  web:
+    build: .
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+    volumes:
+      # El código se monta en vivo: al guardar, runserver recarga solo.
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Solo para demostraciones: HTTPS con certificado local (RNF1.1.1).
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["demo"]
+    environment:
+      DESPEGA_HOST: ${DESPEGA_HOST:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./staticfiles:/srv/static:ro
+      - caddy_data:/data
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  caddy_data:

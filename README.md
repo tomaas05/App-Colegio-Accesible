@@ -1,77 +1,93 @@
-# 📘 Manual de Coordinación y Plan de Dirección
-**Proyecto:** Aplicación de Agenda y Tareas Accesible (Alumnado con Discapacidad Cognitiva)
+# Despega · Agenda accesible
 
-> ⚠️ **IMPORTANTE:** Este documento debe ser completado, aprobado y firmado por todos los implicados en la gestión y desarrollo del proyecto.
+Aplicación web para que el alumnado del Colegio de Educación Especial Purísima Concepción organice su tiempo y sus tareas, y para que tutores, profesionales y familias la configuren y la sigan. Proyecto de DGP y MDA (Universidad de Granada) de **Despega Team**.
 
----
+> **Estado: iteración 1 (diseño).** El repositorio solo contiene la infraestructura para empezar a desarrollar. No hay ninguna funcionalidad implementada: las pantallas y los modelos se programan a partir de la iteración 2, sobre los bocetos y el modelo de datos acordados en esta.
 
-## Índice
-1. [Metodología de Desarrollo y Ciclo de Vida](#1-metodología-de-desarrollo-y-ciclo-de-vida)
-2. [Recursos de Software de Desarrollo](#2-recursos-de-software-de-desarrollo)
-3. [Organización del Equipo de Trabajo](#3-organización-del-equipo-de-trabajo)
-4. [Herramientas de Comunicación](#4-herramientas-de-comunicación)
-5. [Relaciones con el Cliente](#5-relaciones-con-el-cliente)
-6. [Estándares de Documentación](#6-estándares-de-documentación)
-7. [Estándares de Código](#7-estándares-de-código)
-8. [Plan de Gestión de Cambios](#8-plan-de-gestión-de-cambios)
-9. [Control de Versiones](#9-control-de-versiones)
-10. [Gestión de Calidad](#10-gestión-de-calidad)
-11. [Plan de Medición del Desempeño y Recompensas](#11-plan-de-medición-del-desempeño-y-recompensas)
+## Tecnologías
 
----
+| Capa | Herramienta |
+| --- | --- |
+| Servidor | Python 3.12 + Django 5.2 LTS (Django REST Framework solo para endpoints JSON) |
+| Interfaz | Plantillas de Django + HTMX + CSS propio con variables |
+| Base de datos | PostgreSQL 16 |
+| Seguridad | Argon2, django-axes, HTTPS con Caddy |
+| Contenedores | Docker + Docker Compose |
+| Pruebas | pytest-django, Playwright + axe-core, Lighthouse |
+| Calidad | GitHub Actions, ruff, pre-commit |
 
-## 1. Metodología de Desarrollo y Ciclo de Vida 🔄
-El proyecto seguirá un enfoque ágil para poder adaptarnos mejor a las necesidades de accesibilidad durante su creación:
-* **Fases:** Desarrollo iterativo dividido en tres fases principales.
-* **Metodología:** **Scrum**.
+Justificación completa en la Propuesta Técnica (apartado 5.2) y en [docs/decisiones/0001-stack.md](docs/decisiones/0001-stack.md).
 
-## 2. Recursos de Software de Desarrollo 💻
-> ⏳ *[Sección pendiente de definir: Ej. IDEs, frameworks, bases de datos, etc.]*
+## Empezar
 
-## 3. Organización del Equipo de Trabajo 👥
-El equipo está estructurado en los siguientes roles, combinando responsabilidades fijas y rotativas para asegurar el dinamismo y compromiso:
+Guías paso a paso:
 
-* 👑 **Coordinador** | *Tomás (DGP y MDA)*
-  > Responsable del cumplimiento de los objetivos grupales, así como de la gestión integral del grupo (comunicación, coordinación, planificación, etc.).
-* 📁 **Catalogador** | *Manu (MDA y DGP)* — 🔄 **ROTATIVO**
-  > Responsable de recopilar, analizar y clasificar la información generada por el grupo en las diferentes tareas asociadas a las prácticas.
-* ⚖️ **Moderador** | *Ignacio (DGP) y Jorge (MDA y DGP)* — 🔄 **ROTATIVO**
-  > Responsables de plantear y moderar los debates, y de seleccionar las ideas y decisiones grupales.
-* 🎤 **Presentador** | *Pablo (DGP) y Javi (MDA)* — 🔄 **ROTATIVO**
-  > Responsables de elaborar y presentar resúmenes, resultados y presentaciones, tanto al profesor como a los compañeros de otros grupos.
-* 🎯 **Gestor de la Calidad** | *Úrsula (DGP y MDA)* — 📌 **FIJO**
-  > Responsable de asegurar la calidad de los productos generados y del proceso de desarrollo. Vela por que los documentos y técnicas aplicadas sigan los estándares presentados en clase.
-* ♿ **Gestor de Usabilidad y Accesibilidad** | *Lara (MDA)* — 📌 **FIJO**
-  > Responsable de planificar y asegurar de manera estricta la usabilidad y accesibilidad integral del proyecto.
+- [Ubuntu](docs/instalacion/ubuntu.md)
+- [Windows](docs/instalacion/windows.md)
 
-## 4. Herramientas de Comunicación 💬
-Para mantener una coordinación fluida, el equipo utilizará:
-* 📱 **WhatsApp:** Comunicaciones rápidas y del día a día.
-* 💻 **Google Meet:** Reuniones virtuales y sesiones de trabajo en remoto.
-* 🤝 **Reuniones Físicas:** Puestas en común, planificación profunda y trabajo conjunto.
+Resumen con Docker (la opción recomendada en los dos sistemas):
 
-## 5. Relaciones con el Cliente 🏫
-La interacción con los usuarios finales y el colegio (profesorado) se realizará mediante:
-* 🗣️ **Entrevistas iniciales** para toma de requisitos.
-* 📅 **Reuniones periódicas** con el profesorado para validación.
-* 📧 **Comunicación directa y continua** vía correo electrónico.
+```bash
+git clone https://github.com/tomaas05/App-Colegio-Accesible.git
+cd App-Colegio-Accesible
+cp .env.example .env
+docker compose up --build
+```
 
-## 6. Estándares de Documentación 📄
-> ⏳ *[Sección pendiente de definir: Ej. Formatos, plantillas, nomenclatura de archivos, etc.]*
+Abre <http://localhost:8000>: debe aparecer «El entorno de desarrollo funciona».
 
-## 7. Estándares de Código ⌨️
-> ⏳ *[Sección pendiente de definir: Ej. Guías de estilo, convenciones de nombres, linters, etc.]*
+## Estructura
 
-## 8. Plan de Gestión de Cambios 📝
-> ⏳ *[Sección pendiente de definir: Ej. Cómo se solicitan, evalúan y aprueban los cambios en los requisitos.]*
+```text
+App-Colegio-Accesible/
+├── apps/                    # Una app de Django por objetivo de la Propuesta Técnica
+│   ├── cuentas/             #   Obj. 1 · Usuarios, acceso y permisos      (Manuel Jesús)
+│   ├── agenda/              #   Obj. 2 · Agenda del estudiante            (Tomás)
+│   ├── planificacion/       #   Obj. 3 · Creación y planificación         (Úrsula)
+│   ├── perfiles/            #   Obj. 4 · Personalización y accesibilidad  (Kaya)
+│   ├── centro/              #   Obj. 5 · Tareas del centro                (Javier)
+│   └── seguimiento/         #   Obj. 6 · Seguimiento y bienestar          (Jorge)
+│       ├── models.py        #     vacío: indica qué RI y entidades le tocan
+│       ├── migrations/
+│       ├── templates/<app>/ #     plantillas propias de la app
+│       └── tests/
+├── config/                  # Proyecto Django
+│   ├── settings/            #   base.py · dev.py · test.py
+│   └── urls.py
+├── templates/               # base.html (estructura accesible común) e inicio provisional
+├── static/
+│   ├── css/                 #   tokens.css (paleta y tamaños) · base.css (foco, botones…)
+│   ├── fonts/               #   Open Sans y Nunito servidas por nosotros (RNF1.1.2)
+│   ├── js/
+│   └── vendor/htmx/
+├── tests/                   # Pruebas de humo y e2e de accesibilidad (axe + resoluciones)
+├── docker/                  # entrypoint.sh y Caddyfile (HTTPS para la demo)
+├── docs/
+│   ├── instalacion/         #   Guías Ubuntu y Windows
+│   ├── iteracion-1/         #   Bocetos y diseño de la base de datos (entregables It1)
+│   ├── decisiones/          #   Registro de decisiones técnicas (ADR)
+│   ├── actas/               #   Actas de reunión
+│   ├── manual-coordinacion.md
+│   ├── contribuir.md        #   Ramas, commits y pull requests
+│   └── demo-https.md        #   Cómo montar la demo en la Wi-Fi del aula
+├── requirements/            # base.txt (ejecución) · dev.txt (pruebas y calidad)
+├── Dockerfile · docker-compose.yml
+└── pyproject.toml           # Configuración de ruff y pytest
+```
 
-## 9. Control de Versiones 🐙
-El código y la documentación técnica se gestionarán de forma centralizada:
-* **Método y Herramienta:** Git y GitHub.
-* **Repositorio Oficial:** [App-Colegio-Accesible](https://github.com/tomaas05/App-Colegio-Accesible.git)
+## Órdenes habituales
 
-## 10. Gestión de Calidad 🔍
-> ⏳ *[Sección pendiente de definir: Ej. Herramientas de testing (durante el desarrollo y al final), métricas de calidad, auditorías de accesibilidad, etc.]*
+| Para… | Con Docker | Sin Docker (entorno virtual activado) |
+| --- | --- | --- |
+| Arrancar | `docker compose up` | `python manage.py runserver` |
+| Pruebas | `docker compose exec web pytest` | `pytest` |
+| Accesibilidad | — (necesita navegador, hazlo sin Docker) | `pytest -m e2e` |
+| Migraciones | `docker compose exec web python manage.py makemigrations` | `python manage.py makemigrations` |
+| Crear administrador | `docker compose exec web python manage.py createsuperuser` | `python manage.py createsuperuser` |
+| Revisar estilo | `docker compose exec web ruff check .` | `ruff check .` |
 
-## 11. Plan de Medición del Desempeño y Recompensas 🏆
-> ⏳ *[Sección pendiente de definir: Ej. Evaluación por pares, cumplimiento de hitos, reconocimiento interno, etc.]*
+## Documentación del equipo
+
+- [Manual de Coordinación](docs/manual-coordinacion.md)
+- [Cómo contribuir](docs/contribuir.md)
+- [Iteración 1: bocetos y base de datos](docs/iteracion-1/README.md)

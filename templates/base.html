@@ -1,0 +1,28 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Despega{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  {% block estilos %}{% endblock %}
+  {# HTMX servido desde nuestro servidor: ninguna petición a terceros (RNF1.1.2) #}
+  <script src="{% static 'vendor/htmx/htmx.min.js' %}" defer></script>
+</head>
+{# hx-headers envía el token CSRF en todas las peticiones HTMX #}
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+  <header class="cabecera">
+    {% block cabecera %}<p><strong>Despega</strong></p>{% endblock %}
+  </header>
+
+  <main id="contenido" tabindex="-1">
+    {% block contenido %}{% endblock %}
+  </main>
+
+  {% block pie %}{% endblock %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>
