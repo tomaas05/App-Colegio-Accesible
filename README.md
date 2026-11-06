@@ -20,12 +20,19 @@ Justificación completa en la Propuesta Técnica (apartado 5.2) y en [docs/decis
 
 ## Empezar
 
-Guías paso a paso:
+Guías paso a paso (al principio de cada una hay una tabla para saber qué camino te toca según tu versión):
 
-- [Ubuntu](docs/instalacion/ubuntu.md)
-- [Windows](docs/instalacion/windows.md)
+- [Ubuntu 20.04 / 22.04 / 24.04](docs/instalacion/ubuntu.md)
+- [Windows 10 / 11](docs/instalacion/windows.md)
 
-Resumen con Docker (la opción recomendada en los dos sistemas):
+| Sistema | Camino recomendado |
+| --- | --- |
+| Ubuntu 22.04 o 24.04 | Docker |
+| Ubuntu 20.04 | Actualizar a 22.04 (ver guía) |
+| Windows 11 23H2 o posterior | Docker Desktop |
+| Windows 10 | Sin Docker (Python y PostgreSQL instalados) |
+
+Resumen con Docker:
 
 ```bash
 git clone https://github.com/tomaas05/App-Colegio-Accesible.git
