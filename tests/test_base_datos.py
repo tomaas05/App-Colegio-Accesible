@@ -31,7 +31,10 @@ def falla_en_bd(funcion):
 
 # --------------------------------------------------------------- datos de prueba
 def test_datos_de_prueba_cargan_y_no_se_duplican(datos):
+    from apps.usuarios.models import ImagenAcceso
+
     assert Usuario.objects.filter(rol=Rol.ESTUDIANTE).count() == 9
+    assert ImagenAcceso.objects.count() == 12
     assert Tarea.objects.count() == 5
     call_command("cargar_datos_prueba", verbosity=0)  # segunda vez: no hace nada
     assert Tarea.objects.count() == 5
@@ -50,8 +53,46 @@ def test_cada_estudiante_tiene_perfil_por_defecto(datos):
     assert (martina.tema, martina.max_tarjetas, martina.tamano_botones) == ("claro", 6, 48)
 
 
-def test_estudiante_sin_contrasena_utilizable(datos):
-    assert not Estudiante.objects.first().usuario.has_usable_password()
+def test_contrasena_de_imagenes_sin_orden(datos):
+    from apps.usuarios.acceso import comprobar_contrasena_imagenes
+    from apps.usuarios.models import ImagenAcceso
+
+    lucia = Estudiante.objects.get(codigo_estudiante="A01").usuario
+    ids = {i.descripcion_imagen: i.pk for i in ImagenAcceso.objects.all()}
+    assert comprobar_contrasena_imagenes(lucia, [ids["flor"], ids["perro"], ids["sol"]])
+    assert comprobar_contrasena_imagenes(lucia, [ids["sol"], ids["flor"], ids["perro"]])
+    assert not comprobar_contrasena_imagenes(lucia, [ids["gato"], ids["perro"], ids["sol"]])
+    assert not comprobar_contrasena_imagenes(lucia, [ids["perro"], ids["sol"]])  # solo 2
+    assert "imagenes:" not in lucia.password  # la combinación nunca se guarda en claro
+
+
+def test_mateo_entra_con_contrasena_de_texto(datos):
+    mateo = Estudiante.objects.get(codigo_estudiante="A02")
+    assert mateo.perfil.metodo_acceso == "contrasena"
+    assert mateo.usuario.check_password("mateo2026")
+
+
+def test_metodo_de_acceso_por_defecto_imagenes(datos):
+    assert Estudiante.objects.get(codigo_estudiante="A05").perfil.metodo_acceso == "imagenes"
+
+
+@pytest.mark.parametrize(
+    "modelo",
+    ["apps.tareas.models.Tarea", "apps.tareas.models.Paso", "apps.horario.models.Asignatura"],
+)
+def test_imagen_sin_descripcion_rechazada(datos, modelo):
+    """Lector de pantalla: toda imagen tiene que tener su descripción."""
+    from django.utils.module_loading import import_string
+
+    objeto = import_string(modelo).objects.first()
+    objeto.descripcion_imagen = ""
+    assert falla_en_bd(objeto.save)
+
+
+def test_clase_con_imagen_sin_descripcion_rechazada(datos):
+    clase = Clase.objects.first()
+    clase.descripcion_imagen = ""
+    assert falla_en_bd(clase.save)
 
 
 def test_rol_invalido_rechazado(db):

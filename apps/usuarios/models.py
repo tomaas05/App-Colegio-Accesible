@@ -82,6 +82,11 @@ class Clase(models.Model):
             models.UniqueConstraint(
                 fields=["nombre", "curso_escolar"], name="clase_unica_por_curso"
             ),
+            # Lector de pantalla: si hay imagen, tiene que tener descripción.
+            models.CheckConstraint(
+                condition=Q(imagen="") | ~Q(descripcion_imagen=""),
+                name="clase_imagen_con_descripcion",
+            ),
         ]
 
     def __str__(self):
@@ -177,3 +182,34 @@ class Atencion(models.Model):
 
     def __str__(self):
         return f"{self.profesional} atiende a {self.estudiante}"
+
+
+class ImagenAcceso(models.Model):
+    """Imagen de la rejilla de la contraseña de imágenes del estudiante.
+
+    La rejilla es común a todos los estudiantes. La combinación de cada uno
+    (3 imágenes, sin orden) no se guarda aquí: se guarda con hash en
+    usuario.password (ver acceso.py).
+    """
+
+    orden = models.PositiveSmallIntegerField(unique=True)
+    imagen = models.ImageField(upload_to="acceso/")
+    descripcion_imagen = models.CharField(
+        "descripción de la imagen",
+        max_length=60,
+        help_text="Lo que lee el lector de pantalla: «perro», «sol»…",
+    )
+    activa = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "imagen de acceso"
+        verbose_name_plural = "imágenes de acceso"
+        ordering = ["orden"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(descripcion_imagen=""), name="imagen_acceso_con_descripcion"
+            ),
+        ]
+
+    def __str__(self):
+        return self.descripcion_imagen

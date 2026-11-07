@@ -22,14 +22,40 @@ from PIL import Image, ImageDraw, ImageFont
 
 from apps.agenda.models import Ejecucion, EjecucionPaso, EstadoEjecucion, EstadoPaso
 from apps.horario.models import Asignatura, Franja, HorarioClase, TipoAsignatura
-from apps.perfil.models import Paleta, TamanoBotones, TamanoLetra, Tema, TipoTemporizador
+from apps.perfil.models import (
+    MetodoAcceso,
+    Paleta,
+    TamanoBotones,
+    TamanoLetra,
+    Tema,
+    TipoTemporizador,
+)
 from apps.tareas.models import Ambito, Asignacion, Paso, Tarea
-from apps.usuarios.models import Atencion, Clase, Estudiante, Rol, Usuario
+from apps.usuarios.acceso import establecer_contrasena_imagenes
+from apps.usuarios.models import Atencion, Clase, Estudiante, ImagenAcceso, Rol, Usuario
 
 CONTRASENA = "despega2026"
 CURSO = "2026-2027"
 TODOS_LOS_DIAS = [1, 2, 3, 4, 5, 6, 7]  # también fin de semana, para poder probar cualquier día
-CARPETAS_MEDIA = ["avatares", "tareas", "pasos", "asignaturas", "clases"]
+CARPETAS_MEDIA = ["avatares", "tareas", "pasos", "asignaturas", "clases", "acceso"]
+
+# Rejilla común de la contraseña de imágenes y combinación de prueba de los estudiantes.
+IMAGENES_ACCESO = [
+    "perro",
+    "gato",
+    "sol",
+    "luna",
+    "coche",
+    "casa",
+    "árbol",
+    "flor",
+    "pelota",
+    "estrella",
+    "pez",
+    "manzana",
+]
+COMBINACION = ["perro", "sol", "flor"]
+CONTRASENA_MATEO = "mateo2026"
 
 # Colores oscuros: el texto blanco encima cumple contraste AA.
 COLORES = ["#0B3C49", "#1F6F6B", "#7A3E9D", "#B54708", "#1D4ED8", "#9F1239", "#3F6212", "#5B21B6"]
@@ -100,6 +126,7 @@ class Command(BaseCommand):
             Asignatura.objects.all().delete()
             Franja.objects.all().delete()
             Atencion.objects.all().delete()
+            ImagenAcceso.objects.all().delete()
             Estudiante.objects.all().delete()
             Clase.objects.all().delete()
             Usuario.objects.all().delete()
@@ -126,6 +153,17 @@ class Command(BaseCommand):
         clase_b = Clase(nombre="PTVAL 2", curso_escolar=CURSO, descripcion_imagen="Clase PTVAL 2")
         clase_b.imagen.save("ptval2.png", imagen("P2", COLORES[1], "ptval2"), save=False)
         clase_b.save()
+
+        # --- Rejilla de la contraseña de imágenes --------------------------
+        for orden, palabra in enumerate(IMAGENES_ACCESO, start=1):
+            imagen_acceso = ImagenAcceso(orden=orden, descripcion_imagen=palabra)
+            imagen_acceso.imagen.save(
+                f"acceso{orden}.png",
+                imagen(palabra[:2].capitalize(), COLORES[orden % len(COLORES)], f"acceso{orden}"),
+                save=False,
+            )
+            imagen_acceso.save()
+        self.combinacion = [ImagenAcceso.objects.get(descripcion_imagen=p).pk for p in COMBINACION]
 
         # --- Estudiantes ---------------------------------------------------
         nombres_a = [
@@ -168,8 +206,13 @@ class Command(BaseCommand):
         p.save()
         p = mateo.perfil
         p.tema, p.tipo_temporizador = Tema.OSCURO, TipoTemporizador.NUMERICO
+        # Mateo entra con contraseña de texto; el resto, con tres imágenes.
+        p.metodo_acceso = MetodoAcceso.CONTRASENA
         p.save()
+        mateo.usuario.set_password(CONTRASENA_MATEO)
+        mateo.usuario.save()
         p = sofia.perfil
+        p.usa_lector_pantalla = True
         p.paleta, p.max_tarjetas = Paleta.ALTO_CONTRASTE, 3
         p.tamano_botones, p.tamano_letra = TamanoBotones.MUY_GRANDE, TamanoLetra.MUY_GRANDE
         p.save()
@@ -313,7 +356,7 @@ class Command(BaseCommand):
             last_name=apellidos,
             rol=Rol.ESTUDIANTE,
         )
-        usuario.set_unusable_password()
+        establecer_contrasena_imagenes(usuario, self.combinacion, guardar=False)
         usuario.save()
         estudiante = Estudiante(
             usuario=usuario,
@@ -414,8 +457,11 @@ class Command(BaseCommand):
             "  profesional  Luis, logopeda; atiende a Lucía y a Hugo\n"
             "  familiar     Carmen, familiar de Lucía\n"
             "  familiar2    Javier, familiar de Daniela\n"
-            "\n  Estudiantes (entran con su avatar): Lucía, Mateo, Sofía, Hugo, Martina y Leo\n"
+            "\n  Estudiantes (pulsan su avatar): Lucía, Mateo, Sofía, Hugo, Martina y Leo\n"
             "  en PTVAL 1; Daniela, Pablo y Vega en PTVAL 2.\n"
+            f"  Después eligen 3 imágenes: {', '.join(COMBINACION)} (en cualquier orden).\n"
+            f"  Mateo, en cambio, escribe la contraseña {CONTRASENA_MATEO}.\n"
+            "  Sofía tiene marcado que usa lector de pantalla.\n"
             f"  {Tarea.objects.count()} tareas, {Asignacion.objects.count()} asignaciones, "
             f"{HorarioClase.objects.count()} casillas de horario, "
             f"{Ejecucion.objects.count()} ejecuciones de ayer (Lucía).\n"

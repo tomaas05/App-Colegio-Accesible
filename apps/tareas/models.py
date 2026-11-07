@@ -49,6 +49,9 @@ class Tarea(models.Model):
         ordering = ["nombre"]
         constraints = [
             models.CheckConstraint(condition=~Q(nombre=""), name="tarea_nombre_no_vacio"),
+            models.CheckConstraint(
+                condition=~Q(descripcion_imagen=""), name="tarea_imagen_con_descripcion"
+            ),
         ]
 
     def __str__(self):
@@ -71,6 +74,9 @@ class Paso(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["tarea", "orden"], name="paso_orden_unico"),
             models.CheckConstraint(condition=Q(orden__gt=0), name="paso_orden_positivo"),
+            models.CheckConstraint(
+                condition=~Q(descripcion_imagen=""), name="paso_imagen_con_descripcion"
+            ),
         ]
 
     def __str__(self):

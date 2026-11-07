@@ -61,6 +61,11 @@ class TipoTemporizador(models.TextChoices):
     NUMERICO = "numerico", "Numérico"
 
 
+class MetodoAcceso(models.TextChoices):
+    IMAGENES = "imagenes", "Tres imágenes"
+    CONTRASENA = "contrasena", "Contraseña de texto"
+
+
 class Perfil(models.Model):
     estudiante = models.OneToOneField(
         Estudiante, on_delete=models.CASCADE, primary_key=True, related_name="perfil"
@@ -98,6 +103,21 @@ class Perfil(models.Model):
     )
     temporizador_visible = models.BooleanField(default=True)
     puede_ocultar_temporizador = models.BooleanField(default=False)
+    metodo_acceso = models.CharField(
+        "método de acceso",
+        max_length=10,
+        choices=MetodoAcceso.choices,
+        default=MetodoAcceso.IMAGENES,
+        help_text="Qué se le pide al estudiante después de pulsar su avatar.",
+    )
+    usa_lector_pantalla = models.BooleanField(
+        "usa lector de pantalla",
+        default=False,
+        help_text=(
+            "El navegador no permite saber si VoiceOver o TalkBack están activos. "
+            "Si se marca, la aplicación no reproduce su propia voz para no pisar al lector."
+        ),
+    )
 
     class Meta:
         verbose_name = "perfil"
@@ -114,6 +134,10 @@ class Perfil(models.Model):
             models.CheckConstraint(
                 condition=Q(tamano_botones__in=TamanoBotones.values),
                 name="perfil_tamano_botones_valido",
+            ),
+            models.CheckConstraint(
+                condition=Q(metodo_acceso__in=MetodoAcceso.values),
+                name="perfil_metodo_acceso_valido",
             ),
         ]
 

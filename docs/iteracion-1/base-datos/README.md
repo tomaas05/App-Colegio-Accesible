@@ -15,7 +15,9 @@ Responsables: Javier y Úrsula (revisión de privacidad: Lara-Marie y Kaya). Dis
 3. **Programación dentro de asignación**, como pidió la profesora.
 4. **Imagen y descripción de la imagen** en todas las entidades que se muestran con imagen. La descripción sirve además de texto alternativo (RNF4.1.5).
 5. **Cada estudiante pertenece a su clase actual** (N:1). El histórico por curso queda fuera de la iteración 1.
-6. **Las reglas de una sola fila van en la base de datos** (únicos, horas coherentes, rangos). Las que dependen de varias filas, como los solapamientos entre asignaciones, van en el código de su dueño.
+6. **Acceso del estudiante configurable.** Pulsa su avatar y, según su perfil, escribe una contraseña o elige 3 imágenes de una rejilla común (`imagen_acceso`). En ambos casos solo se guarda un hash.
+7. **Lectores de pantalla.** Descripción obligatoria en toda imagen y `perfil.usa_lector_pantalla`, porque la web no puede detectar VoiceOver.
+8. **Las reglas de una sola fila van en la base de datos** (únicos, horas coherentes, rangos). Las que dependen de varias filas, como los solapamientos entre asignaciones, van en el código de su dueño.
 
 ## Cómo usarla
 
