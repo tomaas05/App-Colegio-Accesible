@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Atencion, Clase, Estudiante, Usuario
+from .models import Atencion, Clase, Estudiante, ImagenAcceso, Usuario
 
 
 @admin.register(Usuario)
@@ -52,3 +52,9 @@ class EstudianteAdmin(admin.ModelAdmin):
 class AtencionAdmin(admin.ModelAdmin):
     list_display = ("profesional", "estudiante", "fecha_alta")
     list_filter = ("profesional",)
+
+
+@admin.register(ImagenAcceso)
+class ImagenAccesoAdmin(admin.ModelAdmin):
+    list_display = ("orden", "descripcion_imagen", "activa")
+    list_editable = ("activa",)

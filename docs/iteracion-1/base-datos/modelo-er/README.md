@@ -17,6 +17,8 @@ Salen de la revisión de la profesora del 6 de noviembre (ver el acta) y de las 
 | 7 | **ESTUDIANTE–CLASE pasa de N:M a N:1**: cada estudiante pertenece a su clase del curso actual. Se quita la nota «una clase por curso escolar». | Equipo (simplificación para la iteración 1) |
 | 8 | **PERFIL:** se añade `puede_ocultar_temporizador`, que hace falta para HU-07-01 (RF4.3.1). | Equipo |
 | 9 | Lo no comprometido no aparece en el diagrama. | Profesora |
+| 10 | **Acceso del estudiante.** Nueva entidad IMAGEN_ACCESO (orden, imagen, descripción_imagen, activa), sin relación con ESTUDIANTE: la combinación de cada uno se guarda con hash en su contraseña. PERFIL gana `método_acceso` (3 imágenes o contraseña de texto). | Equipo (7 nov) |
+| 11 | **Lectores de pantalla.** PERFIL gana `usa_lector_pantalla`, porque la web no puede saber si VoiceOver está activo. Toda imagen lleva `descripción_imagen` obligatoria. | Profesora |
 
 ## Diagrama lógico
 
@@ -92,6 +94,15 @@ erDiagram
     varchar tipo_temporizador
     boolean temporizador_visible
     boolean puede_ocultar_temporizador
+    varchar metodo_acceso
+    boolean usa_lector_pantalla
+  }
+  IMAGEN_ACCESO {
+    bigint id PK
+    smallint orden UK
+    varchar imagen
+    varchar descripcion_imagen
+    boolean activa
   }
   FRANJA {
     bigint id PK

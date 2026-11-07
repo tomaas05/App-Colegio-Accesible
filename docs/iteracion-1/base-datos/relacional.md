@@ -12,6 +12,7 @@ Cada tabla indica la app de Django donde vive y su dueño según el reparto de l
 - **estudiante** (**usuario_id** → usuario, codigo_estudiante *UK*, avatar, clase_id → clase, tutor_id → usuario, fecha_alta_tutor, familiar_id → usuario, fecha_alta_familiar)
 - **atencion** (**id**, profesional_id → usuario, estudiante_id → estudiante, fecha_alta)
   - *UK* (profesional_id, estudiante_id)
+- **imagen_acceso** (**id**, orden *UK*, imagen, descripcion_imagen, activa)
 
 Cómo se ha pasado la generalización USUARIO → ADULTO / ESTUDIANTE → ADMINISTRADOR / TUTOR / PROFESIONAL / FAMILIAR:
 
@@ -22,9 +23,11 @@ Cómo se ha pasado la generalización USUARIO → ADULTO / ESTUDIANTE → ADMINI
 - *atiende* (N:M) es la tabla **atencion**.
 - *pertenece* pasa a ser N:1: `estudiante.clase_id`.
 
+Acceso del estudiante (decisión del 7 de noviembre): el estudiante pulsa su avatar y después, según `perfil.metodo_acceso`, escribe una contraseña de texto o elige 3 imágenes de la rejilla común **imagen_acceso**, sin importar el orden. En los dos casos se guarda solo el hash en `usuario.hash_contrasena`; no hay tabla que relacione estudiantes con imágenes. Los adultos entran con usuario y contraseña.
+
 ## Objetivo 4 · Perfil — app `perfil` (Jorge)
 
-- **perfil** (**estudiante_id** → estudiante, tema, paleta, tipo_letra, tamano_letra, tamano_botones, posicion_botones, contenido_botones, max_tarjetas, tipo_temporizador, temporizador_visible, puede_ocultar_temporizador)
+- **perfil** (**estudiante_id** → estudiante, tema, paleta, tipo_letra, tamano_letra, tamano_botones, posicion_botones, contenido_botones, max_tarjetas, tipo_temporizador, temporizador_visible, puede_ocultar_temporizador, metodo_acceso, usa_lector_pantalla)
 
 PERFIL es entidad débil de ESTUDIANTE (1:1), así que su clave es la del estudiante.
 

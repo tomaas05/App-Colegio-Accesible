@@ -112,7 +112,7 @@ App-Colegio-Accesible/
 | `familiar` | Carmen, familiar de Lucía |
 | `familiar2` | Javier, familiar de Daniela |
 
-Los estudiantes no tienen contraseña: entran con su avatar (HU-01-06). Las tareas de PTVAL 1 son a las 9:00, 10:30, 12:00 y 17:00, todos los días (también el fin de semana, para poder probar cualquier día). Lucía tiene además ejecuciones de ayer y una tarea de casa a las 20:00. Lucía, Mateo y Sofía tienen perfiles distintos del de por defecto.
+Los estudiantes pulsan su avatar y después, según su perfil, eligen 3 imágenes (**perro, sol y flor**, en cualquier orden) o, en el caso de **Mateo**, escriben la contraseña **`mateo2026`**. Sofía tiene marcado que usa lector de pantalla. Las tareas de PTVAL 1 son a las 9:00, 10:30, 12:00 y 17:00, todos los días (también el fin de semana, para poder probar cualquier día). Lucía tiene además ejecuciones de ayer y una tarea de casa a las 20:00. Lucía, Mateo y Sofía tienen perfiles distintos del de por defecto.
 
 ## Documentación del equipo
 

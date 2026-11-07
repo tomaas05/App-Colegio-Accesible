@@ -69,6 +69,11 @@ class Asignatura(models.Model):
         verbose_name = "asignatura o taller"
         verbose_name_plural = "asignaturas y talleres"
         ordering = ["nombre"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(descripcion_imagen=""), name="asignatura_imagen_con_descripcion"
+            ),
+        ]
 
     def __str__(self):
         return self.nombre

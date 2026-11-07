@@ -4,6 +4,8 @@ Descripción de cada campo de las tablas del [modelo relacional](relacional.md).
 
 No se guardan fotografías, documentos de identidad ni datos médicos (RNF1.1.3). Las imágenes son archivos subidos al servidor: en la tabla se guarda su ruta.
 
+**Lectores de pantalla (VoiceOver, TalkBack).** Toda imagen que se muestra tiene su `descripcion_imagen`, que es el texto que lee el lector. La base de datos rechaza una tarea, un paso, una asignatura, una imagen de acceso o una clase con imagen cuya descripción esté vacía. El avatar no la necesita: su nombre accesible es el nombre del estudiante.
+
 ## Valores permitidos
 
 | Lista | Valores | Por defecto |
@@ -21,6 +23,7 @@ No se guardan fotografías, documentos de identidad ni datos médicos (RNF1.1.3)
 | posición de botones | `abajo`, `arriba`, `izquierda`, `derecha` | `abajo` |
 | contenido de botones | `imagen`, `texto`, `ambos` | `ambos` |
 | tipo de temporizador | `lineal`, `radial`, `numerico` | `lineal` |
+| método de acceso del estudiante | `imagenes` (3 imágenes de la rejilla), `contrasena` (texto) | `imagenes` |
 | días de la semana | 1 = lunes … 7 = domingo | — |
 
 ---
@@ -36,7 +39,7 @@ App `usuarios` · Requisitos: RI1.1.1, RI1.3.1 · Es el modelo de usuario de Dja
 | nombre | varchar(150) | no | no vacío | Nombre | RI1.1.1 |
 | apellidos | varchar(150) | sí | | Apellidos | RI1.1.1 |
 | correo | varchar(254) | sí | | Correo del adulto (opcional) | E/R |
-| hash_contrasena | varchar(128) | no | Argon2 | Hash de la contraseña. En los estudiantes es un valor inutilizable | RNF1.1.4 |
+| hash_contrasena | varchar(128) | no | Argon2 | Hash de la contraseña. En los estudiantes, el de su contraseña de texto o el de su combinación de 3 imágenes, según `perfil.metodo_acceso` | RNF1.1.4 |
 | rol | varchar(20) | no | lista «rol» | Rol del usuario | RI1.1.1 |
 | activo | boolean | no | por defecto verdadero | Cuenta activa o desactivada | E/R |
 | fecha_creacion | timestamptz | no | automática | Fecha de alta de la cuenta | RI1.1.1 |
@@ -55,7 +58,7 @@ App `usuarios` · Requisito: RI1.1.2
 | imagen | varchar(255) | sí | | Ruta de la imagen de la clase | E/R |
 | descripcion_imagen | varchar(150) | sí | | Texto alternativo de la imagen | RNF4.1.5 |
 
-*UK* (nombre, curso_escolar).
+*UK* (nombre, curso_escolar). Si hay imagen, `descripcion_imagen` no puede estar vacía.
 
 ## estudiante
 
@@ -87,6 +90,20 @@ App `usuarios` · Requisito: RI1.2.2 · La rellena HU-01-08.
 
 *UK* (profesional_id, estudiante_id).
 
+## imagen_acceso
+
+App `usuarios` · Rejilla común de imágenes para la contraseña de los estudiantes que entran con imágenes.
+
+| Campo | Tipo | Nulo | Restricciones | Descripción | Origen |
+| --- | --- | --- | --- | --- | --- |
+| id | bigint | no | PK | Identificador | — |
+| orden | smallint | no | UK | Posición en la rejilla | — |
+| imagen | varchar(255) | no | | Ruta de la imagen | Equipo |
+| descripcion_imagen | varchar(60) | no | no vacía | Lo que lee el lector de pantalla: «perro», «sol»… | RNF4.1.5 |
+| activa | boolean | no | por defecto verdadero | Si aparece en la rejilla | — |
+
+**Cómo se guarda la combinación de cada estudiante.** No hay tabla que relacione estudiantes con imágenes, porque cualquiera con acceso a la base de datos vería las contraseñas. Se ordenan los identificadores de las 3 imágenes elegidas (el orden no importa) y se guarda su hash Argon2 en `usuario.hash_contrasena`, igual que una contraseña de texto. Las funciones están en `apps/usuarios/acceso.py`.
+
 ## perfil
 
 App `perfil` · Requisito: RI4.1.1 · Se crea con los valores por defecto al crear el estudiante.
@@ -105,6 +122,8 @@ App `perfil` · Requisito: RI4.1.1 · Se crea con los valores por defecto al cre
 | tipo_temporizador | varchar(10) | no | lista «tipo de temporizador» | Lineal, radial o numérico | RF4.3.3 |
 | temporizador_visible | boolean | no | por defecto verdadero | Si el temporizador se ve al empezar | RF4.3.1 |
 | puede_ocultar_temporizador | boolean | no | por defecto falso | Si el estudiante puede ocultarlo | RF4.3.1 |
+| metodo_acceso | varchar(10) | no | lista «método de acceso» | Qué se le pide al estudiante después de pulsar su avatar: 3 imágenes o contraseña de texto | Equipo (7 nov) |
+| usa_lector_pantalla | boolean | no | por defecto falso | El estudiante usa VoiceOver o TalkBack. La web no puede detectarlo, así que se guarda aquí; con él activado, la aplicación no reproduce su propia voz para no pisar al lector | Profesora, RNF4.1.5 |
 
 Los campos de iteraciones posteriores (posición y contenido de botones) se crean ya con su valor por defecto, para no tener que migrar la tabla después.
 
@@ -161,7 +180,7 @@ App `tareas` · Requisito: RI3.1.1 · Catálogo de tareas del centro.
 | ambito | varchar(10) | no | lista «ámbito» | Escolar, ocio o casa | RF3.3.1 |
 | creador_id | bigint | no | → usuario, protegida | Quién la creó | RI3.1.1 |
 
-Sin fecha de creación ni estado (profesora).
+Sin fecha de creación ni estado (profesora). `descripcion_imagen` no puede estar vacía.
 
 ## paso
 
@@ -176,7 +195,7 @@ App `tareas` · Requisito: RI3.1.3 · Entidad débil de tarea.
 | descripcion_imagen | varchar(150) | no | | Texto alternativo de la imagen | RNF4.1.5 |
 | descripcion | text | sí | | Explicación del paso (antes «texto opcional») | RF3.1.3, profesora |
 
-*UK* (tarea_id, orden).
+*UK* (tarea_id, orden). `descripcion_imagen` no puede estar vacía.
 
 ## asignacion
 
