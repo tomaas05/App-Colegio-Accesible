@@ -44,6 +44,7 @@ services:
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./staticfiles:/srv/static:ro
+      - ./media:/srv/media:ro
       - caddy_data:/data
     depends_on:
       - web

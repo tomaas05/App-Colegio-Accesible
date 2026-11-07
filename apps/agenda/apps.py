@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class AgendaConfig(AppConfig):
-    """Objetivo 2 – Agenda del estudiante (resp. Tomás)."""
+    """Agenda del estudiante y ejecución de tareas (Objetivo 2). Dueño: Tomás."""
 
     name = "apps.agenda"
     label = "agenda"

@@ -48,14 +48,17 @@ Abre <http://localhost:8000>: debe aparecer «El entorno de desarrollo funciona�
 
 ```text
 App-Colegio-Accesible/
-├── apps/                    # Una app de Django por objetivo de la Propuesta Técnica
-│   ├── cuentas/             #   Obj. 1 · Usuarios, acceso y permisos      (Manuel Jesús)
-│   ├── agenda/              #   Obj. 2 · Agenda del estudiante            (Tomás)
-│   ├── planificacion/       #   Obj. 3 · Creación y planificación         (Úrsula)
-│   ├── perfiles/            #   Obj. 4 · Personalización y accesibilidad  (Kaya)
-│   ├── centro/              #   Obj. 5 · Tareas del centro                (Javier)
-│   └── seguimiento/         #   Obj. 6 · Seguimiento y bienestar          (Jorge)
-│       ├── models.py        #     vacío: indica qué RI y entidades le tocan
+├── apps/                    # Una app de Django por módulo del reparto de la iteración 1
+│   ├── usuarios/            #   Usuario, clase, estudiante, atención            (Manu)
+│   ├── agenda/              #   Ejecución y avance de pasos                     (Tomás)
+│   ├── tareas/              #   Tarea, paso, asignación                         (Úrsula)
+│   ├── perfil/              #   Perfil visual y temporizador                    (Jorge)
+│   ├── horario/             #   Franja, asignatura, horario de clase            (Javi)
+│   ├── centro/              #   Tareas del centro (iteración 2)
+│   ├── seguimiento/         #   Seguimiento y bienestar (iteración 2)
+│   └── comun/               #   Comando cargar_datos_prueba
+│       ├── models.py        #     tablas de la app (ver docs/iteracion-1/base-datos/)
+│       ├── admin.py         #     cómo se ven en /admin/
 │       ├── migrations/
 │       ├── templates/<app>/ #     plantillas propias de la app
 │       └── tests/
@@ -68,7 +71,7 @@ App-Colegio-Accesible/
 │   ├── fonts/               #   Open Sans y Nunito servidas por nosotros (RNF1.1.2)
 │   ├── js/
 │   └── vendor/htmx/
-├── tests/                   # Pruebas de humo y e2e de accesibilidad (axe + resoluciones)
+├── tests/                   # Pruebas de humo, de la base de datos y e2e de accesibilidad
 ├── docker/                  # entrypoint.sh y Caddyfile (HTTPS para la demo)
 ├── docs/
 │   ├── instalacion/         #   Guías Ubuntu y Windows
@@ -91,8 +94,25 @@ App-Colegio-Accesible/
 | Pruebas | `docker compose exec web pytest` | `pytest` |
 | Accesibilidad | — (necesita navegador, hazlo sin Docker) | `pytest -m e2e` |
 | Migraciones | `docker compose exec web python manage.py makemigrations` | `python manage.py makemigrations` |
-| Crear administrador | `docker compose exec web python manage.py createsuperuser` | `python manage.py createsuperuser` |
+| Cargar datos de prueba | `docker compose exec web python manage.py cargar_datos_prueba` | `python manage.py cargar_datos_prueba` |
+| Volver a cargarlos desde cero | `… cargar_datos_prueba --reiniciar` | ídem |
+| Tarea para Lucía en 1 minuto | `… cargar_datos_prueba --tarea-ahora` | ídem |
 | Revisar estilo | `docker compose exec web ruff check .` | `ruff check .` |
+
+## Datos de prueba
+
+`cargar_datos_prueba` crea usuarios, dos clases, el horario, cinco tareas con pasos y sus asignaciones. Todo es ficticio, y las imágenes son marcadores de posición generados al vuelo. **Contraseña de todos los adultos: `despega2026`.**
+
+| Usuario | Quién es |
+| --- | --- |
+| `admin` | Administración; también entra en <http://localhost:8000/admin/> |
+| `tutor` | Ana, tutora de PTVAL 1 (Lucía, Mateo, Sofía, Hugo, Martina y Leo) |
+| `tutor2` | Pedro, tutor de PTVAL 2 (Daniela, Pablo y Vega) |
+| `profesional` | Luis, logopeda; atiende a Lucía y a Hugo |
+| `familiar` | Carmen, familiar de Lucía |
+| `familiar2` | Javier, familiar de Daniela |
+
+Los estudiantes no tienen contraseña: entran con su avatar (HU-01-06). Las tareas de PTVAL 1 son a las 9:00, 10:30, 12:00 y 17:00, todos los días (también el fin de semana, para poder probar cualquier día). Lucía tiene además ejecuciones de ayer y una tarea de casa a las 20:00. Lucía, Mateo y Sofía tienen perfiles distintos del de por defecto.
 
 ## Documentación del equipo
 

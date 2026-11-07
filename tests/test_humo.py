@@ -6,8 +6,8 @@ from django.urls import reverse
 
 
 def test_modelo_de_usuario_propio():
-    assert settings.AUTH_USER_MODEL == "cuentas.Usuario"
-    assert get_user_model()._meta.label == "cuentas.Usuario"
+    assert settings.AUTH_USER_MODEL == "usuarios.Usuario"
+    assert get_user_model()._meta.label == "usuarios.Usuario"
 
 
 def test_contrasenas_con_argon2():
@@ -31,3 +31,18 @@ def test_htmx_servido_desde_nuestro_servidor(client):
 
 def test_base_de_datos_accesible(db):
     assert get_user_model().objects.count() == 0
+
+
+def test_admin_abre_todas_las_tablas(client, datos):
+    """El admin es la herramienta del equipo mientras no hay pantallas propias."""
+    from django.contrib import admin
+
+    client.force_login(get_user_model().objects.get(username="admin"))
+    for modelo in admin.site._registry:
+        meta = modelo._meta
+        url = reverse(f"admin:{meta.app_label}_{meta.model_name}_changelist")
+        assert client.get(url).status_code == 200, url
+        primero = modelo.objects.first()
+        if primero:
+            url = reverse(f"admin:{meta.app_label}_{meta.model_name}_change", args=[primero.pk])
+            assert client.get(url).status_code == 200, url
