@@ -17,6 +17,17 @@ Responsables: Javier y Úrsula (revisión de privacidad: Lara-Marie y Kaya). Dis
 5. **Cada estudiante pertenece a su clase actual** (N:1). El histórico por curso queda fuera de la iteración 1.
 6. **Las reglas de una sola fila van en la base de datos** (únicos, horas coherentes, rangos). Las que dependen de varias filas, como los solapamientos entre asignaciones, van en el código de su dueño.
 
+## Cómo usarla
+
+Los modelos están en el `models.py` de cada app y se ven en <http://localhost:8000/admin/> (usuario `admin`). Para tener datos con los que trabajar:
+
+```bash
+python manage.py cargar_datos_prueba               # la primera vez
+python manage.py cargar_datos_prueba --reiniciar   # para volver a empezar
+```
+
+Usuarios, contraseñas y qué datos se cargan: ver la sección «Datos de prueba» del README principal. Las reglas del diccionario que garantiza la base de datos están probadas en `tests/test_base_datos.py`.
+
 ## Correspondencia con el código
 
 Cada tabla vive en la app de su objetivo, que se indica en el diccionario. Las tablas de Django llevan el prefijo de su app (`tareas_asignacion`). Sin campos de fotografías, documentos de identidad ni datos médicos (RNF1.1.3).

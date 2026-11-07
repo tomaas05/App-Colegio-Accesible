@@ -16,12 +16,12 @@ Los documentos formales (Planificación, Propuesta Técnica, Manual de Coordinac
 
 - El repositorio con su estructura, Docker, pruebas e integración continua (T3).
 - Una app de Django por objetivo, vacía; su `models.py` indica qué requisitos de información le corresponden.
-- El modelo de usuario propio (`cuentas.Usuario`), creado vacío para no tener que rehacer la base de datos después.
+- La base de datos completa de la iteración 1 (modelos, migraciones, admin y datos de prueba), según el [diseño](base-datos/README.md).
 - La plantilla base accesible y las variables CSS con la paleta del boceto.
 - La prueba automática de accesibilidad (axe + resoluciones), lista para añadirle cada pantalla.
 
 ## Cómo pasar de esta iteración a la 2
 
-1. Con el diccionario de datos aprobado, cada responsable de objetivo crea los modelos de su app y sus migraciones (`python manage.py makemigrations <app>`).
+1. Los modelos ya están creados. Si una HU necesita cambiar una tabla, lo hace su dueño en su app y genera la migración (`python manage.py makemigrations <app>`).
 2. Cada pantalla del boceto se convierte en una plantilla dentro de `apps/<app>/templates/<app>/`, reutilizando `base.html` y las variables de `tokens.css`.
 3. Cada pantalla nueva se añade a `tests/e2e/test_accesibilidad.py`.

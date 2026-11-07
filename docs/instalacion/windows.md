@@ -107,12 +107,12 @@ docker compose up --build
 
 La primera vez tarda unos minutos. Cuando veas `Starting development server at http://0.0.0.0:8000/`, abre <http://localhost:8000>.
 
-### A.4 Administrador y pruebas
+### A.4 Datos de prueba y pruebas
 
-En otra ventana de PowerShell, dentro de la carpeta del proyecto:
+En otra ventana de PowerShell, dentro de la carpeta del proyecto (los datos, la primera vez y cada vez que alguien cambie los modelos y te lo avise):
 
 ```powershell
-docker compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py cargar_datos_prueba
 docker compose exec web pytest
 ```
 
@@ -180,7 +180,7 @@ POSTGRES_HOST=localhost
 
 ```powershell
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py cargar_datos_prueba
 python manage.py runserver
 ```
 
@@ -219,6 +219,7 @@ pre-commit install
 
 | Síntoma | Solución |
 | --- | --- |
+| `relation "usuarios_usuario" does not exist` o `InconsistentMigrationHistory` | Tu base de datos local es anterior a los modelos. Bórrala una vez y vuelve a crearla: `docker compose down -v`, `docker compose up --build` y `docker compose exec web python manage.py cargar_datos_prueba`. Sin Docker: en SQL Shell, `DROP DATABASE despega;` y `CREATE DATABASE despega OWNER despega;`, después `python manage.py migrate` y `python manage.py cargar_datos_prueba`. |
 | El instalador de Docker Desktop dice que tu versión de Windows no es compatible | Usa el camino B. Docker Desktop pide Windows 11 23H2 o posterior. |
 | `sh: 1: set: Illegal option -` o `exec format error` al arrancar `web` | `docker/entrypoint.sh` tiene finales CRLF. `git config --global core.autocrlf input`, borra la carpeta y vuelve a clonar. |
 | `docker: error during connect` / `Cannot connect to the Docker daemon` | Docker Desktop no está abierto o sigue arrancando. |

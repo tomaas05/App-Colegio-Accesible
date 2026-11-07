@@ -28,6 +28,7 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
 ]
 THIRD_PARTY_APPS = [
     "rest_framework",
@@ -35,12 +36,14 @@ THIRD_PARTY_APPS = [
     "axes",
 ]
 LOCAL_APPS = [
-    "apps.cuentas",  # Objetivo 1 – Usuarios, acceso y permisos
-    "apps.agenda",  # Objetivo 2 – Agenda del estudiante
-    "apps.planificacion",  # Objetivo 3 – Creación y planificación de tareas
-    "apps.perfiles",  # Objetivo 4 – Personalización y accesibilidad
-    "apps.centro",  # Objetivo 5 – Tareas del centro
-    "apps.seguimiento",  # Objetivo 6 – Seguimiento, bienestar y comunicación
+    "apps.usuarios",  # Usuarios y acceso (Manu)
+    "apps.agenda",  # Agenda del estudiante y ejecución (Tomás)
+    "apps.tareas",  # Tareas, pasos y asignaciones (Úrsula)
+    "apps.perfil",  # Perfil visual y temporizador (Jorge)
+    "apps.horario",  # Horario escolar y vista del adulto (Javi)
+    "apps.centro",  # Tareas del centro (iteración 2)
+    "apps.seguimiento",  # Seguimiento y bienestar (iteración 2)
+    "apps.comun",  # Utilidades compartidas: datos de prueba
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -95,9 +98,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ---------------------------------------------------------------------------
 # Autenticación
 # ---------------------------------------------------------------------------
-# Modelo de usuario propio desde el primer día: cambiarlo después de la
-# primera migración es muy costoso. Los campos se añaden en la iteración 2.
-AUTH_USER_MODEL = "cuentas.Usuario"
+# Modelo de usuario propio (docs/iteracion-1/base-datos/diccionario.md).
+AUTH_USER_MODEL = "usuarios.Usuario"
 
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",  # debe ir el primero
@@ -137,6 +139,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Imágenes subidas (tareas, pasos, avatares, asignaturas). Carpeta fuera de Git.
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # ---------------------------------------------------------------------------
 # Django REST Framework (solo para los pocos endpoints JSON)

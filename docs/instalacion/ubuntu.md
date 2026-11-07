@@ -107,12 +107,12 @@ La primera vez tarda unos minutos (descarga imágenes e instala dependencias). V
 
 Abre <http://localhost:8000>.
 
-### A.3 Crear tu usuario administrador
+### A.3 Cargar los datos de prueba
 
-En otra terminal:
+En otra terminal (la primera vez, y cada vez que alguien cambie los modelos y te lo avise):
 
 ```bash
-docker compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py cargar_datos_prueba
 ```
 
 Entra en <http://localhost:8000/admin/>.
@@ -192,7 +192,7 @@ POSTGRES_HOST=localhost
 
 ```bash
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py cargar_datos_prueba
 python manage.py runserver
 ```
 
@@ -233,6 +233,7 @@ pre-commit install
 
 | Síntoma | Solución |
 | --- | --- |
+| `relation "usuarios_usuario" does not exist` o `InconsistentMigrationHistory` | Tu base de datos local es anterior a los modelos. Bórrala una vez y vuelve a crearla: `docker compose down -v`, `docker compose up --build` y `docker compose exec web python manage.py cargar_datos_prueba`. Sin Docker: `sudo -u postgres dropdb despega && sudo -u postgres createdb -O despega despega`, después `python manage.py migrate` y `python manage.py cargar_datos_prueba`. |
 | `permission denied while trying to connect to the Docker daemon` | No has cerrado sesión tras `usermod -aG docker`. Cierra sesión o ejecuta `newgrp docker`. |
 | `port is already allocated` en el 5432 | Tienes PostgreSQL nativo además de Docker. El contenedor no publica el 5432 salvo que lo descomentes; si lo hiciste, para el nativo: `sudo systemctl stop postgresql`. |
 | `port is already allocated` en el 8000 | Otro `runserver` sigue abierto. Ciérralo o usa `python manage.py runserver 8001`. |

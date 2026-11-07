@@ -6,3 +6,4 @@ django-axes~=9.0               # bloqueo tras intentos fallidos (RNF1.2.3)
 argon2-cffi~=25.1              # hash de contraseñas (RNF1.1.4)
 psycopg[binary]~=3.3           # PostgreSQL 16+
 django-environ~=0.14           # configuración por variables de entorno (.env)
+Pillow~=13.0                   # imágenes de tareas, pasos, avatares y asignaturas
