@@ -19,7 +19,6 @@ urlpatterns = [
     # Página provisional para comprobar que la instalación funciona.
     path("", TemplateView.as_view(template_name="inicio.html"), name="inicio"),
     path("admin/", admin.site.urls),
-    path("tareas/", include("apps.tareas.urls")),
 ]
 
 # En desarrollo, Django sirve las imágenes subidas. En la demo lo hace Caddy.
