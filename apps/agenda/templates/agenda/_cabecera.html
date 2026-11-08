@@ -1,0 +1,8 @@
+{# Fila de cabecera de las pantallas del estudiante (boceto: .cab-est). #}
+{# Recibe: titulo, ahora y, si se puede volver, volver (URL de la agenda). #}
+<div class="cab-est">
+  {% if volver %}<a class="boton boton--aux" href="{{ volver }}" aria-label="Volver a las tareas"><span aria-hidden="true">‹</span> Tareas</a>{% endif %}
+  <h1 id="titulo">{{ titulo }}</h1>
+  {# Reloj: el JavaScript lo pone en hora cada segundo (RNF2.1.2). #}
+  <time class="reloj" data-reloj>{{ ahora|time:"H:i" }}</time>
+</div>

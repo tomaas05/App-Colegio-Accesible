@@ -1,0 +1,10 @@
+{# Una tarea de la agenda (boceto B06: .tarjeta). Reutilizable por la agenda de solo     #}
+{# lectura del profesional (HU-01-09): sin la variable «enlace» no es pulsable.          #}
+<li>
+  {% if enlace %}<a class="tarjeta{% if t.destacada %} tarjeta--ahora{% endif %}{% if t.estado == 'hecha' %} tarjeta--hecha{% endif %}" href="{{ enlace }}"{% if t.destacada %} aria-current="true"{% endif %}>{% else %}<div class="tarjeta{% if t.destacada %} tarjeta--ahora{% endif %}{% if t.estado == 'hecha' %} tarjeta--hecha{% endif %}">{% endif %}
+    <img class="tarjeta__imagen" src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="64" height="64">
+    <span class="tarjeta__hora">De {{ t.inicio|time:"H:i" }} a {{ t.fin|time:"H:i" }}</span>
+    <span class="tarjeta__nombre">{{ t.tarea.nombre }}</span>
+    <span class="chip chip--{{ t.estado }}"><span aria-hidden="true">{{ t.simbolo }}</span> {{ t.etiqueta }}</span>
+  {% if enlace %}</a>{% else %}</div>{% endif %}
+</li>

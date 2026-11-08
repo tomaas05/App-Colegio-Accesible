@@ -1,0 +1,10 @@
+{# Contenido de #siguiente: la siguiente tarea, 10 minutos antes de que empiece (RF2.10.1). #}
+{# HTMX vuelve a pedirlo cada 30 s (RNF2.1.3: como mucho 60 s de retraso). Si no ha       #}
+{# cambiado, la vista responde 204 y no se toca nada, así el lector no lo repite.         #}
+<span hidden hx-get="{% url 'agenda:aviso' %}?mostrado={% if agenda.aviso %}{{ agenda.aviso.asignacion.pk }}{% else %}0{% endif %}" hx-trigger="every 30s" hx-target="#siguiente" hx-swap="innerHTML"></span>
+{% if agenda.aviso %}
+<span class="siguiente">
+  <img src="{{ agenda.aviso.tarea.imagen.url }}" alt="" width="40" height="40">
+  <span><small>Después, a las {{ agenda.aviso.inicio|time:"H:i" }}</small> <b>{{ agenda.aviso.tarea.nombre }}</b></span>
+</span>
+{% endif %}
