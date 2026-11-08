@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Tareas de hoy · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
+{% block cabecera %}<p><strong>Despega</strong> · {{ estudiante }}</p>{% endblock %}
+
+{% block contenido %}
+{# Boceto B06 · Tareas de hoy #}
+<div class="agenda">
+  {% include "agenda/_cabecera.html" with titulo=titulo %}
+
+  {% if not agenda.tareas %}
+  <p class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>Hoy no tienes tareas.</span></p>
+  {% else %}
+  <ol class="tarjetas" aria-labelledby="titulo">
+    {% if not agenda.anterior %}
+    <li class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>No hay tarea antes.</span></li>
+    {% endif %}
+    {% for t in agenda.visibles %}
+      {% url 'agenda:detalle' t.asignacion.pk as enlace %}
+      {% include "agenda/_tarjeta.html" %}
+    {% endfor %}
+    {% if agenda.restantes %}
+    <li class="restantes">Quedan {{ agenda.restantes }} tarea{{ agenda.restantes|pluralize }} más hoy.</li>
+    {% elif not agenda.siguiente %}
+    <li class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>No hay más tareas hoy.</span></li>
+    {% endif %}
+  </ol>
+  {% endif %}
+
+  <div id="siguiente" class="pie-siguiente" role="status">{% include "agenda/_aviso_siguiente.html" %}</div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/agenda.js' %}" defer></script>{% endblock %}

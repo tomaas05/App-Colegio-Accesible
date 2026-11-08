@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}{{ t.tarea.nombre }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
+{% block cabecera %}<p><strong>Despega</strong> · {{ estudiante }}</p>{% endblock %}
+
+{% block contenido %}
+{# Boceto B07 · Tarea #}
+<div class="agenda">
+  {% url 'agenda:dia' as volver %}
+  {% include "agenda/_cabecera.html" with titulo=t.tarea.nombre volver=volver %}
+
+  {% if messages %}
+  <div class="mensajes" role="alert">
+    {% for mensaje in messages %}<p>{{ mensaje }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="ejec">
+    <div class="col">
+      <div class="ficha">
+        <img class="ficha__imagen" src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
+        <div>
+          <p class="chip chip--{{ t.estado }}"><span aria-hidden="true">{{ t.simbolo }}</span> {{ t.etiqueta }}</p>
+          <p class="ficha__hora">De {{ t.inicio|time:"H:i" }} a {{ t.fin|time:"H:i" }}</p>
+        </div>
+      </div>
+
+      {% if t.tarea.descripcion or ofrecer_voz %}
+      <div class="desc">
+        {% if t.tarea.descripcion %}<p>{{ t.tarea.descripcion }}</p>{% endif %}
+        {% if ofrecer_voz %}
+        {# Oculto hasta que el JavaScript comprueba que el navegador tiene voz. Nunca suena solo. #}
+        <button type="button" class="boton boton--aux" data-escuchar data-texto="{{ t.texto_para_escuchar }}" data-parar="Parar" hidden><span aria-hidden="true">🔊</span> Escuchar la descripción</button>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if t.pasos %}
+      <h2 class="pasos__titulo">Pasos</h2>
+      <ol class="pasos">
+        {% for p in t.pasos %}
+        <li class="paso{% if p.hecho %} paso--hecho{% endif %}">
+          <img src="{{ p.paso.imagen.url }}" alt="{{ p.paso.descripcion_imagen }}" width="64" height="64">
+          <span class="paso__texto">
+            <span class="paso__numero">Paso {{ p.paso.orden }}</span>
+            {% if p.paso.descripcion %}<span>{{ p.paso.descripcion }}</span>{% endif %}
+            <span class="chip chip--{% if p.hecho %}hecha{% else %}pendiente{% endif %}"><span aria-hidden="true">{% if p.hecho %}✓{% else %}○{% endif %}</span> {% if p.hecho %}Hecho{% else %}Pendiente{% endif %}</span>
+          </span>
+        </li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+    </div>
+
+    <div class="col">
+      {% if t.en_curso %}
+        {# JORGE (HU-07-01): aquí va el temporizador. Cuando exista perfil/_temporizador.html, #}
+        {# sustituye este comentario por:  include "perfil/_temporizador.html" with fin=t.fin perfil=perfil #}
+        {# (entre llaves y porcentaje, como cualquier etiqueta de Django).                    #}
+      {% endif %}
+
+      {# Botón principal: siempre en este sitio y lo más grande de la pantalla (RNF4.1.7).     #}
+      {# Si aún no se puede empezar, HTMX vuelve a pedir esta zona cada 30 s para que «Empezar» #}
+      {# aparezca sin recargar. Aquí no hay nada enfocable, así que no se pierde el foco; la     #}
+      {# zona exterior es aria-live para que el lector anuncie el botón cuando aparece.          #}
+      <div class="zona-botones" aria-live="polite">
+      <div class="botones-tarea"{% if t.aun_no_es_la_hora or t.esperando %} hx-get="{{ request.path }}" hx-select=".botones-tarea" hx-trigger="every 30s" hx-swap="outerHTML"{% endif %}>
+        {% if t.puede_empezar %}
+        <form method="post" action="{% url 'agenda:empezar' t.asignacion.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="boton boton--principal">Empezar</button>
+        </form>
+        {% elif t.aun_no_es_la_hora %}
+        <p class="estado-grande">Podrás empezar a las {{ t.se_puede_empezar_desde|time:"H:i" }}.</p>
+        {% elif t.esperando %}
+        <p class="estado-grande">{{ t.texto_espera }}</p>
+        {% elif t.puede_terminar %}
+        <a class="boton boton--principal" href="{% url 'agenda:terminar' t.asignacion.pk %}" data-confirmar="confirmar-fin">Terminar</a>
+        {% elif t.en_curso %}
+        <p class="estado-grande">Te {% if t.pasos_pendientes == 1 %}falta 1 paso{% else %}faltan {{ t.pasos_pendientes }} pasos{% endif %} para poder terminar.</p>
+        {% elif t.estado == "hecha" %}
+        <p class="estado-grande"><span aria-hidden="true">✓</span> ¡Hecha!</p>
+        {% elif t.estado == "vencida" %}
+        <p class="estado-grande">Ya ha pasado la hora.</p>
+        {% endif %}
+      </div>
+      </div>
+
+      {# «Antes» y «Después» (RF2.2.2). Si no hay, un mensaje con imagen. #}
+      <div class="contexto">
+        <div>
+          <span>Antes</span>
+          {% if antes %}<b>{{ antes.tarea.nombre }} · {{ antes.etiqueta }}</b>{% else %}<b class="contexto__vacio">{% include "agenda/_imagen_vacia.html" %} No hay tarea antes</b>{% endif %}
+        </div>
+        <div>
+          <span>Después</span>
+          {% if despues %}<b>{{ despues.tarea.nombre }} · {{ despues.inicio|time:"H:i" }}</b>{% else %}<b class="contexto__vacio">{% include "agenda/_imagen_vacia.html" %} No hay más tareas hoy</b>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="siguiente" class="pie-siguiente" role="status">{% include "agenda/_aviso_siguiente.html" %}</div>
+</div>
+
+{% if t.puede_terminar %}
+{# B08 · ¿Has terminado? Ventana de confirmación permitida (RF2.5.1, RNF2.3.3).          #}
+{# Sin JavaScript, «Terminar» abre la misma pregunta en una página (confirmar_fin.html). #}
+<dialog class="confirmar" id="confirmar-fin" aria-labelledby="confirmar-titulo">
+  <img src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
+  <h2 id="confirmar-titulo">¿Has terminado?</h2>
+  <div class="fila-botones">
+    <form method="post" action="{% url 'agenda:terminar' t.asignacion.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="boton boton--principal">Sí</button>
+    </form>
+    <form method="dialog"><button type="submit" class="boton">No</button></form>
+  </div>
+</dialog>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/agenda.js' %}" defer></script>{% endblock %}

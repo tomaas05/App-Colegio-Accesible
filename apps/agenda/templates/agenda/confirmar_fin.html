@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}¿Has terminado? · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
+{% block cabecera %}<p><strong>Despega</strong> · {{ estudiante }}</p>{% endblock %}
+
+{% block contenido %}
+{# B08 en una página: solo se usa si el navegador no abre el <dialog> de tarea.html. #}
+<div class="agenda confirmar confirmar--pagina">
+  <img src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
+  <h1>¿Has terminado?</h1>
+  <div class="fila-botones">
+    <form method="post" action="{% url 'agenda:terminar' t.asignacion.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="boton boton--principal">Sí</button>
+    </form>
+    <a class="boton" href="{% url 'agenda:detalle' t.asignacion.pk %}">No</a>
+  </div>
+</div>
+{% endblock %}
