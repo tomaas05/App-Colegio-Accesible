@@ -8,6 +8,8 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 
 | Dirección | Pantalla | HU | Responsable |
 | --- | --- | --- | --- |
+| `/` | Portada «¿Quién eres?»: Estudiante o Adulto (B01). Aquí llega quien no ha entrado | HU-01-06 | Manu |
+| `/estudiante/` | ¿Cuál es tu clase? (B02) → avatares de la clase (B03) → 3 imágenes o contraseña | HU-01-06 | Manu |
 | `/entrar/` | Entrar como tutor, profesional, familiar o administrador (B12), con bloqueo tras 5 fallos | HU-01-07 | Manu |
 | `/panel/` | Pantalla principal del adulto, con su nombre y sus opciones (B13) | HU-01-07 | Manu |
 | `/agenda/` | Agenda del día del estudiante | HU-02-01 a HU-02-04 | Tomás |
@@ -54,7 +56,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Abre <http://localhost:8000>: debe aparecer «El entorno de desarrollo funciona». Después carga los datos de prueba (`docker compose exec web python manage.py cargar_datos_prueba`) y entra como adulto en <http://localhost:8000/entrar/>.
+Abre <http://localhost:8000>: debe aparecer la portada «¿Quién eres?». Después carga los datos de prueba (`docker compose exec web python manage.py cargar_datos_prueba`) y entra como estudiante o como adulto (ver [Datos de prueba](#datos-de-prueba)).
 
 ## Estructura
 
@@ -77,7 +79,7 @@ App-Colegio-Accesible/
 ├── config/                  # Proyecto Django
 │   ├── settings/            #   base.py · dev.py · test.py
 │   └── urls.py
-├── templates/               # base.html (estructura accesible común) e inicio provisional
+├── templates/               # base.html (estructura accesible común)
 ├── static/
 │   ├── css/                 #   tokens.css (paleta y tamaños) · base.css (foco, botones…)
 │   ├── fonts/               #   Open Sans y Nunito servidas por nosotros (RNF1.1.2)
@@ -127,9 +129,11 @@ App-Colegio-Accesible/
 
 Los adultos entran en <http://localhost:8000/entrar/> y llegan a su pantalla principal (`/panel/`). Tras **5 intentos fallidos seguidos**, ese usuario queda bloqueado **5 minutos** en ese equipo; los demás pueden seguir entrando (ver [docs/decisiones/0002-entrada-y-sesion.md](docs/decisiones/0002-entrada-y-sesion.md)). Para no esperar mientras pruebas: `axes_reset` (tabla de arriba).
 
-Los estudiantes pulsan su avatar y después, según su perfil, eligen 3 imágenes (**perro, sol y flor**, en cualquier orden) o, en el caso de **Mateo**, escriben la contraseña **`mateo2026`**. Sofía tiene marcado que usa lector de pantalla. Las tareas de PTVAL 1 son a las 9:00, 10:30, 12:00 y 17:00, todos los días (también el fin de semana, para poder probar cualquier día). Lucía tiene además ejecuciones de ayer y una tarea de casa a las 20:00. Lucía, Mateo y Sofía tienen perfiles distintos del de por defecto.
+Los estudiantes entran desde la portada: **Estudiante → su clase → su avatar** y después, según su perfil, eligen 3 imágenes (**perro, sol y flor**, en cualquier orden) o, en el caso de **Mateo**, escriben la contraseña **`mateo2026`**. Sofía tiene marcado que usa lector de pantalla. Las tareas de PTVAL 1 son a las 9:00, 10:30, 12:00 y 17:00, todos los días (también el fin de semana, para poder probar cualquier día). Lucía tiene además ejecuciones de ayer y una tarea de casa a las 20:00. Lucía, Mateo y Sofía tienen perfiles distintos del de por defecto.
 
-> Mientras no esté la entrada del estudiante (HU-01-06), su agenda se abre con un atajo solo para desarrollo: pon `AGENDA_ENTRAR_COMO=1` en el `.env` y abre <http://localhost:8000/agenda/?como=A01> (entra como Lucía).
+> Por ejemplo, Lucía: <http://localhost:8000> → Estudiante → PTVAL 1 → Lucía → perro, sol y flor → su agenda. Al equivocarse sale «No es correcto. Vuelve a intentarlo.» y puede repetir sin límite: a los estudiantes no se les bloquea (ver la decisión 0002).
+>
+> El atajo de desarrollo `/agenda/?como=A01` (con `AGENDA_ENTRAR_COMO=1` en el `.env`) ya no hace falta y se quitará.
 
 ## Documentación del equipo
 
