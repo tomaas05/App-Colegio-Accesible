@@ -1,11 +1,12 @@
 /*
  * Despega · Pantallas de la agenda del estudiante (B06 y B07).
- * Tres cosas, todas opcionales: sin JavaScript las pantallas siguen funcionando.
+ * Cuatro cosas, todas opcionales: sin JavaScript las pantallas siguen funcionando.
  *  1. Reloj de la cabecera, puesto en hora cada segundo (RNF2.1.2).
  *  2. «Escuchar la descripción» con la voz del dispositivo (HU-02-02). Solo suena al
  *     pulsarlo; el botón sigue oculto si el navegador no tiene voz.
  *  3. Confirmación de «Terminar» en un <dialog> (B08, RF2.5.1). Sin JavaScript, el
  *     enlace lleva a la misma pregunta en una página.
+ *  4. Pasos (HU-02-05): tras «Hecho», el foco pasa al paso siguiente o a «Terminar».
  */
 (function () {
   "use strict";
@@ -57,15 +58,36 @@
     window.addEventListener("pagehide", parar);
   }
 
-  // 3. Confirmar
-  document.querySelectorAll("[data-confirmar]").forEach(function (enlace) {
+  // 3. Confirmar. Se escucha en todo el documento (y no en cada enlace) porque «Terminar»
+  // también puede aparecer sin recargar, al hacer el último paso (HU-02-05).
+  document.addEventListener("click", function (evento) {
+    var enlace = evento.target.closest("[data-confirmar]");
+    if (!enlace) {
+      return;
+    }
     var dialogo = document.getElementById(enlace.dataset.confirmar);
     if (!dialogo || typeof dialogo.showModal !== "function") {
       return;
     }
-    enlace.addEventListener("click", function (evento) {
-      evento.preventDefault();
-      dialogo.showModal();
-    });
+    evento.preventDefault();
+    dialogo.showModal();
+  });
+
+  // 4. Pasos (HU-02-05). Tras pulsar «Hecho», HTMX cambia la lista de pasos y el botón que
+  // tenía el foco desaparece. El foco pasa al «Hecho» del paso siguiente o, si ya no
+  // quedan, a «Terminar», como en el boceto. Así con teclado, pulsador o lector de
+  // pantalla se sigue sin tener que buscar dónde se estaba.
+  document.addEventListener("htmx:afterSettle", function (evento) {
+    var config = evento.detail && evento.detail.requestConfig;
+    if (!config || !config.elt || !config.elt.hasAttribute("data-paso")) {
+      return;
+    }
+    var destino =
+      document.querySelector("[data-paso] button") ||
+      document.querySelector("[data-confirmar]") ||
+      document.getElementById("pasos");
+    if (destino && destino !== document.activeElement) {
+      destino.focus();
+    }
   });
 })();

@@ -11,11 +11,12 @@
   {% url 'agenda:dia' as volver %}
   {% include "agenda/_cabecera.html" with titulo=t.tarea.nombre volver=volver %}
 
-  {% if messages %}
+  {# #mensajes siempre está, aunque vacío, para que HTMX pueda rellenarlo al marcar un paso. #}
+  <div id="mensajes" class="mensajes-zona">{% if messages %}
   <div class="mensajes" role="alert">
     {% for mensaje in messages %}<p>{{ mensaje }}</p>{% endfor %}
   </div>
-  {% endif %}
+  {% endif %}</div>
 
   <div class="ejec">
     <div class="col">
@@ -38,19 +39,48 @@
       {% endif %}
 
       {% if t.pasos %}
-      <h2 class="pasos__titulo">Pasos</h2>
-      <ol class="pasos">
-        {% for p in t.pasos %}
-        <li class="paso{% if p.hecho %} paso--hecho{% endif %}">
-          <img src="{{ p.paso.imagen.url }}" alt="{{ p.paso.descripcion_imagen }}" width="64" height="64">
-          <span class="paso__texto">
-            <span class="paso__numero">Paso {{ p.paso.orden }}</span>
-            {% if p.paso.descripcion %}<span>{{ p.paso.descripcion }}</span>{% endif %}
-            <span class="chip chip--{% if p.hecho %}hecha{% else %}pendiente{% endif %}"><span aria-hidden="true">{% if p.hecho %}✓{% else %}○{% endif %}</span> {% if p.hecho %}Hecho{% else %}Pendiente{% endif %}</span>
-          </span>
-        </li>
-        {% endfor %}
-      </ol>
+      {# HU-02-05 · Seguir los pasos. Con la tarea en marcha, el paso que toca se destaca  #}
+      {# y es el único con botón «Hecho»: los demás no se pueden pulsar (RF2.4.3, RF2.4.4). #}
+      {# Al pulsarlo, HTMX cambia #pasos y, con hx-select-oob, el botón principal, los     #}
+      {# mensajes y la confirmación de «Terminar»; agenda.js lleva el foco al siguiente.   #}
+      {# Sin JavaScript, el mismo formulario recarga la página.                           #}
+      <div id="pasos" class="pasos-zona" tabindex="-1">
+        <div class="pasos__cabecera">
+          <h2 class="pasos__titulo">Pasos</h2>
+          {% if t.paso_actual %}
+          <p class="pasos__cuenta">Paso {{ t.posicion_paso_actual }} de {{ t.pasos|length }}</p>
+          {% elif t.en_curso or t.estado == "hecha" %}
+          <p class="pasos__cuenta"><span aria-hidden="true">✓</span> Todos los pasos hechos</p>
+          {% endif %}
+        </div>
+        <ol class="pasos">
+          {% for p in t.pasos %}
+          <li class="paso{% if p.hecho %} paso--hecho{% elif p == t.paso_actual %} paso--actual{% endif %}"{% if p == t.paso_actual %} aria-current="step"{% endif %}>
+            <img src="{{ p.paso.imagen.url }}" alt="{{ p.paso.descripcion_imagen }}" width="64" height="64">
+            <span class="paso__texto">
+              <span class="paso__numero">Paso {{ forloop.counter }}</span>
+              {% if p.paso.descripcion %}<span id="paso-{{ p.paso.pk }}-texto">{{ p.paso.descripcion }}</span>{% endif %}
+              {% if p.hecho %}
+              <span class="chip chip--hecha"><span aria-hidden="true">✓</span> Hecho</span>
+              {% elif p == t.paso_actual %}
+              <span class="chip chip--en_curso"><span aria-hidden="true">▶</span> Ahora</span>
+              {% else %}
+              <span class="chip chip--pendiente"><span aria-hidden="true">○</span> Pendiente</span>
+              {% endif %}
+            </span>
+            {% if p == t.paso_actual %}
+            {% url 'agenda:paso_hecho' t.asignacion.pk p.paso.pk as url_paso %}
+            <form class="paso__accion" method="post" action="{{ url_paso }}" data-paso
+                  hx-post="{{ url_paso }}" hx-target="#pasos" hx-select="#pasos" hx-swap="outerHTML"
+                  hx-select-oob="#botones-tarea,#mensajes,#confirmar-zona" hx-sync="this:drop">
+              {% csrf_token %}
+              <button type="submit" class="boton paso__boton" aria-label="Hecho, paso {{ forloop.counter }}"{% if p.paso.descripcion %} aria-describedby="paso-{{ p.paso.pk }}-texto"{% endif %}><span aria-hidden="true">✓</span> Hecho</button>
+            </form>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
       {% endif %}
     </div>
 
@@ -66,7 +96,7 @@
       {# aparezca sin recargar. Aquí no hay nada enfocable, así que no se pierde el foco; la     #}
       {# zona exterior es aria-live para que el lector anuncie el botón cuando aparece.          #}
       <div class="zona-botones" aria-live="polite">
-      <div class="botones-tarea"{% if t.aun_no_es_la_hora or t.esperando %} hx-get="{{ request.path }}" hx-select=".botones-tarea" hx-trigger="every 30s" hx-swap="outerHTML"{% endif %}>
+      <div class="botones-tarea" id="botones-tarea"{% if t.aun_no_es_la_hora or t.esperando %} hx-get="{{ request.path }}" hx-select=".botones-tarea" hx-trigger="every 30s" hx-swap="outerHTML"{% endif %}>
         {% if t.puede_empezar %}
         <form method="post" action="{% url 'agenda:empezar' t.asignacion.pk %}">
           {% csrf_token %}
@@ -105,7 +135,8 @@
   <div id="siguiente" class="pie-siguiente" role="status">{% include "agenda/_aviso_siguiente.html" %}</div>
 </div>
 
-{% if t.puede_terminar %}
+{# #confirmar-zona siempre está: al hacer el último paso, HTMX mete aquí el <dialog>.   #}
+<div id="confirmar-zona" class="confirmar-zona">{% if t.puede_terminar %}
 {# B08 · ¿Has terminado? Ventana de confirmación permitida (RF2.5.1, RNF2.3.3).          #}
 {# Sin JavaScript, «Terminar» abre la misma pregunta en una página (confirmar_fin.html). #}
 <dialog class="confirmar" id="confirmar-fin" aria-labelledby="confirmar-titulo">
@@ -119,7 +150,7 @@
     <form method="dialog"><button type="submit" class="boton">No</button></form>
   </div>
 </dialog>
-{% endif %}
+{% endif %}</div>
 {% endblock %}
 
 {% block scripts %}<script src="{% static 'js/agenda.js' %}" defer></script>{% endblock %}

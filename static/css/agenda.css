@@ -267,6 +267,51 @@ a.tarjeta:hover {
   color: var(--petroleo);
 }
 
+/* --- Seguir los pasos (HU-02-05) --- */
+.pasos-zona {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  border-radius: var(--radio-tarjeta);
+}
+.pasos__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+}
+.pasos__cuenta {
+  font-weight: 700;
+  color: var(--verde-oscuro);
+}
+/* Todos con el mismo borde (transparente) para que no se muevan al destacar uno. */
+.paso {
+  padding: 0.4rem 0.6rem;
+  border: 3px solid transparent;
+  border-radius: 1rem;
+}
+/* El que toca: borde grueso, fondo menta y «▶ Ahora», nunca solo el color (RNF4.1.3). */
+.paso--actual {
+  background: var(--menta);
+  border-color: var(--petroleo);
+}
+/* «Hecho» en su propia fila, debajo de la imagen y el texto: así cabe a 360 px de ancho
+   también con la letra más grande del perfil (32 px) sin desplazar la pantalla. */
+.paso__accion {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.paso__boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--blanco);
+}
+.paso__boton:hover {
+  background: var(--menta-hover);
+}
+
 .botones-tarea {
   display: flex;
   flex-direction: column;
@@ -313,6 +358,12 @@ a.tarjeta:hover {
 .contexto__vacio .vacio__dibujo {
   width: 1.75rem;
   height: 1.75rem;
+}
+
+/* Contenedores que HTMX rellena (HU-02-05): sin caja propia, para no añadir huecos. */
+.mensajes-zona,
+.confirmar-zona {
+  display: contents;
 }
 
 /* --- Mensajes de error (p. ej. «Todavía no es la hora») --- */

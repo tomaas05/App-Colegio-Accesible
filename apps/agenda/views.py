@@ -1,15 +1,16 @@
-"""Pantallas de la agenda del estudiante (Tomás): HU-02-01 a HU-02-04.
+"""Pantallas de la agenda del estudiante (Tomás): HU-02-01 a HU-02-04. HU-02-05: Javi.
 
 Bocetos: docs/iteracion-1/bocetos/despega_mockup_v3.html, pantallas B06 (Tareas de hoy),
-B07 (Tarea) y B08 (¿Has terminado?).
+B07 (Tarea, también los pasos) y B08 (¿Has terminado?).
 """
 
 from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from apps.tareas.models import Asignacion
+from apps.tareas.models import Asignacion, Paso
 
 from . import servicios
 from .acceso import estudiante_requerido
@@ -115,3 +116,23 @@ def terminar(request, pk):
             messages.error(request, "Todavía te faltan pasos por hacer.")
         return redirect("agenda:detalle", pk=pk)
     return render(request, "agenda/confirmar_fin.html", {"t": t, "estudiante": request.estudiante})
+
+
+@estudiante_requerido
+@require_POST
+def paso_hecho(request, pk, paso_pk):
+    """HU-02-05. «Hecho» en el paso que toca. Vuelve a la pantalla de la tarea.
+
+    Sin JavaScript se recarga la página y baja hasta los pasos (#pasos). Con HTMX el
+    navegador sigue la redirección y solo se cambian los pasos, el botón principal, los
+    mensajes y la confirmación de «Terminar» (ver tarea.html).
+    """
+    try:
+        servicios.marcar_paso_hecho(request.estudiante, pk, paso_pk)
+    except (Asignacion.DoesNotExist, Paso.DoesNotExist):
+        raise Http404 from None
+    except servicios.ErrorDeAgenda as error:
+        # Sin bajar a los pasos: el aviso sale arriba y tiene que verse.
+        messages.error(request, str(error))
+        return redirect("agenda:detalle", pk=pk)
+    return redirect(reverse("agenda:detalle", args=[pk]) + "#pasos")
