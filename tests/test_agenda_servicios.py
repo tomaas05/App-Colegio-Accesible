@@ -274,8 +274,9 @@ def test_una_asignacion_que_no_toca_hoy_no_se_abre(lucia):
         servicios.tarea_del_dia(lucia, cuento.pk, a_las(17, 5))
 
 
-def test_por_defecto_no_se_empieza_antes_de_la_hora(lucia):
-    """RF2.3.2 y prueba de aceptación de HU-02-03."""
-    manos = asignacion(lucia, "Lavarse las manos")
-    with pytest.raises(ErrorDeAgenda, match="10:30"):
-        servicios.empezar(lucia, manos.pk, a_las(10, 29))
+def test_por_defecto_se_puede_empezar_15_minutos_antes(lucia):
+    """RF2.3.2 cambiado: se puede empezar desde 15 minutos antes de la hora de inicio."""
+    manos = asignacion(lucia, "Lavarse las manos")  # 10:30
+    with pytest.raises(ErrorDeAgenda, match="10:15"):
+        servicios.empezar(lucia, manos.pk, a_las(10, 14))
+    assert servicios.empezar(lucia, manos.pk, a_las(10, 15)).inicio_real == a_las(10, 15)
