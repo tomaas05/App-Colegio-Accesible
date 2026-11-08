@@ -1,8 +1,9 @@
 /*
- * Despega · Pantallas de usuarios y acceso (HU-01-07).
- * Botón «Mostrar / Ocultar» de la contraseña (boceto B12). Sin JavaScript, la
- * contraseña se escribe igual: el botón solo aparece si este archivo se carga.
+ * Despega · Pantallas de usuarios y acceso.
+ * Sin JavaScript todo funciona igual: esto solo añade ayudas.
  */
+
+/* HU-01-07 y HU-01-06 · Botón «Mostrar / Ocultar» de la contraseña. */
 document.querySelectorAll("[data-ver-clave]").forEach((boton) => {
   const campo = document.getElementById(boton.getAttribute("aria-controls"));
   if (!campo) return;
@@ -13,4 +14,26 @@ document.querySelectorAll("[data-ver-clave]").forEach((boton) => {
     boton.textContent = ver ? "Ocultar" : "Mostrar";
     boton.setAttribute("aria-pressed", String(ver));
   });
+});
+
+/*
+ * HU-01-06 · Rejilla de la contraseña de imágenes: cuenta las elegidas y, con 3,
+ * desactiva el resto para que no se pueda marcar una cuarta. Quitando una se
+ * puede elegir otra. El servidor comprueba igualmente que sean 3.
+ */
+const MAXIMO_IMAGENES = 3;
+document.querySelectorAll("[data-rejilla-acceso]").forEach((rejilla) => {
+  const casillas = [...rejilla.querySelectorAll('input[type="checkbox"]')];
+  const contador = document.querySelector("[data-contador]");
+  const numero = document.querySelector("[data-contador-n]");
+  const actualizar = () => {
+    const elegidas = casillas.filter((c) => c.checked).length;
+    casillas.forEach((c) => {
+      c.disabled = !c.checked && elegidas >= MAXIMO_IMAGENES;
+    });
+    if (numero) numero.textContent = String(elegidas);
+  };
+  if (contador) contador.hidden = false;
+  casillas.forEach((c) => c.addEventListener("change", actualizar));
+  actualizar();
 });

@@ -48,12 +48,14 @@ def test_pa1_entro_y_veo_mi_pantalla_principal_con_mi_nombre(client, datos, usua
 
 
 def test_pa1_vuelve_a_la_pantalla_que_pedia_antes_de_entrar(client, datos):
+    # Sin sesión se va a la portada «¿Quién eres?» (LOGIN_URL, HU-01-06), que pasa el ?next=.
     pedida = client.get(reverse("usuarios:panel"))
     assert pedida.status_code == 302
-    assert pedida["Location"].startswith(reverse("usuarios:entrar") + "?next=")
+    assert pedida["Location"] == reverse("inicio") + "?next=/panel/"
 
     respuesta = client.post(
-        pedida["Location"], {"username": "tutor", "password": CONTRASENA, "next": "/panel/"}
+        reverse("usuarios:entrar") + "?next=/panel/",
+        {"username": "tutor", "password": CONTRASENA, "next": "/panel/"},
     )
     assert respuesta["Location"] == "/panel/"
 
