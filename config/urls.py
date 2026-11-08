@@ -20,6 +20,7 @@ urlpatterns = [
     path("", TemplateView.as_view(template_name="inicio.html"), name="inicio"),
     path("admin/", admin.site.urls),
     path("agenda/", include("apps.agenda.urls")),
+    path("tareas/", include("apps.tareas.urls")),
 ]
 
 # En desarrollo, Django sirve las imágenes subidas. En la demo lo hace Caddy.
