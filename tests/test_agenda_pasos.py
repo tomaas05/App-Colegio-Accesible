@@ -13,8 +13,10 @@ agenda, Meter el estuche, Meter el almuerzo y Cerrar la mochila. «Regar las pla
 """
 
 from datetime import datetime, time
+from html.parser import HTMLParser
 
 import pytest
+from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
@@ -187,6 +189,38 @@ def test_los_pasos_se_numeran_por_su_posicion_aunque_el_orden_tenga_huecos(
     assert "Paso 4: Meter el estuche" in t.texto_para_escuchar
 
 
+def test_una_tarea_que_ya_no_toca_hoy_no_se_toca(lucia, mochila, pasos, empezada):
+    """Si quitan el día de hoy a la asignación con la tarea empezada, la pantalla da 404:
+    marcar un paso tampoco debe guardar nada."""
+    hoy = timezone.localdate().isoweekday()
+    mochila.dias_semana = [d for d in range(1, 8) if d != hoy]
+    mochila.save()
+    with pytest.raises(Asignacion.DoesNotExist):
+        hacer(lucia, mochila, pasos[0])
+    assert estados(empezada) == ["pendiente"] * 4
+
+
+def test_un_toque_tardio_en_una_tarea_hecha_no_crea_nada(lucia, mochila, pasos, empezada):
+    """RF2.4.4: «sin generar marcas». Aunque el tutor haya añadido un paso después."""
+    for i, paso in enumerate(pasos):
+        hacer(lucia, mochila, paso, minuto=2 + i)
+    servicios.terminar(lucia, mochila.pk, a_las(9, 10))
+    Paso.objects.create(
+        tarea=mochila.tarea, orden=5, imagen=pasos[0].imagen.name, descripcion_imagen="Colgarla"
+    )
+    hacer(lucia, mochila, pasos[0], minuto=11)  # ya hecho: no es un error
+    assert empezada.pasos.count() == 4
+
+
+def test_con_tiempo_agotado_guardado_tambien_se_sigue(lucia, mochila, pasos, empezada):
+    """Hoy «tiempo agotado» solo se calcula; si algún día se guarda, la pantalla sigue
+    ofreciendo «Hecho» (en_curso) y el servidor debe aceptarlo igual."""
+    empezada.estado = EstadoEjecucion.TIEMPO_AGOTADO
+    empezada.save()
+    hacer(lucia, mochila, pasos[0], minuto=20)
+    assert estados(empezada) == ["hecho", "pendiente", "pendiente", "pendiente"]
+
+
 # --- Pantalla (apps/agenda/views.py y tarea.html) -----------------------------------
 
 
@@ -204,33 +238,95 @@ def url_hecho(asignacion, paso):
     return reverse("agenda:paso_hecho", args=[asignacion.pk, paso.pk])
 
 
+class PasosEnPantalla(HTMLParser):
+    """Lee cada <li class="paso"> de la pantalla: si es el actual, el texto alternativo de
+    la imagen, el texto, el estado (chip) y el nombre del botón «Hecho», si lo tiene.
+
+    Así las pruebas miran lo que se ve y lo que anuncia el lector de pantalla, y no se
+    rompen si cambian los espacios o el orden de los atributos de la plantilla.
+    """
+
+    def __init__(self, html):
+        super().__init__()
+        self.pasos = []
+        self._en_paso = self._en_boton = False
+        self._en_chip = 0
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        atributos = dict(attrs)
+        clases = (atributos.get("class") or "").split()
+        if tag == "li" and "paso" in clases:
+            self._en_paso = True
+            actual = atributos.get("aria-current") == "step"
+            self.pasos.append(
+                {"actual": actual, "imagen": None, "texto": "", "estado": "", "boton": None}
+            )
+        elif not self._en_paso:
+            return
+        elif tag == "img":
+            self.pasos[-1]["imagen"] = atributos.get("alt")
+        elif tag == "button":
+            self._en_boton = True
+            self.pasos[-1]["boton"] = atributos.get("aria-label")
+        elif tag == "span" and ("chip" in clases or self._en_chip):
+            self._en_chip += 1
+
+    def handle_endtag(self, tag):
+        if tag == "li":
+            self._en_paso = False
+        elif tag == "button":
+            self._en_boton = False
+        elif tag == "span" and self._en_chip:
+            self._en_chip -= 1
+
+    def handle_data(self, data):
+        if not self._en_paso or self._en_boton:
+            return
+        paso = self.pasos[-1]
+        clave = "estado" if self._en_chip else "texto"
+        paso[clave] = " ".join(f"{paso[clave]} {data}".split())
+
+
+def pasos_en_pantalla(cliente, asignacion):
+    return PasosEnPantalla(cliente.get(url_detalle(asignacion)).content.decode()).pasos
+
+
 def test_veo_la_lista_de_pasos_con_imagen_descripcion_y_estado(entra_lucia, hora, mochila):
     """Prueba de aceptación 1, antes de empezar: todos pendientes y ninguno se puede pulsar."""
     hora(9, 0)
-    html = entra_lucia.get(url_detalle(mochila)).content.decode()
-    for numero, texto in enumerate(PASOS_MOCHILA, start=1):
-        assert f'alt="{texto}"' in html and f"Paso {numero}</span>" in html
-    assert html.count("○</span> Pendiente") == 4
-    assert "data-paso" not in html and 'aria-current="step"' not in html
+    assert pasos_en_pantalla(entra_lucia, mochila) == [
+        {
+            "actual": False,
+            "imagen": texto,
+            "texto": f"Paso {numero} {texto}",
+            "estado": "○ Pendiente",
+            "boton": None,
+        }
+        for numero, texto in enumerate(PASOS_MOCHILA, start=1)
+    ]
 
 
 def test_en_marcha_veo_en_que_paso_estoy_y_cuantos_me_quedan(
     entra_lucia, hora, lucia, mochila, pasos, empezada
 ):
+    """Prueba de aceptación 1 con la tarea en marcha y el paso 1 hecho."""
     hacer(lucia, mochila, pasos[0])
     hora(9, 5)
+    en_pantalla = pasos_en_pantalla(entra_lucia, mochila)
+    estados_vistos = [p["estado"] for p in en_pantalla]
+    assert estados_vistos == ["✓ Hecho", "▶ Ahora", "○ Pendiente", "○ Pendiente"]
+    assert [p["actual"] for p in en_pantalla] == [False, True, False, False]
+    # Un solo botón «Hecho», el del paso 2: no se puede saltar ninguno (prueba 3).
+    assert [p["boton"] for p in en_pantalla] == [None, "Hecho, paso 2", None, None]
+    assert [p["imagen"] for p in en_pantalla] == PASOS_MOCHILA
+
     html = entra_lucia.get(url_detalle(mochila)).content.decode()
-    assert "Paso 2 de 4" in html
-    assert "faltan 3 pasos" in html
-    assert html.count("✓</span> Hecho</span>") == 1  # chip del paso 1
-    assert html.count('aria-current="step"') == 1
-    assert html.count("▶</span> Ahora</span>") == 1
-    assert html.count("○</span> Pendiente") == 2
-    # Un solo botón «Hecho», el del paso 2, que se anuncia con su número y su texto.
-    assert html.count("data-paso") == 1
+    assert "Paso 2 de 4" in html and "faltan 3 pasos" in html
     assert f'action="{url_hecho(mochila, pasos[1])}"' in html
-    assert 'aria-label="Hecho, paso 2"' in html
+    # El botón se describe con el texto del paso, que el lector lee tras su nombre.
     assert f'aria-describedby="paso-{pasos[1].pk}-texto"' in html
+    assert f'id="paso-{pasos[1].pk}-texto"' in html
 
 
 def test_hecho_marca_el_paso_y_vuelve_a_los_pasos(entra_lucia, hora, mochila, pasos, empezada):
@@ -250,6 +346,8 @@ def test_pulsar_un_paso_posterior_no_cambia_nada_y_lo_dice(
     respuesta = entra_lucia.post(url_hecho(mochila, pasos[2]), follow=True)
     html = respuesta.content.decode()
     assert "Primero haz el paso 1." in html and 'role="alert"' in html
+    # Sin #pasos: la página se queda arriba, donde sale el aviso.
+    assert respuesta.redirect_chain == [(url_detalle(mochila), 302)]
     assert estados(empezada) == ["pendiente"] * 4
 
 
@@ -275,25 +373,25 @@ def test_con_htmx_solo_cambian_los_trozos_que_hacen_falta(entra_lucia, hora, moc
     tienen que estar siempre en la página aunque estén vacías."""
     hora(9, 5)
     html = entra_lucia.get(url_detalle(mochila)).content.decode()
-    assert 'hx-target="#pasos" hx-select="#pasos"' in html
+    assert 'hx-target="#pasos"' in html and 'hx-select="#pasos"' in html
     assert 'hx-select-oob="#botones-tarea,#mensajes,#confirmar-zona"' in html
     for zona in ('id="pasos"', 'id="botones-tarea"', 'id="mensajes"', 'id="confirmar-zona"'):
         assert zona in html
 
 
 def test_marcar_un_paso_pide_post_y_sesion_del_estudiante(
-    client, entra_lucia, hora, mochila, pasos, empezada
+    entra_lucia, hora, mochila, pasos, empezada
 ):
     hora(9, 5)
     assert entra_lucia.get(url_hecho(mochila, pasos[0])).status_code == 405
     # Un paso de la mochila con la URL de otra tarea suya (Lavarse las manos): 404.
     manos = mochila.estudiante.asignaciones.get(tarea__nombre="Lavarse las manos")
     assert entra_lucia.post(url_hecho(manos, pasos[0])).status_code == 404
-    mateo = Estudiante.objects.get(codigo_estudiante="A02")
-    client.force_login(mateo.usuario)
-    assert client.post(url_hecho(mochila, pasos[0])).status_code == 404
-    client.logout()
-    assert client.post(url_hecho(mochila, pasos[0])).status_code == 302  # a la entrada
+    mateo = Client()
+    mateo.force_login(Estudiante.objects.get(codigo_estudiante="A02").usuario)
+    assert mateo.post(url_hecho(mochila, pasos[0])).status_code == 404
+    sin_sesion = Client()
+    assert sin_sesion.post(url_hecho(mochila, pasos[0])).status_code == 302  # a la entrada
     assert estados(empezada) == ["pendiente"] * 4
 
 

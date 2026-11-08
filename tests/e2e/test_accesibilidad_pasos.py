@@ -24,6 +24,8 @@ RESOLUCIONES = {
     "ordenador": (1366, 768),
 }
 ETIQUETAS_WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
+# Tras mover el foco, agenda.js ignora «Hecho» y «Terminar» durante 500 ms (pulsación larga).
+TRAS_LA_ESPERA_MS = 600
 PASOS_MOCHILA = ["Coger la agenda", "Meter el estuche", "Meter el almuerzo", "Cerrar la mochila"]
 
 
@@ -100,7 +102,8 @@ def test_seguir_todos_los_pasos_con_teclado(live_server, page, mochila):
     """Pruebas de aceptación 2 y 4 en el navegador, solo con teclado y sin recargar.
 
     Cada «Hecho» marca su paso, el foco pasa al «Hecho» del siguiente y, tras el último,
-    a «Terminar», que abre «¿Has terminado?».
+    a «Terminar», que abre «¿Has terminado?». Entre pulsación y pulsación se deja pasar
+    la espera de agenda.js, como haría una persona.
     """
     page.goto(url(live_server, mochila))
     page.evaluate("() => { window.misma_pagina = true; }")
@@ -109,6 +112,7 @@ def test_seguir_todos_los_pasos_con_teclado(live_server, page, mochila):
     for numero in range(1, 5):
         assert page.get_by_text(f"Paso {numero} de 4").is_visible()
         boton_hecho(page, numero).focus()
+        page.wait_for_timeout(TRAS_LA_ESPERA_MS)
         page.keyboard.press("Enter")
         siguiente = boton_hecho(page, numero + 1) if numero < 4 else terminar
         siguiente.wait_for()
@@ -120,6 +124,7 @@ def test_seguir_todos_los_pasos_con_teclado(live_server, page, mochila):
     assert page.get_by_text("Todos los pasos hechos").is_visible()
     assert page.evaluate("() => window.misma_pagina === true")  # HTMX: no se ha recargado
 
+    page.wait_for_timeout(TRAS_LA_ESPERA_MS)
     page.keyboard.press("Enter")
     dialogo = page.get_by_role("dialog", name="¿Has terminado?")
     assert dialogo.is_visible()
@@ -129,8 +134,9 @@ def test_seguir_todos_los_pasos_con_teclado(live_server, page, mochila):
     assert mochila.ejecuciones.get(fecha=timezone.localdate()).estado == "hecha"
 
 
-def test_el_lector_anuncia_cuantos_pasos_faltan(live_server, page, mochila):
-    """«Te faltan N pasos» está en una zona aria-live que se actualiza sin recargar."""
+def test_cuantos_pasos_faltan_se_actualiza_en_la_zona_viva(live_server, page, mochila):
+    """«Te faltan N pasos» está en una zona aria-live (el lector la anuncia al cambiar) y se
+    actualiza sin recargar. Que el lector lo diga de verdad hay que probarlo a mano."""
     page.goto(url(live_server, mochila))
     zona = page.locator(".zona-botones[aria-live='polite']")
     assert "faltan 4 pasos" in zona.inner_text()
@@ -152,3 +158,69 @@ def test_sin_javascript_tambien_se_siguen_los_pasos(live_server, browser, client
     assert pagina.url.endswith("#pasos")
     assert estados(mochila) == ["hecho", "pendiente", "pendiente", "pendiente"]
     contexto.close()
+
+
+def test_mantener_pulsado_intro_no_marca_el_paso_siguiente(live_server, page, mochila):
+    """Una pulsación larga (la tecla se repite sola) o dos pulsaciones seguidas sin querer
+    marcan un solo paso: cada paso, un «Hecho» (RF2.4.3)."""
+    page.goto(url(live_server, mochila))
+    boton_hecho(page, 1).focus()
+    page.keyboard.down("Enter")
+    boton_hecho(page, 2).wait_for()
+    page.keyboard.down("Enter")  # la repetición automática de la tecla
+    page.keyboard.up("Enter")
+    page.keyboard.press("Enter")  # otra pulsación justo después de mover el foco
+    page.wait_for_timeout(TRAS_LA_ESPERA_MS)
+    assert estados(mochila) == ["hecho", "pendiente", "pendiente", "pendiente"]
+    assert es_el_foco(boton_hecho(page, 2))
+
+    page.keyboard.press("Enter")  # pasada la espera, sí cuenta
+    boton_hecho(page, 3).wait_for()
+    assert estados(mochila) == ["hecho", "hecho", "pendiente", "pendiente"]
+
+
+def test_con_otra_pestana_desfasada_sale_el_aviso_sin_recargar(live_server, page, mochila):
+    """Si la tarea ya no está en marcha (p. ej. se cerró desde otra pestaña), «Hecho» no
+    cambia nada, sale el aviso y la lista se pone al día sin recargar la página."""
+    page.goto(url(live_server, mochila))
+    page.evaluate("() => { window.misma_pagina = true; }")
+    mochila.ejecuciones.filter(fecha=timezone.localdate()).update(estado="cancelada")
+
+    boton_hecho(page, 1).click()
+    aviso = page.get_by_role("alert")
+    aviso.wait_for()
+    assert "Esta tarea ya no está en marcha." in aviso.inner_text()
+    assert page.locator("[data-paso] button").count() == 0
+    assert es_el_foco(page.locator("#pasos"))
+    assert page.evaluate("() => window.misma_pagina === true")
+    assert estados(mochila) == ["pendiente"] * 4
+
+
+def test_si_la_sesion_ha_caducado_se_recarga_y_no_se_borra_la_lista(live_server, page, mochila):
+    """Sin sesión, la respuesta no es la pantalla de la tarea: en vez de cambiar la lista
+    por nada, se recarga la página entera (lo mismo que sin JavaScript)."""
+    page.goto(url(live_server, mochila))
+    page.context.clear_cookies(name="sessionid")
+    with page.expect_navigation():
+        boton_hecho(page, 1).click()
+    # Va a la entrada y, al volver, a la pantalla de la tarea (no a la URL del POST).
+    ruta = reverse("agenda:detalle", args=[mochila.pk])
+    assert f"next={ruta}" in page.url
+    assert estados(mochila) == ["pendiente"] * 4
+
+
+def test_sin_conexion_avisa_y_se_puede_volver_a_pulsar(live_server, page, mochila):
+    page.goto(url(live_server, mochila))
+    page.route("**/paso/**", lambda ruta: ruta.abort())
+    boton = boton_hecho(page, 1)
+    boton.click()
+    aviso = page.get_by_role("alert")
+    aviso.wait_for()
+    assert "No se ha podido guardar" in aviso.inner_text()
+    assert boton.is_visible()
+    assert estados(mochila) == ["pendiente"] * 4
+
+    page.unroute("**/paso/**")
+    boton.click()
+    boton_hecho(page, 2).wait_for()
+    assert estados(mochila) == ["hecho", "pendiente", "pendiente", "pendiente"]

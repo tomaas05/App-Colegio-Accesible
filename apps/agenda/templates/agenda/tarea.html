@@ -49,11 +49,12 @@
           <h2 class="pasos__titulo">Pasos</h2>
           {% if t.paso_actual %}
           <p class="pasos__cuenta">Paso {{ t.posicion_paso_actual }} de {{ t.pasos|length }}</p>
-          {% elif t.en_curso or t.estado == "hecha" %}
+          {% elif t.pasos_pendientes == 0 %}
           <p class="pasos__cuenta"><span aria-hidden="true">✓</span> Todos los pasos hechos</p>
           {% endif %}
         </div>
-        <ol class="pasos">
+        {# role="list": con list-style:none, Safari y VoiceOver dejan de anunciarla como lista. #}
+        <ol class="pasos" role="list">
           {% for p in t.pasos %}
           <li class="paso{% if p.hecho %} paso--hecho{% elif p == t.paso_actual %} paso--actual{% endif %}"{% if p == t.paso_actual %} aria-current="step"{% endif %}>
             <img src="{{ p.paso.imagen.url }}" alt="{{ p.paso.descripcion_imagen }}" width="64" height="64">

@@ -399,26 +399,32 @@ def marcar_paso_hecho(estudiante, asignacion_id, paso_id, ahora_=None):
     (p. ej. un doble toque), tampoco cambia nada y no es un error. No se guarda la hora de
     cada paso: RF2.4.2 no está comprometido.
 
-    Lanza Asignacion.DoesNotExist si la tarea no es del estudiante y Paso.DoesNotExist si
-    el paso no es de esa tarea: la vista responde 404.
+    Lanza Asignacion.DoesNotExist si la tarea no es del estudiante o no toca hoy, y
+    Paso.DoesNotExist si el paso no es de esa tarea: la vista responde 404.
     """
     ahora_ = ahora_ or ahora()
     hoy = ahora_.date()
     asignacion = estudiante.asignaciones.select_related("tarea").get(pk=asignacion_id)
+    if not asignacion.aplica_el(hoy):
+        raise Asignacion.DoesNotExist  # como en tarea_del_dia: la pantalla daría 404
     paso = asignacion.tarea.pasos.get(pk=paso_id)
     with transaction.atomic():
         try:
             ejecucion = Ejecucion.objects.select_for_update().get(asignacion=asignacion, fecha=hoy)
         except Ejecucion.DoesNotExist:
             raise ErrorDeAgenda("Primero tienes que empezar la tarea.") from None
-        _asegurar_pasos(ejecucion)
-        avance = ejecucion.pasos.get(paso=paso)
-        if avance.estado == EstadoPaso.HECHO:
+        avance = ejecucion.pasos.filter(paso=paso).first()
+        if avance and avance.estado == EstadoPaso.HECHO:
             return avance
         if ejecucion.estado == EstadoEjecucion.PENDIENTE:
             raise ErrorDeAgenda("Primero tienes que empezar la tarea.")
-        if ejecucion.estado != EstadoEjecucion.EN_CURSO:
+        # «Tiempo agotado» se calcula y no se guarda, pero si algún día se guarda la tarea
+        # sigue en marcha, igual que en la pantalla (TareaDelDia.en_curso).
+        if ejecucion.estado not in (EstadoEjecucion.EN_CURSO, EstadoEjecucion.TIEMPO_AGOTADO):
             raise ErrorDeAgenda("Esta tarea ya no está en marcha.")
+        # Solo con la tarea en marcha: crea el avance de los pasos añadidos tras empezar.
+        _asegurar_pasos(ejecucion)
+        avance = avance or ejecucion.pasos.get(paso=paso)
         toca = (
             ejecucion.pasos.filter(estado=EstadoPaso.PENDIENTE)
             .select_related("paso")
