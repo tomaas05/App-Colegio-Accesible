@@ -1,0 +1,249 @@
+/* --- ESTILOS DE LA VISTA CREAR TAREA (DESIGN SYSTEM) --- */
+
+.crear-tarea-container {
+  max-width: 50rem;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: var(--blanco);
+  border-radius: 1.25rem;
+  box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.05);
+}
+
+.crear-tarea-container h1 {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  color: var(--petroleo);
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Secciones tipo ficha / panel */
+.crear-tarea-container fieldset {
+  border: 1px solid var(--gris);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background-color: var(--aviso-fondo);
+}
+
+.crear-tarea-container legend {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  color: var(--petroleo);
+  font-size: 1.15rem;
+  padding: 0 0.5rem;
+  float: none;
+  width: 100%;
+  border-bottom: 2px solid var(--gris);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Formularios adaptados al sistema */
+.crear-tarea-container label {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  color: var(--texto);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.crear-tarea-container input[type="text"],
+.crear-tarea-container textarea,
+.crear-tarea-container select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--gris);
+  border-radius: 0.75rem;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 1rem;
+  background-color: var(--blanco);
+  color: var(--texto);
+  box-sizing: border-box;
+  margin-bottom: 0.5rem;
+  min-height: var(--toque);
+}
+
+.crear-tarea-container input[type="text"]:focus,
+.crear-tarea-container textarea:focus,
+.crear-tarea-container select:focus {
+  outline: none;
+  border-color: var(--verde);
+  box-shadow: 0 0 0 3px var(--menta);
+}
+
+.crear-tarea-container textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+/* Mejora del campo de archivo (Imagen) */
+.crear-tarea-container input[type="file"] {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px dashed var(--gris);
+  border-radius: 0.75rem;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 1rem;
+  background-color: var(--blanco);
+  color: var(--texto);
+  cursor: pointer;
+  box-sizing: border-box;
+  margin-top: 0.4rem;
+  margin-bottom: 1rem;
+  min-height: var(--toque);
+}
+
+.crear-tarea-container input[type="file"]:hover {
+  border-color: var(--verde);
+}
+
+/* Buscador ARASAAC */
+.buscador-arasaac-box {
+  background-color: var(--blanco);
+  padding: 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid var(--gris);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.buscador-arasaac-flex {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+@media (min-width: 37.5rem) {
+  .buscador-arasaac-flex {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .buscador-arasaac-flex input[type="text"] {
+    flex: 1;
+    margin-bottom: 0 !important;
+  }
+
+  .buscador-arasaac-flex .principal {
+    white-space: nowrap;
+  }
+}
+
+.resultados-arasaac-grid {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.mensaje-exito-pic {
+  color: var(--verde-oscuro);
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 800;
+  margin-top: 0.5rem;
+}
+
+/* Botones estándar según Design System */
+.principal,
+.secundario,
+.aux {
+  min-height: var(--toque);
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: opacity 0.2s;
+}
+
+.principal {
+  background-color: var(--verde);
+  color: var(--blanco);
+}
+.principal:hover { opacity: 0.9; }
+
+.secundario {
+  background-color: var(--petroleo);
+  color: var(--blanco);
+}
+.secundario:hover { opacity: 0.9; }
+
+.aux {
+  background-color: var(--gris);
+  color: var(--texto);
+}
+.aux:hover { opacity: 0.9; }
+
+.contenedor-botones-inferiores {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Pasos dinámicos (Fichas) */
+.paso-item {
+  background: var(--blanco);
+  border: 1px solid var(--gris);
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.titulo-paso {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--petroleo);
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* Ventana modal (confirmar / dialog) */
+.confirmar {
+  width: 90%;
+  max-width: 37.5rem;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--gris);
+  background-color: var(--blanco);
+  box-shadow: 0 0.625rem 1.5625rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--gris);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  color: var(--petroleo);
+  margin: 0;
+}
+
+.modal-body {
+  font-family: 'Open Sans', sans-serif;
+  color: var(--texto);
+  text-align: left;
+}
+
+/* Textos explicativos con clase txt */
+.txt {
+  font-family: 'Open Sans', sans-serif;
+  color: var(--texto);
+}
