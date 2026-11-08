@@ -1,0 +1,367 @@
+/*
+ * Despega · Agenda del estudiante (HU-02-01 a HU-02-04).
+ * Sigue el boceto docs/iteracion-1/bocetos/despega_mockup_v3.html:
+ *   B06 Tareas de hoy, B07 Tarea y B08 ¿Has terminado?
+ * Solo variables de tokens.css y rem, para que el perfil de cada estudiante
+ * (tema, letra, tamaño de botones) se aplique sin tocar este archivo.
+ */
+
+.agenda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+}
+.agenda h1,
+.agenda h2,
+.agenda p {
+  margin: 0;
+}
+
+/* --- Botones con aspecto de botón aunque sean enlaces --- */
+a.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-decoration: none;
+}
+.boton--aux {
+  padding: 0.25rem 1rem;
+}
+/* «Empezar» y «Terminar»: lo más grande de la pantalla (RNF4.1.7) */
+.boton--principal {
+  min-height: var(--toque-grande);
+  padding: 0.5rem 2rem;
+  font-size: 1.5rem;
+  color: var(--blanco);
+  background: var(--petroleo);
+}
+.boton--principal:hover {
+  background: var(--verde-oscuro);
+}
+
+/* --- Cabecera de la pantalla (boceto: .cab-est) --- */
+.cab-est {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.75rem;
+  min-height: var(--toque);
+}
+.cab-est h1 {
+  flex: 1 1 8em;
+  min-width: 0;
+  font-size: 1.75rem;
+}
+.reloj {
+  margin-left: auto;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+
+/* --- Tarjetas de la agenda (B06) --- */
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tarjetas > li {
+  display: flex;
+}
+.tarjeta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.75rem;
+  row-gap: 0.15rem;
+  align-items: center;
+  width: 100%;
+  min-height: var(--toque-grande);
+  padding: 0.6rem 0.75rem;
+  color: var(--texto);
+  text-decoration: none;
+  background: var(--blanco);
+  border: 3px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+}
+a.tarjeta:hover {
+  background: var(--menta-hover);
+}
+/* La de ahora: borde más grueso y fondo menta, además de la etiqueta «Ahora». */
+.tarjeta--ahora {
+  border-width: 6px;
+  background: var(--menta);
+}
+.tarjeta__imagen {
+  grid-row: 1 / 4;
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+.tarjeta__hora {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--verde-oscuro);
+}
+.tarjeta__nombre {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--petroleo);
+}
+
+/* --- Estado: símbolo y texto, nunca solo color (RNF4.1.3) --- */
+.chip {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: fit-content;
+  padding: 0 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--petroleo);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: var(--radio-boton);
+}
+.chip--hecha,
+.chip--cancelada,
+.chip--no_realizable {
+  border-style: dashed;
+}
+.chip--vencida,
+.chip--tiempo_agotado {
+  color: var(--error);
+  background: var(--error-fondo);
+  border-color: var(--error);
+}
+
+/* --- Mensajes cuando no hay tarea --- */
+.vacio {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  color: var(--gris);
+  border: 2px dashed var(--gris);
+  border-radius: var(--radio-tarjeta);
+}
+.vacio__dibujo {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+.restantes {
+  align-self: center;
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  color: var(--petroleo);
+}
+
+/* --- Siguiente tarea al pie, 10 minutos antes (RF2.10.1) --- */
+.pie-siguiente {
+  display: flex;
+  justify-content: flex-end;
+}
+.siguiente {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--blanco);
+  border: 3px solid var(--verde-oscuro);
+  border-radius: 1rem;
+}
+.siguiente img {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+.siguiente small {
+  display: block;
+  font-size: 1rem;
+  color: var(--gris);
+}
+.siguiente b {
+  font-family: var(--fuente-titulos);
+  color: var(--petroleo);
+}
+
+/* --- Pantalla de la tarea (B07): dos columnas si caben --- */
+.ejec {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem 1.5rem;
+  align-items: start;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+  min-width: 0;
+}
+.ficha {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ficha > div {
+  display: grid;
+  gap: 0.25rem;
+}
+.ficha__imagen {
+  flex: none;
+  width: 6rem;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: 1.25rem;
+}
+.ficha__hora {
+  color: var(--gris);
+}
+.desc {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+}
+.pasos__titulo {
+  font-size: 1.25rem;
+}
+.pasos {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.paso {
+  display: grid;
+  grid-template-columns: 4rem 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+.paso img {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+.paso__texto {
+  display: grid;
+  gap: 0.15rem;
+  justify-items: start;
+}
+.paso__numero {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+
+.botones-tarea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+}
+.botones-tarea form,
+.botones-tarea .boton--principal {
+  width: 100%;
+}
+.estado-grande {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--petroleo);
+}
+
+/* «Antes» y «Después» */
+.contexto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.contexto > div {
+  display: grid;
+  gap: 0.15rem;
+  align-content: start;
+  padding: 0.4rem 0.6rem;
+  border: 2px dashed var(--gris);
+  border-radius: 0.8rem;
+}
+.contexto span {
+  font-size: 1rem;
+  color: var(--gris);
+}
+.contexto b {
+  font-family: var(--fuente-titulos);
+  color: var(--petroleo);
+}
+.contexto__vacio {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.contexto__vacio .vacio__dibujo {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+/* --- Mensajes de error (p. ej. «Todavía no es la hora») --- */
+.mensajes {
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  color: var(--error);
+  background: var(--error-fondo);
+  border: 2px solid var(--error);
+  border-radius: var(--radio-tarjeta);
+}
+
+/* --- B08 · ¿Has terminado? --- */
+dialog.confirmar {
+  width: min(24rem, calc(100% - 2rem));
+  padding: 1.25rem;
+  color: var(--texto);
+  background: var(--blanco);
+  border: 4px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+}
+dialog.confirmar::backdrop {
+  background: rgb(11 60 73 / 35%);
+}
+.confirmar {
+  text-align: center;
+}
+.confirmar img {
+  display: block;
+  margin: 0 auto 0.75rem;
+  border-radius: 1rem;
+}
+.confirmar h1,
+.confirmar h2 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+}
+.confirmar--pagina {
+  align-items: center;
+}
+.fila-botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+.fila-botones form {
+  margin: 0;
+}
+.fila-botones .boton {
+  min-width: 6.5rem;
+}

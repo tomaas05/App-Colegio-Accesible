@@ -7,7 +7,7 @@ Cada app añadirá aquí su include(...) cuando tenga vistas, por ejemplo:
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from django.views.generic import TemplateView
 from django.urls import path, include
 
@@ -19,6 +19,7 @@ urlpatterns = [
     # Página provisional para comprobar que la instalación funciona.
     path("", TemplateView.as_view(template_name="inicio.html"), name="inicio"),
     path("admin/", admin.site.urls),
+    path("agenda/", include("apps.agenda.urls")),
 ]
 
 # En desarrollo, Django sirve las imágenes subidas. En la demo lo hace Caddy.
