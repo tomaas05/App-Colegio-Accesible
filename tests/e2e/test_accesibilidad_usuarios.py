@@ -1,8 +1,8 @@
 """Accesibilidad de las pantallas de usuarios y acceso (Manu).
 
 Misma comprobación que test_accesibilidad.py (axe WCAG 2.2 AA y sin scroll horizontal) para
-las pantallas que no se ven sin más: la entrada con errores, el bloqueo y el panel de cada
-rol, que pide sesión.
+las pantallas que no se ven sin más: la entrada de adultos con errores, el bloqueo, el panel
+de cada rol (pide sesión) y la entrada del estudiante con datos de prueba (HU-01-06).
 Se lanzan con:  pytest -m e2e
 """
 
@@ -72,4 +72,65 @@ def test_bloqueo(live_server, page, settings, datos, nombre):
         page.fill("#id_password", "no-es-esta")
         page.click("button[type=submit]")
     assert "Espera 5 minutos" in page.content()
+    revisar(page, nombre)
+
+
+# --- HU-01-06 · Entrar como estudiante ---
+
+
+def tamano(nombre):
+    return dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True))
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_portada_clases_y_avatares(live_server, page, datos, nombre):
+    """B01 · ¿Quién eres?, B02 · ¿Cuál es tu clase? y B03 · avatares de PTVAL 1."""
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + reverse("inicio"))
+    revisar(page, nombre)
+    page.click("text=Estudiante")
+    revisar(page, nombre)
+    page.click("text=PTVAL 1")
+    assert page.locator(".loseta__nombre", has_text="Lucía").is_visible()
+    revisar(page, nombre)
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_rejilla_de_imagenes_con_error(live_server, page, datos, nombre):
+    """Rejilla de Lucía: sin elegir nada, con el aviso de error y con 3 elegidas."""
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + reverse("usuarios:entrar_estudiante", args=["A01"]))
+    revisar(page, nombre)
+    for palabra in ("perro", "sol", "gato"):
+        page.locator("label.loseta--marcar", has=page.locator(f'img[alt="{palabra}"]')).click()
+    page.click("button[type=submit]")
+    assert page.locator("[role=alert]").is_visible()
+    revisar(page, nombre)
+
+
+def test_rejilla_no_deja_marcar_una_cuarta_imagen(live_server, page, datos):
+    page.goto(live_server.url + reverse("usuarios:entrar_estudiante", args=["A01"]))
+    loseta = lambda palabra: page.locator(  # noqa: E731
+        "label.loseta--marcar", has=page.locator(f'img[alt="{palabra}"]')
+    )
+    for palabra in ("perro", "sol", "flor"):
+        loseta(palabra).click()
+    assert page.locator("[data-contador-n]").inner_text() == "3"
+    assert page.locator("input[name=imagenes]:disabled").count() == 9
+    loseta("sol").click()  # quitar una vuelve a dejar elegir
+    assert page.locator("input[name=imagenes]:disabled").count() == 0
+    loseta("sol").click()
+    page.click("button[type=submit]")
+    page.wait_for_url("**/agenda/")
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_contrasena_del_estudiante(live_server, page, datos, nombre):
+    """Mateo escribe su contraseña; con una equivocada sale el aviso."""
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + reverse("usuarios:entrar_estudiante", args=["A02"]))
+    revisar(page, nombre)
+    page.fill("#id_password", "no-es-esta")
+    page.click("button[type=submit]")
+    assert page.locator("[role=alert]").is_visible()
     revisar(page, nombre)
