@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Espera un momento · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{% block contenido %}
+{# HU-01-07, prueba de aceptación 5 (RNF1.2.3). La pinta django-axes al bloquear la cuenta. #}
+<div class="acceso">
+  <h1>Espera un momento</h1>
+  <div class="aviso-error" role="alert">
+    <span class="aviso-error__ico" aria-hidden="true">⏳</span>
+    <div>
+      <p>Has fallado {{ failure_limit }} veces seguidas.</p>
+      <p>Espera 5 minutos y vuelve a intentarlo.</p>
+    </div>
+  </div>
+  <a class="boton boton--aux" href="{% url 'usuarios:entrar' %}"><span aria-hidden="true">‹</span> Volver a Entrar</a>
+</div>
+{% endblock %}

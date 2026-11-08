@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Inicio · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{% block cabecera %}
+<div class="cabecera-adulto">
+  <p><strong>Despega</strong></p>
+  {# Salir con POST: Django no cierra la sesión con un simple enlace. #}
+  <form method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block contenido %}
+{# Boceto B13 · Panel. HU-01-07, prueba de aceptación 1: «veo la pantalla principal con mi nombre». #}
+<div class="panel">
+  <section class="panel__saludo" aria-labelledby="panel-titulo">
+    <span class="panel__iniciales" aria-hidden="true">{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}</span>
+    <div>
+      <h1 id="panel-titulo">Hola, {{ user.first_name }}</h1>
+      <p class="panel__rol">{{ user.get_rol_display }}</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="panel-que">
+    <h2 id="panel-que">¿Qué quieres hacer?</h2>
+    {% if opciones %}
+    <ul class="panel__opciones">
+      {% for opcion in opciones %}
+      <li>
+        <a class="panel__opcion" href="{{ opcion.url }}">
+          <b>{{ opcion.texto }}</b>
+          <span>{{ opcion.descripcion }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>Todavía no hay opciones para tu perfil.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

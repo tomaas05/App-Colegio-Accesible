@@ -123,6 +123,17 @@ AUTH_PASSWORD_VALIDATORS = [
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 5 / 60  # en horas
 AXES_RESET_ON_SUCCESS = True
+# Se bloquea la pareja usuario + equipo, no la IP sola: en el colegio todas las tabletas
+# salen por la misma IP y un adulto que falla no debe dejar fuera a los demás.
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+# Lo que se ve al quedar bloqueado (HU-01-07, prueba de aceptación 5).
+AXES_LOCKOUT_TEMPLATE = "usuarios/bloqueado.html"
+
+# Entrada y salida (HU-01-07). Tras entrar, cada rol va a su pantalla: lo decide
+# EntrarAdultoView, porque LOGIN_REDIRECT_URL solo admite una.
+LOGIN_URL = "usuarios:entrar"
+LOGIN_REDIRECT_URL = "usuarios:panel"
+LOGOUT_REDIRECT_URL = "inicio"
 
 # ---------------------------------------------------------------------------
 # Idioma y hora

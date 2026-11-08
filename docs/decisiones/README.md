@@ -7,3 +7,4 @@ Se escribe una cuando la decisión afecta a más de un objetivo o es difícil de
 | Nº | Decisión | Estado |
 | --- | --- | --- |
 | 0001 | [Stack tecnológico](0001-stack.md) | Aceptada |
+| 0002 | [Entrada, sesión y bloqueo de adultos](0002-entrada-y-sesion.md) | Propuesta |
