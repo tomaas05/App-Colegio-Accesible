@@ -24,10 +24,10 @@ from .models import Ejecucion, EjecucionPaso, EstadoEjecucion, EstadoPaso
 # La siguiente tarea se anuncia al pie 10 minutos antes (RF2.10.1, boceto B06).
 AVISO_MINUTOS = 10
 
-# Cuánto antes de su hora se puede empezar una tarea. 0 = como dice RF2.3.2 (esperar a la
-# hora de inicio). Si es mayor, solo cuando no hay otra tarea en curso ni otra a la que le
-# toque ahora (una cosa cada vez).
-MARGEN_EMPEZAR_ANTES = timedelta(0)
+# Cuánto antes de su hora se puede empezar una tarea: 15 minutos (decisión del equipo, que
+# cambia RF2.3.2). Solo cuando no hay otra tarea en curso ni otra a la que le toque ahora
+# (una cosa cada vez). Con timedelta(0) vuelve a ser como decía RF2.3.2.
+MARGEN_EMPEZAR_ANTES = timedelta(minutes=15)
 
 # (símbolo, texto), los mismos del boceto v3. El color nunca es la única señal (RNF4.1.3).
 ETIQUETAS_ESTADO = {
