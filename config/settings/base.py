@@ -129,9 +129,11 @@ AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
 # Lo que se ve al quedar bloqueado (HU-01-07, prueba de aceptación 5).
 AXES_LOCKOUT_TEMPLATE = "usuarios/bloqueado.html"
 
-# Entrada y salida (HU-01-07). Tras entrar, cada rol va a su pantalla: lo decide
-# EntrarAdultoView, porque LOGIN_REDIRECT_URL solo admite una.
-LOGIN_URL = "usuarios:entrar"
+# Entrada y salida (HU-01-07 y HU-01-06). Quien no ha entrado va a la portada
+# «¿Quién eres?», que lleva a la entrada del estudiante o a la del adulto.
+# Tras entrar, cada rol va a su pantalla: lo decide la vista, porque
+# LOGIN_REDIRECT_URL solo admite una.
+LOGIN_URL = "inicio"
 LOGIN_REDIRECT_URL = "usuarios:panel"
 LOGOUT_REDIRECT_URL = "inicio"
 

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}{% if con_imagenes %}Elige tus 3 imágenes{% else %}Escribe tu contraseña{% endif %} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{% block contenido %}
+{# HU-01-06, pruebas de aceptación 3, 4, 5 y 6. Lo que se pide sale de perfil.metodo_acceso. #}
+<div class="acceso-est">
+  <div class="cab-acceso">
+    <a class="boton boton--aux" href="{% url 'usuarios:avatares' estudiante.clase.pk %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span aria-hidden="true">‹</span> Volver</a>
+    <h1 id="titulo">{% if con_imagenes %}Elige tus 3 imágenes{% else %}Escribe tu contraseña{% endif %}</h1>
+  </div>
+
+  {# Para que el estudiante vea que ha pulsado su avatar y no el de otro. #}
+  <p class="quien">
+    <img class="quien__avatar" src="{{ estudiante.avatar.url }}" alt="" width="64" height="64">
+    <span>{{ estudiante.usuario.first_name }}</span>
+  </p>
+
+  <form class="formulario formulario--estudiante" method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.errors %}
+    {# PA5: mensaje con pictograma. No dice qué imagen o qué letra ha fallado. #}
+    <div class="aviso-error aviso-error--estudiante" role="alert">
+      <svg class="aviso-error__picto" viewBox="0 0 64 64" width="56" height="56" aria-hidden="true" focusable="false">
+        <path d="M50 22A21 21 0 1 0 53 34" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+        <path d="M52 8v15H37" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p>{% for error in form.non_field_errors %}{{ error }}{% empty %}{% for campo in form %}{% for error in campo.errors %}{{ error }}{% endfor %}{% endfor %}{% endfor %}</p>
+    </div>
+    {% endif %}
+
+    {% if con_imagenes %}
+    <fieldset class="rejilla-acceso" data-rejilla-acceso>
+      <legend class="visualmente-oculto">Tus 3 imágenes, en cualquier orden</legend>
+      <ul class="losetas losetas--acceso">
+        {% for imagen in form.fields.imagenes.queryset %}
+        <li>
+          {# PA6: cada imagen se lee con su descripción («perro», «sol»…). #}
+          <label class="loseta loseta--marcar">
+            <input type="checkbox" name="imagenes" value="{{ imagen.pk }}">
+            <img class="loseta__imagen" src="{{ imagen.imagen.url }}" alt="{{ imagen.descripcion_imagen }}" width="96" height="96">
+          </label>
+        </li>
+        {% endfor %}
+      </ul>
+    </fieldset>
+    {# Solo con JavaScript (usuarios.js): cuántas lleva elegidas. #}
+    <p class="contador" data-contador aria-live="polite" hidden>Has elegido <b data-contador-n>0</b> de 3.</p>
+    {% else %}
+    {% with campo=form.password %}
+    <div class="campo">
+      <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+      <div class="campo__fila">
+        {{ campo }}
+        <button class="boton--aux" type="button" data-ver-clave aria-controls="{{ campo.id_for_label }}" aria-pressed="false" hidden>Mostrar</button>
+      </div>
+    </div>
+    {% endwith %}
+    {% endif %}
+
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="boton--principal" type="submit">Entrar</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}
