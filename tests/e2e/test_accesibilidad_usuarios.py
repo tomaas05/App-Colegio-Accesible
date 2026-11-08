@@ -102,7 +102,7 @@ def test_rejilla_de_imagenes_con_error(live_server, page, datos, nombre):
     page.goto(live_server.url + reverse("usuarios:entrar_estudiante", args=["A01"]))
     revisar(page, nombre)
     for palabra in ("perro", "sol", "gato"):
-        page.locator("label.loseta--marcar", has=page.locator(f'img[alt="{palabra}"]')).click()
+        page.locator("label.loseta--marcar", has_text=palabra).click()
     page.click("button[type=submit]")
     assert page.locator("[role=alert]").is_visible()
     revisar(page, nombre)
@@ -110,9 +110,7 @@ def test_rejilla_de_imagenes_con_error(live_server, page, datos, nombre):
 
 def test_rejilla_no_deja_marcar_una_cuarta_imagen(live_server, page, datos):
     page.goto(live_server.url + reverse("usuarios:entrar_estudiante", args=["A01"]))
-    loseta = lambda palabra: page.locator(  # noqa: E731
-        "label.loseta--marcar", has=page.locator(f'img[alt="{palabra}"]')
-    )
+    loseta = lambda palabra: page.locator("label.loseta--marcar", has_text=palabra)  # noqa: E731
     for palabra in ("perro", "sol", "flor"):
         loseta(palabra).click()
     assert page.locator("[data-contador-n]").inner_text() == "3"

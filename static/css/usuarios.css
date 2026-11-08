@@ -259,7 +259,13 @@ a.boton {
 }
 .losetas--acceso .loseta__imagen {
   width: 100%;
-  max-width: 6rem;
+  max-width: 5rem;
+}
+.loseta__nombre--acceso {
+  max-width: 100%;
+  font-size: 0.95rem;
+  overflow-wrap: normal;
+  hyphens: auto; /* «estre-lla» y no «estrell-a» (lang="es" en base.html) */
 }
 .losetas > li {
   display: flex;
@@ -320,8 +326,9 @@ a.boton {
 }
 .loseta--marcar {
   position: relative;
+  gap: 0.2rem;
   min-height: var(--toque-grande);
-  padding: 0.35rem;
+  padding: 0.35rem 0.25rem;
 }
 .loseta--marcar input {
   position: absolute;

@@ -38,10 +38,12 @@
       <ul class="losetas losetas--acceso">
         {% for imagen in form.fields.imagenes.queryset %}
         <li>
-          {# PA6: cada imagen se lee con su descripción («perro», «sol»…). #}
+          {# PA6: cada imagen lleva su palabra debajo («perro», «sol»…), que es lo que lee el #}
+          {# lector de pantalla; la imagen es decorativa para no leerlo dos veces. #}
           <label class="loseta loseta--marcar">
             <input type="checkbox" name="imagenes" value="{{ imagen.pk }}">
-            <img class="loseta__imagen" src="{{ imagen.imagen.url }}" alt="{{ imagen.descripcion_imagen }}" width="96" height="96">
+            <img class="loseta__imagen" src="{{ imagen.imagen.url }}" alt="" width="96" height="96">
+            <span class="loseta__nombre loseta__nombre--acceso">{{ imagen.descripcion_imagen }}</span>
           </label>
         </li>
         {% endfor %}

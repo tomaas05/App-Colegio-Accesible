@@ -112,7 +112,7 @@ def test_pa3_entro_con_mis_3_imagenes_en_cualquier_orden(client, datos, orden):
 def test_pa3_una_imagen_desactivada_no_sale_en_la_rejilla(client, datos):
     ImagenAcceso.objects.filter(descripcion_imagen="gato").update(activa=False)
     contenido = client.get(url_entrar("A01")).content.decode()
-    assert 'alt="gato"' not in contenido
+    assert ">gato</span>" not in contenido
 
 
 # --- PA4: con acceso con contraseña, escribo mi contraseña y entro ---
@@ -202,9 +202,11 @@ def test_pa6_cada_avatar_se_lee_con_el_nombre(client, datos):
 
 
 def test_pa6_cada_imagen_de_la_rejilla_se_lee_con_su_descripcion(client, datos):
+    """La palabra se ve debajo de la imagen y es el nombre de la casilla para el lector."""
     contenido = client.get(url_entrar("A01")).content.decode()
+    etiqueta = '<span class="loseta__nombre loseta__nombre--acceso">{}</span>'
     for imagen in ImagenAcceso.objects.filter(activa=True):
-        assert f'alt="{imagen.descripcion_imagen}"' in contenido
+        assert etiqueta.format(imagen.descripcion_imagen) in contenido
     assert '<legend class="visualmente-oculto">' in contenido
 
 
