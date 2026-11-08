@@ -2,7 +2,19 @@
 
 Aplicación web para que el alumnado del Colegio de Educación Especial Purísima Concepción organice su tiempo y sus tareas, y para que tutores, profesionales y familias la configuren y la sigan. Proyecto de DGP y MDA (Universidad de Granada) de **Despega Team**.
 
-> **Estado: iteración 1 (diseño).** El repositorio solo contiene la infraestructura para empezar a desarrollar. No hay ninguna funcionalidad implementada: las pantallas y los modelos se programan a partir de la iteración 2, sobre los bocetos y el modelo de datos acordados en esta.
+> **Estado: iteración 1 (implementación).** Están en `main` la base de datos, los datos de prueba y las primeras historias de usuario. La Entrega 1 vence el miércoles 11/11/2026 a las 23:59.
+
+### Qué funciona ya
+
+| Dirección | Pantalla | HU | Responsable |
+| --- | --- | --- | --- |
+| `/entrar/` | Entrar como tutor, profesional, familiar o administrador (B12), con bloqueo tras 5 fallos | HU-01-07 | Manu |
+| `/panel/` | Pantalla principal del adulto, con su nombre y sus opciones (B13) | HU-01-07 | Manu |
+| `/agenda/` | Agenda del día del estudiante | HU-02-01 a HU-02-04 | Tomás |
+| `/agenda/tarea/<id>/` | Detalle de una tarea: pasos, Empezar y Terminar | HU-02-02 a HU-02-04 | Tomás |
+| `/tareas/crear/` · `/tareas/catalogo/` | Crear una tarea y ver las creadas | HU-03-01 | Úrsula |
+
+Cuando se fusione tu historia, añade aquí sus pantallas.
 
 ## Tecnologías
 
@@ -42,7 +54,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Abre <http://localhost:8000>: debe aparecer «El entorno de desarrollo funciona».
+Abre <http://localhost:8000>: debe aparecer «El entorno de desarrollo funciona». Después carga los datos de prueba (`docker compose exec web python manage.py cargar_datos_prueba`) y entra como adulto en <http://localhost:8000/entrar/>.
 
 ## Estructura
 
@@ -98,6 +110,7 @@ App-Colegio-Accesible/
 | Volver a cargarlos desde cero | `… cargar_datos_prueba --reiniciar` | ídem |
 | Tarea para Lucía en 1 minuto | `… cargar_datos_prueba --tarea-ahora` | ídem |
 | Revisar estilo | `docker compose exec web ruff check .` | `ruff check .` |
+| Desbloquear a quien ha fallado 5 veces | `docker compose exec web python manage.py axes_reset` | `python manage.py axes_reset` |
 
 ## Datos de prueba
 
@@ -112,7 +125,11 @@ App-Colegio-Accesible/
 | `familiar` | Carmen, familiar de Lucía |
 | `familiar2` | Javier, familiar de Daniela |
 
+Los adultos entran en <http://localhost:8000/entrar/> y llegan a su pantalla principal (`/panel/`). Tras **5 intentos fallidos seguidos**, ese usuario queda bloqueado **5 minutos** en ese equipo; los demás pueden seguir entrando (ver [docs/decisiones/0002-entrada-y-sesion.md](docs/decisiones/0002-entrada-y-sesion.md)). Para no esperar mientras pruebas: `axes_reset` (tabla de arriba).
+
 Los estudiantes pulsan su avatar y después, según su perfil, eligen 3 imágenes (**perro, sol y flor**, en cualquier orden) o, en el caso de **Mateo**, escriben la contraseña **`mateo2026`**. Sofía tiene marcado que usa lector de pantalla. Las tareas de PTVAL 1 son a las 9:00, 10:30, 12:00 y 17:00, todos los días (también el fin de semana, para poder probar cualquier día). Lucía tiene además ejecuciones de ayer y una tarea de casa a las 20:00. Lucía, Mateo y Sofía tienen perfiles distintos del de por defecto.
+
+> Mientras no esté la entrada del estudiante (HU-01-06), su agenda se abre con un atajo solo para desarrollo: pon `AGENDA_ENTRAR_COMO=1` en el `.env` y abre <http://localhost:8000/agenda/?como=A01> (entra como Lucía).
 
 ## Documentación del equipo
 
