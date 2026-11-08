@@ -4,13 +4,18 @@
 {% block titulo %}Catálogo de Tareas - Despega{% endblock %}
 
 {% block contenido %}
-<!-- Cabecera y Botón de Creación -->
+<!-- Cabecera y Botones de Acción Global -->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
   <h1 style="margin: 0;">Catálogo de Tareas del Centro</h1>
 
-  <a href="{% url 'tareas:crear_tarea' %}" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0.75rem 1.5rem; background-color: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    + Crear nueva tarea
-  </a>
+  <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+    <a href="{% url 'tareas:asignar_tarea' %}" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0.75rem 1.5rem; background-color: #007bff; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      📅 Asignar tarea general
+    </a>
+    <a href="{% url 'tareas:crear_tarea' %}" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0.75rem 1.5rem; background-color: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      + Crear nueva tarea
+    </a>
+  </div>
 </div>
 
 {% if messages %}
@@ -37,15 +42,20 @@
       {% endif %}
 
       <span style="display: inline-block; background-color: #e9ecef; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5rem; color: #495057;">
-            {{ tarea.get_ambito_display|default:tarea.ambito }}
-          </span>
+        {{ tarea.get_ambito_display|default:tarea.ambito }}
+      </span>
 
       <h2 style="font-size: 1.5rem; margin: 0 0 0.5rem 0; color: #333;">{{ tarea.nombre }}</h2>
       <p style="color: #666; font-size: 1rem; margin-bottom: 1rem;">{{ tarea.descripcion|truncatechars:90 }}</p>
     </div>
 
-    <div style="border-top: 1px solid #eee; padding-top: 0.75rem; margin-top: auto;">
-      <p style="font-size: 0.9rem; color: #6c757d; margin: 0;">Pasos configurados: <strong>{{ tarea.pasos.count }}</strong></p>
+    <div style="border-top: 1px solid #eee; padding-top: 0.75rem; margin-top: auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+      <p style="font-size: 0.9rem; color: #6c757d; margin: 0;">Pasos: <strong>{{ tarea.pasos.count }}</strong></p>
+
+      <!-- Botón para asignar esta tarea específica directamente -->
+      <a href="{% url 'tareas:asignar_tarea_con_id' tarea.id %}" style="padding: 0.4rem 0.8rem; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem; font-weight: bold; display: inline-flex; align-items: center;">
+        Asignar ➔
+      </a>
     </div>
 
   </div>
