@@ -4,7 +4,7 @@
 {% block titulo %}Crear nueva tarea - Despega{% endblock %}
 
 {% block estilos %}
-<link rel="stylesheet" href="{% static 'css/crear_tarea.css' %}">
+<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
 {% endblock %}
 
 {% block contenido %}
@@ -39,7 +39,10 @@
       <p>{{ form.descripcion.label_tag }} {{ form.descripcion }} {{ form.descripcion.errors }}</p>
       <p>{{ form.ambito.label_tag }} {{ form.ambito }} {{ form.ambito.errors }}</p>
 
+      <hr>
       <h3>Imagen de la tarea</h3>
+      <p>Sube un archivo de tu equipo o busca un pictograma en ARASAAC.</p>
+
       <p>{{ form.imagen.label_tag }} {{ form.imagen }} {{ form.imagen.errors }}</p>
 
       <!-- Buscador ARASAAC -->
@@ -86,10 +89,14 @@
     </fieldset>
 
     <!-- Botones de acción inferiores -->
-    <div class="contenedor-botones-inferiores">
+    <div class="contenedor-botones-inferiores" style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
+
       <button type="button" onclick="prepararYMostrarVistaPrevia()" class="secundario">
         Guardar tarea
       </button>
+      <a href="{% url 'tareas:catalogo' %}" class="peligro" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+        Cancelar
+      </a>
     </div>
   </form>
 </div>
@@ -112,5 +119,5 @@
 
 {% block scripts %}
 <script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
-<script src="{% static 'tareas/js/crear_tarea.js' %}"></script>
+<script src="{% static 'js/tarea.js' %}"></script>
 {% endblock %}

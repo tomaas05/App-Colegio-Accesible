@@ -5,8 +5,9 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
 
-from .forms import TareaForm, PasoFormSet
+from .forms import TareaForm, PasoFormSet, AsignacionForm
 from .models import Tarea
+
 
 @login_required
 def catalogo_tareas(request):
@@ -60,7 +61,7 @@ def crear_tarea(request):
                             )
                     paso.save()
 
-            # Guardar eliminaciones usando deleted_forms en lugar de deleted_objects
+            # Guardar eliminaciones usando deleted_forms
             for form_eliminado in formset.deleted_forms:
                 if form_eliminado.instance.pk:
                     form_eliminado.instance.delete()
@@ -96,12 +97,12 @@ def anadir_paso(request):
         if field.name in ['DELETE', 'orden']:
             html_campos += f'<div style="display:none;">{field}</div>'
         else:
-            # Imprimimos los errores en pantalla con un span rojo si existen
             errores_html = f'<div style="color: var(--error, #991b1b); font-size: 0.85rem; margin-top: 0.25rem;">{field.errors}</div>' if field.errors else ""
             html_campos += f'<p>{field.label_tag()} {field} {errores_html}</p>'
 
     html_campos = html_campos.replace("__prefix__", str(numero_pasos))
 
+    # HTML completo del paso con su buscador ARASAAC independiente
     html = f"""
     <div class="paso-item" id="paso-item-{numero_pasos}" style="background: var(--blanco); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--gris); margin-bottom: 1rem;">
         <h2 class="titulo-paso" style="color: var(--petroleo); margin-top: 0;">Paso {numero_pasos + 1}</h2>
@@ -115,7 +116,7 @@ def anadir_paso(request):
                 <button type="button" onclick="buscarArasaacPaso({numero_pasos})" class="principal" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Buscar</button>
             </div>
             <div id="resultados-arasaac-{numero_pasos}" class="resultados-arasaac-grid" style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;"></div>
-            <input type="hidden" name="pasos-{numero_pasos}-arasaac_id_paso" id="id_pasos-{numero_pasos}-{numero_pasos}-arasaac_id_paso" value="">
+            <input type="hidden" name="pasos-{numero_pasos}-arasaac_id_paso" id="id_pasos-{numero_pasos}-arasaac_id_paso" value="">
             <p id="mensaje-pic-paso-{numero_pasos}" style="color: var(--verde-oscuro); font-weight: bold; display: none; margin-top: 0.5rem; font-size: 0.9rem;">✓ Pictograma seleccionado para el paso.</p>
         </div>
 
@@ -130,3 +131,56 @@ def anadir_paso(request):
     </script>
     """
     return HttpResponse(html)
+
+
+@login_required
+def asignar_tarea(request, tarea_id=None):
+    """
+    Vista para asignar una tarea del catálogo a uno o varios estudiantes,
+    validando solapes de horario y coherencia temporal.
+    """
+    tarea_inicial = None
+    if tarea_id:
+        from django.shortcuts import get_object_or_404
+        tarea_inicial = get_object_or_404(Tarea, id=tarea_id)
+
+    if request.method == "POST":
+        form = AsignacionForm(request.POST)
+        if form.is_valid():
+            tarea = form.cleaned_data["tarea"]
+            estudiantes = form.cleaned_data["estudiantes"]
+            hora_inicio = form.cleaned_data["hora_inicio"]
+            hora_fin = form.cleaned_data["hora_fin"]
+            dias_semana = form.cleaned_data.get("dias_semana")
+            vigencia_desde = form.cleaned_data.get("vigencia_desde")
+            vigencia_hasta = form.cleaned_data.get("vigencia_hasta")
+
+            # Creamos una asignación por cada estudiante seleccionado asignándola al usuario actual
+            from .models import Asignacion
+            for estudiante in estudiantes:
+                Asignacion.objects.create(
+                    tarea=tarea,
+                    estudiante=estudiante,
+                    asignado_por=request.user,  # Añadido para evitar IntegrityError
+                    hora_inicio=hora_inicio,
+                    hora_fin=hora_fin,
+                    dias_semana=dias_semana,
+                    vigencia_desde=vigencia_desde,
+                    vigencia_hasta=vigencia_hasta
+                )
+
+            messages.success(request, f"La tarea '{tarea.nombre}' se ha asignado correctamente a los estudiantes seleccionados.")
+            return redirect("tareas:catalogo")
+        else:
+            print("--- ERRORES FORMULARIO ASIGNACIÓN ---")
+            print(form.errors)
+    else:
+        initial_data = {}
+        if tarea_inicial:
+            initial_data["tarea"] = tarea_inicial
+        form = AsignacionForm(initial=initial_data)
+
+    return render(request, "tareas/asignar_tarea.html", {
+        "form": form,
+        "tarea": tarea_inicial,
+    })

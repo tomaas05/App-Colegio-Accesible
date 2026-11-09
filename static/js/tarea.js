@@ -142,7 +142,7 @@ async function buscarArasaacPaso(indice) {
   }
 }
 
-// --- 4. LÓGICA DE CONFIRMACIÓN Y VISTA PREVIA (VALIDACIÓN ESTRICTA) ---
+// --- 4. LÓGICA DE CONFIRMACIÓN Y VISTA PREVIA (VALIDACIÓN ESTRICTA UNIFICADA) ---
 function prepararYMostrarVistaPrevia() {
   const modal = document.getElementById('modal-vista-previa');
   const contenedor = document.getElementById('contenido-vista-previa');
@@ -155,11 +155,11 @@ function prepararYMostrarVistaPrevia() {
   const descripcion = descripcionInput ? descripcionInput.value.trim() : '';
   const descripcionImagen = descImgInput ? descImgInput.value.trim() : '';
 
+  let errores = [];
+
   // 1. Validar campos principales obligatorios
   if (!nombre) {
-    alert("⚠️ El nombre de la tarea es obligatorio.");
-    if (nombreInput) nombreInput.focus();
-    return;
+    errores.push("• El nombre de la tarea es obligatorio.");
   }
 
   // Comprobar imagen principal (Archivo local o ARASAAC)
@@ -168,52 +168,49 @@ function prepararYMostrarVistaPrevia() {
   const tieneImagenPrincipal = arasaacId || (fileInput && fileInput.files && fileInput.files[0]);
 
   if (!tieneImagenPrincipal) {
-    alert("⚠️ Es obligatorio añadir una imagen principal (subir archivo o buscar pictograma en ARASAAC).");
-    return;
+    errores.push("• Es obligatorio añadir una imagen principal (subir archivo o buscar pictograma en ARASAAC).");
   }
 
   if (!descripcionImagen) {
-    alert("⚠️ La descripción de la imagen principal es obligatoria.");
-    if (descImgInput) descImgInput.focus();
-    return;
+    errores.push("• La descripción de la imagen principal es obligatoria.");
   }
 
   // 2. Validar que obligatoriamente haya al menos un paso y cumpla con todo
   const pasosVisibles = document.querySelectorAll('.paso-item:not([style*="display: none"])');
   if (pasosVisibles.length === 0) {
-    alert("⚠️ Debes añadir al menos un paso a la tarea.");
-    return;
+    errores.push("• Debes añadir al menos un paso a la tarea.");
+  } else {
+    for (let i = 0; i < pasosVisibles.length; i++) {
+      const paso = pasosVisibles[i];
+      const campoTexto = paso.querySelector('textarea, input[type="text"]:not([name$="-orden"]):not([name$="-DELETE"]):not([name$="-arasaac_id_paso"]):not([id*="buscador"])');
+      const textoPaso = campoTexto ? campoTexto.value.trim() : '';
+
+      const arasaacPasoInput = paso.querySelector('input[id*="arasaac_id_paso"]');
+      const arasaacPasoId = arasaacPasoInput ? arasaacPasoInput.value : '';
+      const filePasoInput = paso.querySelector('input[type="file"]');
+      const tieneImagenPaso = arasaacPasoId || (filePasoInput && filePasoInput.files && filePasoInput.files[0]);
+
+      const descImgPasoInput = paso.querySelector('input[name$="-descripcion_imagen"]');
+      const descImgPaso = descImgPasoInput ? descImgPasoInput.value.trim() : '';
+
+      if (!textoPaso) {
+        errores.push(`• El Paso ${i + 1} debe contener una descripción.`);
+      }
+
+      if (!tieneImagenPaso) {
+        errores.push(`• El Paso ${i + 1} es obligatorio: debes subir una imagen o seleccionar un pictograma de ARASAAC.`);
+      }
+
+      if (!descImgPaso) {
+        errores.push(`• El Paso ${i + 1} requiere obligatoriamente una descripción de su imagen.`);
+      }
+    }
   }
 
-  for (let i = 0; i < pasosVisibles.length; i++) {
-    const paso = pasosVisibles[i];
-    const campoTexto = paso.querySelector('textarea, input[type="text"]:not([name$="-orden"]):not([name$="-DELETE"]):not([name$="-arasaac_id_paso"]):not([id*="buscador"])');
-    const textoPaso = campoTexto ? campoTexto.value.trim() : '';
-
-    const arasaacPasoInput = paso.querySelector('input[id*="arasaac_id_paso"]');
-    const arasaacPasoId = arasaacPasoInput ? arasaacPasoInput.value : '';
-    const filePasoInput = paso.querySelector('input[type="file"]');
-    const tieneImagenPaso = arasaacPasoId || (filePasoInput && filePasoInput.files && filePasoInput.files[0]);
-
-    const descImgPasoInput = paso.querySelector('input[name$="-descripcion_imagen"]');
-    const descImgPaso = descImgPasoInput ? descImgPasoInput.value.trim() : '';
-
-    if (!textoPaso) {
-      alert(`⚠️ El Paso ${i + 1} debe contener una descripción.`);
-      if (campoTexto) campoTexto.focus();
-      return;
-    }
-
-    if (!tieneImagenPaso) {
-      alert(`⚠️ El Paso ${i + 1} es obligatorio: debes subir una imagen o seleccionar un pictograma de ARASAAC.`);
-      return;
-    }
-
-    if (!descImgPaso) {
-      alert(`⚠️ El Paso ${i + 1} requiere obligatoriamente una descripción de su imagen.`);
-      if (descImgPasoInput) descImgPasoInput.focus();
-      return;
-    }
+  // Si hay errores, mostrarlos todos juntos en un único alert y detener el proceso
+  if (errores.length > 0) {
+    alert("⚠️ Por favor, corrige los siguientes errores antes de continuar:\n\n" + errores.join("\n"));
+    return;
   }
 
   // Montar el resumen visual para el tutor
@@ -263,6 +260,64 @@ function cerrarVistaPrevia() {
 }
 
 function confirmarGuardado() {
+  const form = document.querySelector('form');
+  if (form) {
+    form.submit();
+  }
+}
+
+// --- VALIDACIÓN ESTRICTA Y UNIFICADA PARA ASIGNAR TAREA ---
+function validarYEnviarAsignacion(event) {
+  event.preventDefault(); // Detenemos el envío automático para validar primero
+
+  let errores = [];
+
+  // 1. Validar nombre / tarea principal
+  const tareaInput = document.querySelector('[name="nombre"], select[name="tarea"]');
+  const tareaValor = tareaInput ? tareaInput.value.trim() : '';
+
+  if (!tareaValor) {
+    errores.push("• El campo de tarea o nombre es obligatorio.");
+  }
+
+  // 2. Validar selección de estudiantes (buscando las casillas de verificación o select)
+  const estudiantesSeleccionados = document.querySelectorAll('input[name="estudiantes"]:checked, select[name="estudiantes"] option:checked');
+  if (estudiantesSeleccionados.length === 0) {
+    errores.push("• Debes seleccionar al menos un estudiante para asignar la tarea.");
+  }
+
+  // 3. Validar horas
+  const horaInicioInput = document.querySelector('[name="hora_inicio"]');
+  const horaFinInput = document.querySelector('[name="hora_fin"]');
+
+  const horaInicio = horaInicioInput ? horaInicioInput.value : '';
+  const horaFin = horaFinInput ? horaFinInput.value : '';
+
+  if (!horaInicio) {
+    errores.push("• La hora de inicio es obligatoria.");
+  }
+
+  if (!horaFin) {
+    errores.push("• La hora de fin es obligatoria.");
+  }
+
+  if (horaInicio && horaFin && horaFin <= horaInicio) {
+    errores.push("• La hora de fin no puede ser anterior o igual a la hora de inicio.");
+  }
+
+  // 4. Validar días de la semana
+  const diasSeleccionados = document.querySelectorAll('input[name="dias_semana"]:checked');
+  if (diasSeleccionados.length === 0) {
+    errores.push("• Debes marcar al menos un día de la semana.");
+  }
+
+  // Si hay errores, los mostramos todos juntos en el alert y frenamos el envío
+  if (errores.length > 0) {
+    alert("⚠️ Por favor, corrige los siguientes errores antes de continuar:\n\n" + errores.join("\n"));
+    return;
+  }
+
+  // Si todo es correcto, enviamos el formulario al backend
   const form = document.querySelector('form');
   if (form) {
     form.submit();
