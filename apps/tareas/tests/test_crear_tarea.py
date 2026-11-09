@@ -1,8 +1,9 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
+
+from apps.tareas.models import Ambito, Tarea
 from apps.usuarios.models import Usuario
-from apps.tareas.models import Tarea, Paso, Ambito
 
 
 class CrearTareaTests(TestCase):
@@ -50,7 +51,7 @@ class CrearTareaTests(TestCase):
         self.assertEqual(tarea.creador, self.tutor_user)
 
     def test_creacion_tarea_valida_con_arasaac(self):
-        """Una tarea sin archivo de imagen físico pero con arasaac_id_tarea se guarda correctamente."""
+        """Una tarea sin archivo de imagen físico pero con arasaac_id_tarea se guarda bien."""
         self.client.force_login(self.tutor_user)
 
         response = self.client.post(
@@ -174,7 +175,7 @@ class CrearTareaTests(TestCase):
         self.assertEqual(pasos[1].descripcion, "Colocar la almohada")
 
     def test_creacion_paso_con_arasaac(self):
-        """Un paso que utiliza un pictograma de ARASAAC en lugar de imagen física se guarda con éxito."""
+        """Un paso con un pictograma de ARASAAC en lugar de imagen física se guarda con éxito."""
         self.client.force_login(self.tutor_user)
 
         response = self.client.post(
@@ -220,4 +221,6 @@ class CrearTareaTests(TestCase):
                 },
             )
             self.assertEqual(response.status_code, 302)
-            self.assertTrue(Tarea.objects.filter(nombre=f"Tarea de {ambito_val}", ambito=ambito_val).exists())
+            self.assertTrue(
+                Tarea.objects.filter(nombre=f"Tarea de {ambito_val}", ambito=ambito_val).exists()
+            )

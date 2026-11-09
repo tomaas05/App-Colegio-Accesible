@@ -1,19 +1,20 @@
 import requests
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
 
-from .forms import TareaForm, PasoFormSet, AsignacionForm
+from .forms import AsignacionForm, PasoFormSet, TareaForm
 from .models import Tarea
 
 
 @login_required
 def catalogo_tareas(request):
     # Recuperamos todas las tareas guardadas
-    tareas = Tarea.objects.all().order_by('-id')
+    tareas = Tarea.objects.all().order_by("-id")
     return render(request, "tareas/catalogo.html", {"tareas": tareas})
+
 
 @login_required
 def crear_tarea(request):
@@ -30,7 +31,7 @@ def crear_tarea(request):
                 file_data["imagen"] = SimpleUploadedFile(
                     name=f"pictograma_tarea_{arasaac_id}.png",
                     content=respuesta.content,
-                    content_type="image/png"
+                    content_type="image/png",
                 )
 
         # 2. Instanciar formularios con prefijo 'pasos'
@@ -42,9 +43,9 @@ def crear_tarea(request):
             tarea.creador = request.user
             tarea.save()
 
-            # Procesar y guardar cada paso del formset (incluyendo pictogramas de ARASAAC si los hay)
+            # Procesar y guardar cada paso del formset (con pictogramas de ARASAAC si los hay)
             for i, paso_form in enumerate(formset.forms):
-                if paso_form.cleaned_data and not paso_form.cleaned_data.get('DELETE'):
+                if paso_form.cleaned_data and not paso_form.cleaned_data.get("DELETE"):
                     paso = paso_form.save(commit=False)
                     paso.tarea = tarea
 
@@ -57,7 +58,7 @@ def crear_tarea(request):
                             paso.imagen = SimpleUploadedFile(
                                 name=f"pictograma_paso_{arasaac_paso_id}.png",
                                 content=resp_paso.content,
-                                content_type="image/png"
+                                content_type="image/png",
                             )
                     paso.save()
 
@@ -78,14 +79,19 @@ def crear_tarea(request):
         form = TareaForm()
         formset = PasoFormSet(prefix="pasos")
 
-    return render(request, "tareas/crear_tarea.html", {
-        "form": form,
-        "formset": formset,
-    })
+    return render(
+        request,
+        "tareas/crear_tarea.html",
+        {
+            "form": form,
+            "formset": formset,
+        },
+    )
+
 
 @login_required
 def anadir_paso(request):
-    numero_pasos = int(request.GET.get('total_forms', 0))
+    numero_pasos = int(request.GET.get("total_forms", 0))
     formset = PasoFormSet(prefix="pasos")
     form = formset.empty_form
 
@@ -94,11 +100,16 @@ def anadir_paso(request):
         html_campos += str(hidden)
 
     for field in form.visible_fields():
-        if field.name in ['DELETE', 'orden']:
+        if field.name in ["DELETE", "orden"]:
             html_campos += f'<div style="display:none;">{field}</div>'
         else:
-            errores_html = f'<div style="color: var(--error, #991b1b); font-size: 0.85rem; margin-top: 0.25rem;">{field.errors}</div>' if field.errors else ""
-            html_campos += f'<p>{field.label_tag()} {field} {errores_html}</p>'
+            errores_html = (
+                '<div style="color: var(--error, #991b1b); font-size: 0.85rem; '
+                f'margin-top: 0.25rem;">{field.errors}</div>'
+                if field.errors
+                else ""
+            )
+            html_campos += f"<p>{field.label_tag()} {field} {errores_html}</p>"
 
     html_campos = html_campos.replace("__prefix__", str(numero_pasos))
 
@@ -129,7 +140,7 @@ def anadir_paso(request):
     <script>
         document.getElementById('id_pasos-TOTAL_FORMS').value = {numero_pasos + 1};
     </script>
-    """
+    """  # noqa: E501 (HTML del paso; partir las líneas cambiaría el HTML)
     return HttpResponse(html)
 
 
@@ -142,6 +153,7 @@ def asignar_tarea(request, tarea_id=None):
     tarea_inicial = None
     if tarea_id:
         from django.shortcuts import get_object_or_404
+
         tarea_inicial = get_object_or_404(Tarea, id=tarea_id)
 
     if request.method == "POST":
@@ -157,6 +169,7 @@ def asignar_tarea(request, tarea_id=None):
 
             # Creamos una asignación por cada estudiante seleccionado asignándola al usuario actual
             from .models import Asignacion
+
             for estudiante in estudiantes:
                 Asignacion.objects.create(
                     tarea=tarea,
@@ -166,10 +179,14 @@ def asignar_tarea(request, tarea_id=None):
                     hora_fin=hora_fin,
                     dias_semana=dias_semana,
                     vigencia_desde=vigencia_desde,
-                    vigencia_hasta=vigencia_hasta
+                    vigencia_hasta=vigencia_hasta,
                 )
 
-            messages.success(request, f"La tarea '{tarea.nombre}' se ha asignado correctamente a los estudiantes seleccionados.")
+            messages.success(
+                request,
+                f"La tarea '{tarea.nombre}' se ha asignado correctamente "
+                "a los estudiantes seleccionados.",
+            )
             return redirect("tareas:catalogo")
         else:
             print("--- ERRORES FORMULARIO ASIGNACIÓN ---")
@@ -180,7 +197,11 @@ def asignar_tarea(request, tarea_id=None):
             initial_data["tarea"] = tarea_inicial
         form = AsignacionForm(initial=initial_data)
 
-    return render(request, "tareas/asignar_tarea.html", {
-        "form": form,
-        "tarea": tarea_inicial,
-    })
+    return render(
+        request,
+        "tareas/asignar_tarea.html",
+        {
+            "form": form,
+            "tarea": tarea_inicial,
+        },
+    )

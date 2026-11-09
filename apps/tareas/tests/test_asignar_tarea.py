@@ -1,9 +1,11 @@
 from datetime import date, time
+
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from django.contrib.auth import get_user_model
-from apps.usuarios.models import Estudiante, Clase
-from apps.tareas.models import Tarea, Asignacion
+
+from apps.tareas.models import Asignacion, Tarea
+from apps.usuarios.models import Clase, Estudiante
 
 Usuario = get_user_model()
 
@@ -20,9 +22,7 @@ class AsignacionTareaTests(TestCase):
         self.tutor_user.set_password("despega2026")
         self.tutor_user.save()
 
-        self.clase = Clase.objects.create(
-            nombre="PTVAL 1", curso_escolar="2026-2027"
-        )
+        self.clase = Clase.objects.create(nombre="PTVAL 1", curso_escolar="2026-2027")
 
         self.usuario_estudiante1 = Usuario.objects.create_user(
             username="est_1",
@@ -78,9 +78,7 @@ class AsignacionTareaTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)  # Redirección tras éxito
         self.assertTrue(
-            Asignacion.objects.filter(
-                estudiante=self.estudiante1, tarea=self.tarea
-            ).exists()
+            Asignacion.objects.filter(estudiante=self.estudiante1, tarea=self.tarea).exists()
         )
 
     def test_asignacion_masiva_grupo(self):
@@ -98,9 +96,7 @@ class AsignacionTareaTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(
-            Asignacion.objects.filter(tarea=self.tarea).count(), 2
-        )
+        self.assertEqual(Asignacion.objects.filter(tarea=self.tarea).count(), 2)
 
     def test_error_hora_fin_anterior(self):
         """Una tarea cuya hora de fin es anterior o igual a la de inicio no se guarda."""
@@ -118,8 +114,7 @@ class AsignacionTareaTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(
-            response,
-            "La hora de fin no puede ser anterior o igual a la hora de inicio."
+            response, "La hora de fin no puede ser anterior o igual a la hora de inicio."
         )
 
     def test_error_sin_estudiantes_seleccionados(self):
@@ -159,9 +154,7 @@ class AsignacionTareaTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(
-            Asignacion.objects.filter(
-                estudiante=self.estudiante1, tarea=self.tarea
-            ).exists()
+            Asignacion.objects.filter(estudiante=self.estudiante1, tarea=self.tarea).exists()
         )
 
     def test_error_solape_horario(self):
@@ -193,8 +186,10 @@ class AsignacionTareaTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
-            f"El estudiante {self.estudiante1} ya tiene una tarea asignada en ese horario y día ({self.tarea.nombre})."
+            f"El estudiante {self.estudiante1} ya tiene una tarea asignada "
+            f"en ese horario y día ({self.tarea.nombre}).",
         )
+
     def test_asignacion_sin_solape_diferente_dia(self):
         """Un solape de horas pero en días distintos de la semana SÍ se permite correctamente."""
         # Asignación previa el Lunes (día 1)

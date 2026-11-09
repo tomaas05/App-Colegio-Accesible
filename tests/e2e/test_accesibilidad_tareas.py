@@ -6,7 +6,7 @@ iniciando sesión previamente como usuario tutor.
 
 import pytest
 from axe_playwright_python.sync_playwright import Axe
-from django.urls import reverse
+
 from apps.usuarios.models import Usuario
 
 pytestmark = pytest.mark.e2e
@@ -30,7 +30,7 @@ def tutor_logueado(live_server, page, client):
     # Creamos o recuperamos un usuario con rol de tutor para las pruebas E2E
     tutor, _ = Usuario.objects.get_or_create(
         username="tutor_gestion_e2e",
-        defaults={"first_name": "Úrsula", "last_name": "Tutor", "rol": "tutor"}
+        defaults={"first_name": "Úrsula", "last_name": "Tutor", "rol": "tutor"},
     )
     tutor.set_password("despega2026")
     tutor.save()
@@ -49,7 +49,9 @@ def sin_errores_axe(page):
 
 @pytest.mark.parametrize("ruta", PANTALLAS)
 @pytest.mark.parametrize("nombre", RESOLUCIONES)
-def test_gestion_tareas_sin_errores_axe_ni_scroll_horizontal(live_server, page, tutor_logueado, ruta, nombre):
+def test_gestion_tareas_sin_errores_axe_ni_scroll_horizontal(
+    live_server, page, tutor_logueado, ruta, nombre
+):
     ancho, alto = RESOLUCIONES[nombre]
     page.set_viewport_size({"width": ancho, "height": alto})
     page.goto(live_server.url + ruta)
