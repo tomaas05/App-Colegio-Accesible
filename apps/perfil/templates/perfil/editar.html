@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Perfil visual de {{ estudiante.usuario.first_name }} · Despega{% endblock %}
+{% block estilos %}
+<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
+<link rel="stylesheet" href="{% static 'css/perfil.css' %}">
+{% endblock %}
+
+{% block cabecera %}
+<div class="cabecera-adulto">
+  <p><strong>Despega</strong></p>
+  <form method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block contenido %}
+{# Boceto B52 · Tutor · Perfil visual (HU-04-01, AGENDA-227). #}
+<div class="perfil-pagina">
+  <div class="cab-acceso">
+    <a class="boton boton--aux" href="{% url 'perfil:lista' %}"><span aria-hidden="true">‹</span> Mis estudiantes</a>
+    <h1 id="titulo">Perfil visual</h1>
+    <span class="cab-acceso__sub">Estudiante: {{ estudiante.usuario.get_full_name }} ({{ estudiante.clase.nombre }})</span>
+  </div>
+
+  {% if messages %}
+  <div class="aviso-ok" role="status">
+    {% for mensaje in messages %}
+    <p><span aria-hidden="true">✓</span> {{ mensaje }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="perfil-rejilla">
+    <form method="post" class="formulario perfil-form" id="perfil-form" novalidate>
+      {% csrf_token %}
+
+      <fieldset class="grupo-opciones">
+        <legend>Tema</legend>
+        <div class="opciones-lista">
+          {% for radio in form.tema %}
+          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="grupo-opciones">
+        <legend>Paleta de colores</legend>
+        <div class="opciones-lista">
+          {% for radio in form.paleta %}
+          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="grupo-opciones">
+        <legend>Tipo de letra</legend>
+        <div class="opciones-lista">
+          {% for radio in form.tipo_letra %}
+          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="grupo-opciones">
+        <legend>Tamaño de letra</legend>
+        <div class="opciones-lista">
+          {% for radio in form.tamano_letra %}
+          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="grupo-opciones">
+        <legend>Tamaño de los botones</legend>
+        <div class="opciones-lista">
+          {% for radio in form.tamano_botones %}
+          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="grupo-opciones">
+        <legend>Lector de pantalla</legend>
+        <label class="opcion-check">
+          {{ form.usa_lector_pantalla }}
+          <span>El estudiante usa lector de pantalla (la aplicación no reproduce su propia voz)</span>
+        </label>
+      </fieldset>
+
+      <button class="boton boton--principal" type="submit">Guardar perfil visual</button>
+    </form>
+
+    <section
+      class="perfil-previa"
+      id="perfil-previa"
+      aria-labelledby="perfil-previa-tit"
+      data-tema="{{ perfil.tema }}"
+      data-paleta="{{ perfil.paleta }}"
+      data-fuente="{{ perfil.tipo_letra }}"
+      data-letra="{{ perfil.tamano_letra }}"
+      data-botones="{{ perfil.tamano_botones }}"
+    >
+      <h2 id="perfil-previa-tit">Vista previa en vivo</h2>
+      <p class="perfil-previa__resumen" id="perfil-previa-resumen">
+        Tema {{ perfil.get_tema_display|lower }} · Paleta {{ perfil.get_paleta_display|lower }} · {{ perfil.get_tipo_letra_display }} {{ perfil.tamano_letra }} px · Botones {{ perfil.tamano_botones }} px
+      </p>
+      <div class="perfil-previa__marco">
+        <div class="perfil-previa__tarjeta">
+          <div>
+            <p class="perfil-previa__hora">10:30 – 11:00 · Ahora</p>
+            <p class="perfil-previa__nombre">Lavarse las manos</p>
+          </div>
+        </div>
+        <button type="button" class="boton perfil-previa__boton">Terminar tarea</button>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/perfil.js' %}" defer></script>
+{% endblock %}

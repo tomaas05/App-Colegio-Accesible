@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Perfil visual · Mis estudiantes · Despega{% endblock %}
+{% block estilos %}
+<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
+<link rel="stylesheet" href="{% static 'css/perfil.css' %}">
+{% endblock %}
+
+{% block cabecera %}
+<div class="cabecera-adulto">
+  <p><strong>Despega</strong></p>
+  <form method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block contenido %}
+<div class="perfil-pagina">
+  <div class="cab-acceso">
+    <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Panel</a>
+    <h1 id="titulo">Perfil visual · Mis estudiantes</h1>
+  </div>
+
+  <p class="perfil-intro">Elige un estudiante para configurar su tema, paleta de colores, tipo y tamaño de letra, tamaño de botones y lector de pantalla.</p>
+
+  {% if estudiantes %}
+  <ul class="perfil-estudiantes" aria-labelledby="titulo">
+    {% for est in estudiantes %}
+    <li>
+      <a class="perfil-estudiante-card" href="{% url 'perfil:editar' est.codigo_estudiante %}">
+        <img class="perfil-estudiante-card__avatar" src="{{ est.avatar.url }}" alt="" width="64" height="64">
+        <span class="perfil-estudiante-card__info">
+          <b>{{ est.usuario.get_full_name }}</b>
+          <span>{{ est.clase.nombre }} · Tema {{ est.perfil.get_tema_display|lower }} · {{ est.perfil.get_paleta_display }} · {{ est.perfil.tamano_letra }} px</span>
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No tienes estudiantes asignados actualmente.</p>
+  {% endif %}
+</div>
+{% endblock %}

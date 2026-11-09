@@ -75,6 +75,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.perfil.context_processors.perfil_estudiante",
             ],
         },
     },
@@ -136,6 +137,7 @@ AXES_LOCKOUT_TEMPLATE = "usuarios/bloqueado.html"
 LOGIN_URL = "inicio"
 LOGIN_REDIRECT_URL = "usuarios:panel"
 LOGOUT_REDIRECT_URL = "inicio"
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # ---------------------------------------------------------------------------
 # Idioma y hora
