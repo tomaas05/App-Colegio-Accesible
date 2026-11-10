@@ -57,6 +57,11 @@ OPCIONES_POR_ROL = {
     Rol.TUTOR: [
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
         ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
+        (
+            "Perfil visual",
+            "Tema, colores, letra, botones y lector de pantalla de tus estudiantes.",
+            "perfil:lista",
+        ),
     ],
     Rol.PROFESIONAL: [
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),

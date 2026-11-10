@@ -31,8 +31,43 @@
 }
 @font-face {
   font-family: "Nunito";
+  src: url("../fonts/nunito-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
   src: url("../fonts/nunito-latin-800-normal.woff2") format("woff2");
   font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("../fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("../fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2");
+  font-weight: 700 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lexend";
+  src: url("../fonts/lexend-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lexend";
+  src: url("../fonts/lexend-latin-700-normal.woff2") format("woff2");
+  font-weight: 700 800;
   font-style: normal;
   font-display: swap;
 }
@@ -71,4 +106,124 @@
   /* Formas */
   --radio-tarjeta: 1.5rem;
   --radio-boton: 999px;
+}
+
+/* --- Personalización por perfil del estudiante (HU-04-01) --- */
+
+/* Paleta suave (tema claro) — contraste ≥ 5,1:1 */
+html[data-paleta="suave"] {
+  --petroleo: #164652;
+  --verde-oscuro: #216b67;
+  --verde: #469e96;
+  --menta: #edf6f3;
+  --menta-hover: #dfeee9;
+  --texto: #233135;
+  --gris: #526368;
+  --blanco: #fafdfb;
+}
+
+/* Paleta de alto contraste (tema claro) — contraste AAA ≥ 8:1 */
+html[data-paleta="alto_contraste"] {
+  --petroleo: #002233;
+  --verde-oscuro: #003d52;
+  --verde: #005570;
+  --menta: #e6f2ff;
+  --menta-hover: #cce4ff;
+  --texto: #000000;
+  --gris: #222b2e;
+  --blanco: #ffffff;
+  --error: #8a1c00;
+  --error-fondo: #fff5f0;
+  --focus: #003399;
+}
+
+/* Tema oscuro (paleta estándar) — contraste ≥ 6,8:1 */
+html[data-tema="oscuro"] {
+  --petroleo: #b8ece3;
+  --verde-oscuro: #88d9cb;
+  --verde: #4db8ae;
+  --menta: #182f37;
+  --menta-hover: #223f49;
+  --aviso-fondo: #2b2212;
+  --error: #ffb570;
+  --error-fondo: #2d1606;
+  --texto: #f2f7f6;
+  --gris: #b8ccd0;
+  --blanco: #0f1d22;
+  --focus: #70b8ff;
+}
+
+/* Tema oscuro + paleta suave — contraste ≥ 6,5:1 */
+html[data-tema="oscuro"][data-paleta="suave"] {
+  --petroleo: #c4efe7;
+  --verde-oscuro: #96dfd2;
+  --menta: #1f333a;
+  --menta-hover: #29414a;
+  --texto: #eaf2f0;
+  --gris: #c2d4d8;
+  --blanco: #162429;
+}
+
+/* Tema oscuro + alto contraste — contraste AAA ≥ 10:1 */
+html[data-tema="oscuro"][data-paleta="alto_contraste"] {
+  --petroleo: #ffffff;
+  --verde-oscuro: #99f2e6;
+  --verde: #66e0d0;
+  --menta: #0d1f26;
+  --menta-hover: #16303b;
+  --texto: #ffffff;
+  --gris: #d9e6e8;
+  --blanco: #000000;
+  --error: #ffd1a6;
+  --error-fondo: #260d00;
+  --focus: #99ccff;
+}
+/* Tipo de letra (RF4.1.2) */
+html[data-fuente="nunito"] {
+  --fuente-texto: "Nunito", Arial, sans-serif;
+  --fuente-titulos: "Nunito", Arial, sans-serif;
+}
+html[data-fuente="open_sans"] {
+  --fuente-texto: "Open Sans", Arial, sans-serif;
+  --fuente-titulos: "Open Sans", Arial, sans-serif;
+}
+html[data-fuente="atkinson"] {
+  --fuente-texto: "Atkinson Hyperlegible", Verdana, sans-serif;
+  --fuente-titulos: "Atkinson Hyperlegible", Verdana, sans-serif;
+}
+html[data-fuente="lexend"] {
+  --fuente-texto: "Lexend", "Trebuchet MS", sans-serif;
+  --fuente-titulos: "Lexend", "Trebuchet MS", sans-serif;
+}
+
+/* Tamaño de letra en px CSS (RF4.1.2: 16, 20, 24 o 32 px) */
+html[data-letra="16"] {
+  --tamano-base: 1rem;
+}
+html[data-letra="20"] {
+  --tamano-base: 1.25rem;
+}
+html[data-letra="24"] {
+  --tamano-base: 1.5rem;
+}
+html[data-letra="32"] {
+  --tamano-base: 2rem;
+}
+
+/* Tamaño de los botones (RF4.1.3: 48, 64 u 80 px) */
+html[data-botones="48"] {
+  --toque: 3rem;
+  --toque-grande: 3rem;
+}
+html[data-botones="64"] {
+  --toque: 4rem;
+  --toque-grande: 4rem;
+}
+html[data-botones="80"] {
+  --toque: 5rem;
+  --toque-grande: 5rem;
+}
+html[data-botones] :is(button, .boton) {
+  line-height: 1.1;
+  padding-block: 0.2rem;
 }

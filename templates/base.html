@@ -1,6 +1,6 @@
 {% load static %}<!DOCTYPE html>
-<html lang="es">
-<head>
+<html lang="es"{% if perfil_activo %} data-tema="{{ perfil_activo.tema }}" data-paleta="{{ perfil_activo.paleta }}" data-fuente="{{ perfil_activo.tipo_letra }}" data-letra="{{ perfil_activo.tamano_letra }}" data-botones="{{ perfil_activo.tamano_botones }}"{% endif %}>
+  <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Despega{% endblock %}</title>

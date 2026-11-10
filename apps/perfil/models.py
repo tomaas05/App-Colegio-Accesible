@@ -23,7 +23,7 @@ class Paleta(models.TextChoices):
 
 
 class TipoLetra(models.TextChoices):
-    # Provisional: las tres fuentes definitivas las decide HU-04-01.
+    NUNITO = "nunito", "Nunito"
     OPEN_SANS = "open_sans", "Open Sans"
     ATKINSON = "atkinson", "Atkinson Hyperlegible"
     LEXEND = "lexend", "Lexend"
@@ -73,7 +73,7 @@ class Perfil(models.Model):
     tema = models.CharField(max_length=10, choices=Tema.choices, default=Tema.CLARO)
     paleta = models.CharField(max_length=20, choices=Paleta.choices, default=Paleta.ESTANDAR)
     tipo_letra = models.CharField(
-        max_length=20, choices=TipoLetra.choices, default=TipoLetra.OPEN_SANS
+        max_length=20, choices=TipoLetra.choices, default=TipoLetra.NUNITO
     )
     tamano_letra = models.PositiveSmallIntegerField(
         "tamaño de letra", choices=TamanoLetra.choices, default=TamanoLetra.MEDIANA
