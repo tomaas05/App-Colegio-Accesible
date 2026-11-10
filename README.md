@@ -14,9 +14,9 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/panel/` | Pantalla principal del adulto, con su nombre y sus opciones (B13) | HU-01-07 | Manu |
 | `/usuarios/` | Cuentas con filtros (B20), crear cuenta (B21) y cargar una lista de estudiantes desde un CSV. Solo el administrador | HU-01-01 | Manu |
 | `/agenda/` | Agenda del día del estudiante | HU-02-01 a HU-02-04 | Tomás |
-| `/agenda/tarea/<id>/` | Detalle de una tarea: pasos, Empezar y Terminar | HU-02-02 a HU-02-04 | Tomás |
+| `/agenda/tarea/<id>/` | Detalle de una tarea: pasos, temporizador, Empezar y Terminar | HU-02-02 a HU-02-04 · HU-07-01 | Tomás · Jorge |
 | `/tareas/crear/` · `/tareas/catalogo/` | Crear una tarea y ver las creadas | HU-03-01 | Úrsula |
-| `/perfil/` · `/perfil/<codigo>/` | Elegir estudiante y configurar su perfil visual (B52) | HU-04-01 | Jorge |
+| `/perfil/` · `/perfil/<codigo>/` | Elegir estudiante y configurar su perfil visual y temporizador (B52, B54) | HU-04-01 · HU-07-01 | Jorge |
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
 

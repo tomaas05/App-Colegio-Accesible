@@ -1,0 +1,68 @@
+{% load temporizador %}
+{% datos_temporizador fin=fin perfil=perfil as temp %}
+<section
+  class="tiempo"
+  aria-label="Tiempo restante de la tarea"
+  data-temporizador
+  data-restante-seg="{{ temp.segundos_restantes }}"
+  data-duracion-seg="{{ temp.duracion_total }}"
+  data-tipo="{{ temp.tipo }}"
+>
+  <div id="temporizador-cuerpo" class="tiempo__cuerpo" data-temporizador-cuerpo{% if not temp.visible %} hidden{% endif %}>
+    <span class="resto" data-temporizador-texto>{{ temp.texto_restante }}</span>
+
+    {% if temp.tipo == "lineal" %}
+    <div
+      class="lineal"
+      role="progressbar"
+      aria-label="Tiempo que queda"
+      aria-valuenow="{{ temp.porcentaje }}"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      data-temporizador-barra
+    >
+      <div class="relleno" data-temporizador-relleno data-porcentaje="{{ temp.porcentaje }}"></div>
+    </div>
+    {% elif temp.tipo == "radial" %}
+    <div
+      class="temporizador-radial-envoltorio"
+      role="progressbar"
+      aria-label="Tiempo que queda"
+      aria-valuenow="{{ temp.porcentaje }}"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      data-temporizador-barra
+    >
+      <svg class="temporizador-radial-svg" viewBox="0 0 88 88" aria-hidden="true">
+        <circle class="temporizador-radial-fondo" cx="44" cy="44" r="36"></circle>
+        <circle
+          class="temporizador-radial-arco"
+          cx="44"
+          cy="44"
+          r="36"
+          stroke-dasharray="{{ temp.circunferencia }}"
+          stroke-dashoffset="{{ temp.offset_radial }}"
+          data-temporizador-arco
+        ></circle>
+      </svg>
+      <span class="temporizador-radial-texto" data-temporizador-corto aria-hidden="true">{{ temp.texto_corto }}</span>
+    </div>
+    {% elif temp.tipo == "numerico" %}
+    <div class="temporizador-numerico" data-temporizador-reloj aria-label="Cuenta atrás en minutos y segundos">
+      {{ temp.mm_ss }}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if temp.puede_ocultar %}
+  <button
+    type="button"
+    class="boton boton--aux tiempo__boton-ocultar"
+    data-ocultar-temporizador
+    aria-controls="temporizador-cuerpo"
+    aria-expanded="{% if temp.visible %}true{% else %}false{% endif %}"
+  >
+    {% if temp.visible %}Ocultar tiempo{% else %}Mostrar tiempo{% endif %}
+  </button>
+  {% endif %}
+</section>

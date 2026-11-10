@@ -365,3 +365,88 @@ dialog.confirmar::backdrop {
 .fila-botones .boton {
   min-width: 6.5rem;
 }
+
+/* --- Temporizador de tarea en curso (HU-07-01) --- */
+.tiempo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--blanco);
+  border: 3px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+}
+.tiempo__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.tiempo__cuerpo[hidden] {
+  display: none;
+}
+.tiempo .resto {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--petroleo);
+}
+.tiempo .lineal {
+  height: 1.4rem;
+  overflow: hidden;
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: var(--radio-boton);
+}
+.tiempo .relleno {
+  width: 100%;
+  height: 100%;
+  background: var(--verde);
+  transition: width 0.3s linear;
+}
+.temporizador-radial-envoltorio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 5.5rem;
+  height: 5.5rem;
+}
+.temporizador-radial-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.temporizador-radial-fondo {
+  fill: none;
+  stroke: var(--menta);
+  stroke-width: 8;
+}
+.temporizador-radial-arco {
+  fill: none;
+  stroke: var(--petroleo);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s linear;
+}
+.temporizador-radial-texto {
+  position: absolute;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--petroleo);
+}
+.temporizador-numerico {
+  align-self: flex-start;
+  padding: 0.25rem 0.8rem;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 1.75rem;
+  color: var(--petroleo);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 0.8rem;
+}
+.tiempo__boton-ocultar {
+  align-self: flex-start;
+}
