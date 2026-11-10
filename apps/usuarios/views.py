@@ -64,6 +64,11 @@ OPCIONES_POR_ROL = {
             "Crear y editar clases, desde la administración de Django.",
             "admin:usuarios_clase_changelist",
         ),
+        (
+            "Horario escolar",
+            "Qué asignatura o taller tiene cada clase en cada franja.",
+            "horario:cargar",
+        ),
         ("Vínculos", "Tutor y familiar de cada estudiante.", "usuarios:vinculos"),
     ],
     Rol.TUTOR: [
