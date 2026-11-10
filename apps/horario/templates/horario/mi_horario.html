@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Mi horario · {{ dia.label }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}"><link rel="stylesheet" href="{% static 'css/horario.css' %}">{% endblock %}
+
+{% block cabecera %}
+<a class="boton boton--aux" href="{% url 'agenda:dia' %}"><span aria-hidden="true">‹</span> Mi agenda</a>
+{% endblock %}
+
+{% block contenido %}
+{# HU-03-11, PA1 y PA4: el estudiante ve el horario de su clase, con imagen y nombre. #}
+<div class="mi-horario">
+  <h1>Mi horario{% if es_hoy %}: hoy, {{ dia.label|lower }}{% else %}: {{ dia.label|lower }}{% endif %}</h1>
+
+  <nav aria-label="Elegir día">
+    <ul class="mi-horario__dias">
+      {% for valor, nombre in dias %}
+      <li><a class="boton boton--aux" href="?dia={{ valor }}"{% if valor == dia.value %} aria-current="page"{% endif %}>{{ nombre }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  {% if casillas %}
+  <ol class="mi-horario__lista">
+    {% for casilla in casillas %}
+    <li class="mi-horario__casilla">
+      <img src="{{ casilla.asignatura.imagen.url }}" alt="" width="96" height="96">
+      <div>
+        <b>{{ casilla.asignatura.nombre }}</b>
+        <span>{{ casilla.franja.hora_inicio|time:"H:i" }} – {{ casilla.franja.hora_fin|time:"H:i" }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="mi-horario__vacio">Este día no hay clase.</p>
+  {% endif %}
+</div>
+{% endblock %}

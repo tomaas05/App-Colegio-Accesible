@@ -20,6 +20,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("agenda/", include("apps.agenda.urls")),
     path("tareas/", include("apps.tareas.urls")),
+    path("horario/", include("apps.horario.urls")),
     # Entrar, salir y panel del adulto: /entrar/, /salir/ y /panel/ (HU-01-07).
     path("", include("apps.usuarios.urls")),
 ]

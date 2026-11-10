@@ -1,0 +1,169 @@
+/*
+ * Despega · Horario escolar (Javi). HU-03-11: B37 (administrador) y «Mi horario»
+ * (estudiante). Boceto: docs/iteracion-1/bocetos/despega_mockup_v3.html.
+ * Solo variables de tokens.css y rem.
+ */
+
+/* --- B37 · Administrador --- */
+.horario__clase,
+.horario__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+.horario__clase .campo,
+.horario__form .campo {
+  flex: 1 1 12rem;
+}
+.horario .campo select {
+  min-height: var(--toque);
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  color: var(--texto);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 0.75rem;
+}
+.horario .boton--aux {
+  min-height: var(--toque);
+}
+.horario .aviso-ok {
+  padding: 0.75rem 1rem;
+  background: var(--menta);
+  border: 3px solid var(--verde-oscuro);
+  border-radius: 1rem;
+}
+.horario .aviso-ok p {
+  margin: 0;
+  font-weight: 700;
+}
+.horario section h2 {
+  margin-bottom: 0.75rem;
+}
+.horario__caja {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 2px solid var(--menta);
+  border-radius: 1rem;
+}
+.horario__caja:focus-visible {
+  outline: var(--foco-grosor) solid var(--focus);
+  outline-offset: var(--foco-separacion);
+}
+.horario__tabla {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+}
+.horario__tabla caption {
+  padding: 0.75rem 1rem;
+  color: var(--gris);
+  text-align: left;
+}
+.horario__tabla th,
+.horario__tabla td {
+  padding: 0.5rem;
+  vertical-align: top;
+  text-align: left;
+  border-top: 1px solid var(--menta);
+}
+.horario__tabla thead th {
+  font-family: var(--fuente-titulos);
+  color: var(--petroleo);
+  background: var(--menta);
+}
+.horario__tabla tbody th {
+  white-space: nowrap;
+  color: var(--petroleo);
+}
+.horario__tabla td form {
+  margin-top: 0.4rem;
+}
+.horario__asignatura {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+.horario__asignatura img {
+  flex: none;
+  border-radius: 0.5rem;
+}
+.horario__quitar {
+  font-size: 1rem;
+}
+.horario__libre {
+  color: var(--gris);
+  font-style: italic;
+}
+.horario__poner {
+  padding: 1.25rem;
+  border: 2px solid var(--menta);
+  border-radius: 1.25rem;
+}
+.horario__poner p {
+  margin-top: 0.75rem;
+}
+
+/* --- Mi horario (estudiante): grande, con imagen y nombre --- */
+.mi-horario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: min(48rem, 100%);
+  margin-inline: auto;
+}
+.mi-horario h1 {
+  margin: 0;
+}
+.mi-horario__dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mi-horario__dias .boton {
+  min-height: var(--toque);
+}
+/* El día elegido: fondo y borde grueso, no solo el color. */
+.mi-horario__dias [aria-current="page"] {
+  color: var(--blanco);
+  background: var(--petroleo);
+  border-width: 3px;
+}
+.mi-horario__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mi-horario__casilla {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+}
+.mi-horario__casilla img {
+  flex: none;
+  border-radius: 1rem;
+}
+.mi-horario__casilla div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.mi-horario__casilla b {
+  font-family: var(--fuente-titulos);
+  font-size: 1.5rem;
+  color: var(--petroleo);
+}
+.mi-horario__vacio {
+  font-size: 1.25rem;
+}

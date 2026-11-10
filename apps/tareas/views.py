@@ -5,6 +5,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
+from apps.horario.servicios import choca_con_horario_escolar
+from apps.usuarios.models import Rol
+
 from .forms import AsignacionForm, PasoFormSet, TareaForm
 from .models import Tarea
 
@@ -158,6 +161,21 @@ def asignar_tarea(request, tarea_id=None):
 
     if request.method == "POST":
         form = AsignacionForm(request.POST)
+        # HU-03-11, PA5 (Javi): el familiar solo pone tareas para casa fuera del horario escolar.
+        if (
+            form.is_valid()
+            and request.user.rol == Rol.FAMILIAR
+            and choca_con_horario_escolar(
+                form.cleaned_data["dias_semana"],
+                form.cleaned_data["hora_inicio"],
+                form.cleaned_data["hora_fin"],
+            )
+        ):
+            form.add_error(
+                None,
+                "Esas horas son de horario escolar. Las tareas para casa se ponen fuera "
+                "de las horas de clase.",
+            )
         if form.is_valid():
             tarea = form.cleaned_data["tarea"]
             estudiantes = form.cleaned_data["estudiantes"]

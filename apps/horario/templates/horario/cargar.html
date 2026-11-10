@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Horario escolar{% if clase %} · {{ clase.nombre }}{% endif %} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/horario.css' %}">{% endblock %}
+
+{% block cabecera %}
+<div class="cabecera-adulto">
+  <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Volver</a>
+  <form method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block contenido %}
+{# Boceto B37 · Administrador · Horario escolar. HU-03-11 (AGENDA-222). #}
+<div class="panel horario">
+  <h1>Horario escolar</h1>
+
+  {% if not clase %}
+  <p>Todavía no hay clases. Créalas primero.</p>
+  {% else %}
+  <form class="horario__clase" method="get">
+    <div class="campo">
+      <label for="clase">Clase</label>
+      <select id="clase" name="clase">
+        {% for c in clases %}<option value="{{ c.pk }}"{% if c.pk == clase.pk %} selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="boton--aux" type="submit">Ver horario</button>
+  </form>
+
+  {% if messages %}
+  <div class="aviso-ok" role="status">
+    {% for mensaje in messages %}<p><span aria-hidden="true">✓</span> {{ mensaje }}</p>{% endfor %}
+  </div>
+  {% endif %}
+  {% if error %}
+  {# PA3: si la casilla ya está ocupada no se guarda y se dice. #}
+  <div class="aviso-error" role="alert">
+    <span class="aviso-error__ico" aria-hidden="true">⚠</span>
+    <p>{{ error }}</p>
+  </div>
+  {% endif %}
+
+  <section aria-labelledby="horario-tabla">
+    <h2 id="horario-tabla">Horario de {{ clase.nombre }}</h2>
+    {% if filas %}
+    {# La tabla va en su caja: en el móvil se desplaza ella, no la página. #}
+    <div class="horario__caja" role="region" aria-labelledby="horario-tabla" tabindex="0">
+      <table class="horario__tabla">
+        <caption>Franjas horarias del centro (las mismas todos los días) y lo que tiene {{ clase.nombre }} en cada una.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Franja</th>
+            {% for valor, nombre in dias %}<th scope="col">{{ nombre }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in filas %}
+          <tr>
+            <th scope="row">{{ fila.franja.hora_inicio|time:"H:i" }} – {{ fila.franja.hora_fin|time:"H:i" }}</th>
+            {% for casilla in fila.casillas %}
+            <td>
+              {% if casilla %}
+              {# PA4: cada asignatura o taller con su imagen y su nombre. #}
+              <div class="horario__asignatura">
+                <img src="{{ casilla.asignatura.imagen.url }}" alt="" width="40" height="40">
+                <span>{{ casilla.asignatura.nombre }}</span>
+              </div>
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="clase" value="{{ clase.pk }}">
+                <input type="hidden" name="dia" value="{{ casilla.dia_semana }}">
+                <input type="hidden" name="franja" value="{{ fila.franja.pk }}">
+                <button class="boton--aux horario__quitar" type="submit" name="quitar" value="1" aria-label="Quitar {{ casilla.asignatura.nombre }} del {{ casilla.get_dia_semana_display|lower }} a las {{ fila.franja.hora_inicio|time:'H:i' }}">Quitar</button>
+              </form>
+              {% else %}
+              <span class="horario__libre">Libre</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>Todavía no hay franjas horarias. Créalas en la administración («Franjas horarias»).</p>
+    {% endif %}
+  </section>
+
+  {% if filas %}
+  <section class="horario__poner" aria-labelledby="horario-poner">
+    <h2 id="horario-poner">Poner una asignatura o taller</h2>
+    <form method="post" class="horario__form">
+      {% csrf_token %}
+      <input type="hidden" name="clase" value="{{ clase.pk }}">
+      <div class="campo">
+        <label for="dia">Día</label>
+        <select id="dia" name="dia" required>
+          {% for valor, nombre in dias %}<option value="{{ valor }}"{% if valor == elegido.dia %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="franja">Franja</label>
+        <select id="franja" name="franja" required>
+          {% for franja in franjas %}<option value="{{ franja.pk }}"{% if franja.pk == elegido.franja %} selected{% endif %}>{{ franja.hora_inicio|time:"H:i" }} – {{ franja.hora_fin|time:"H:i" }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="asignatura">Asignatura o taller</label>
+        <select id="asignatura" name="asignatura" required>
+          <option value="">Elige una</option>
+          {% for a in asignaturas %}<option value="{{ a.pk }}"{% if a.pk == elegido.asignatura %} selected{% endif %}>{{ a.nombre }} ({{ a.get_tipo_display|lower }})</option>{% endfor %}
+        </select>
+      </div>
+      <button class="boton boton--principal" type="submit">Poner</button>
+    </form>
+    <p class="panel__rol">Las asignaturas, los talleres y sus imágenes se crean en la administración.</p>
+  </section>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

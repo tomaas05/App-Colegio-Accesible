@@ -29,6 +29,9 @@
   </ol>
   {% endif %}
 
+  {# HU-03-11, PA1 (Javi): el estudiante ve el horario de su clase. #}
+  <p class="ver-horario"><a class="boton boton--aux" href="{% url 'horario:mi_horario' %}">Ver mi horario de clase</a></p>
+
   <div id="siguiente" class="pie-siguiente" role="status">{% include "agenda/_aviso_siguiente.html" %}</div>
 </div>
 {% endblock %}

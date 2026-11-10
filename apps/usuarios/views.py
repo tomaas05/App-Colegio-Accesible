@@ -34,6 +34,11 @@ OPCIONES_POR_ROL = {
             "Mientras no estén sus pantallas, desde la administración de Django.",
             "admin:index",
         ),
+        (
+            "Horario escolar",
+            "Qué asignatura o taller tiene cada clase en cada franja.",
+            "horario:cargar",
+        ),
     ],
     Rol.TUTOR: [
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
