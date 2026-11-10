@@ -409,3 +409,132 @@ a.boton {
 .aviso-vacio {
   font-size: 1.25rem;
 }
+
+/* --- HU-01-08 · B26 Elegir mis estudiantes (Javi) --- */
+.aviso-ok {
+  padding: 0.75rem 1rem;
+  background: var(--menta);
+  border: 3px solid var(--verde-oscuro);
+  border-radius: 1rem;
+}
+.aviso-ok p {
+  margin: 0;
+  font-weight: 700;
+}
+.elegir__cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+.elegir__tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 2px solid var(--menta);
+  border-radius: 1.25rem;
+}
+.elegir__tarjeta form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.elegir__tarjeta .elegir__filtros {
+  flex-flow: row wrap;
+  align-items: flex-end;
+}
+.elegir__filtros .campo {
+  flex: 1 1 10rem;
+}
+.campo select {
+  min-height: var(--toque);
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  color: var(--texto);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 0.75rem;
+}
+.elegir__filtros .boton--aux {
+  min-height: var(--toque);
+}
+.elegir__lista {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.elegir__lista legend {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+.elegir__lista ul,
+.elegir__mios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.elegir__estudiante {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--toque-grande);
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.elegir__estudiante:hover {
+  background: var(--menta-hover);
+}
+/* Elegido = casilla marcada + fondo menta + borde doble (no solo el color). */
+.elegir__estudiante:has(input:checked) {
+  background: var(--menta);
+  border-width: 0.375rem;
+  border-style: double;
+}
+.elegir__estudiante input {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  accent-color: var(--petroleo);
+}
+.elegir__estudiante img,
+.elegir__mios img {
+  flex: none;
+  border-radius: 50%;
+}
+.elegir__estudiante span,
+.elegir__nombre {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.elegir__estudiante b {
+  font-family: var(--fuente-titulos);
+  color: var(--petroleo);
+}
+.elegir__estudiante small,
+.elegir__nombre small {
+  color: var(--gris);
+}
+.elegir__mios li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.elegir__nombre {
+  flex: 1;
+}
+.elegir__mios form {
+  margin-left: auto;
+}
+.elegir__mios .boton--aux,
+.cabecera-adulto .boton--aux {
+  min-height: var(--toque);
+}

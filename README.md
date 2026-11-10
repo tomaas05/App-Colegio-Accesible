@@ -15,6 +15,7 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/agenda/` | Agenda del día del estudiante | HU-02-01 a HU-02-04 | Tomás |
 | `/agenda/tarea/<id>/` | Detalle de una tarea: pasos, Empezar y Terminar | HU-02-02 a HU-02-04 | Tomás |
 | `/tareas/crear/` · `/tareas/catalogo/` | Crear una tarea y ver las creadas | HU-03-01 | Úrsula |
+| `/panel/mis-estudiantes/` | El profesional elige en la lista del centro los estudiantes que atiende (B26) | HU-01-08 | Javi |
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
 
