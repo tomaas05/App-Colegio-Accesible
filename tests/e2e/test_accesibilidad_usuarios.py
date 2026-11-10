@@ -202,3 +202,56 @@ def test_cargar_lista_con_resultado(live_server, page, client, datos, nombre, tm
     page.click("main form button[type=submit]")
     assert "Se ha creado 1 cuenta" in page.content()
     revisar(page, nombre)
+
+
+# --- HU-01-04 · Vínculos (B25) y «Tus estudiantes» en el panel ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_vinculos_con_el_aviso_de_un_segundo_familiar(live_server, page, client, datos, nombre):
+    """B25 con Lucía elegida, el aviso de cambio de tutor y el error de un segundo familiar."""
+    como_admin(page, live_server, client)
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + reverse("usuarios:vinculos"))
+    revisar(page, nombre)
+    page.goto(live_server.url + reverse("usuarios:vinculos") + "?estudiante=A01")
+    revisar(page, nombre)
+
+    page.select_option("#id_tutor", label="Pedro Gómez Sanz")
+    aviso = page.locator("[data-aviso-tutor]")
+    assert aviso.is_visible()
+    assert "de Ana Martín Ruiz a Pedro Gómez Sanz" in aviso.inner_text()
+    revisar(page, nombre)
+
+    page.select_option("#id_nuevo_familiar", label="Javier Ortega Ramos")
+    page.click("button[value=anadir]")
+    assert page.locator("[role=alert]").is_visible()
+    assert "Solo puede tener uno" in page.content()
+    revisar(page, nombre)
+
+
+def test_vinculos_buscar_filtra_la_lista_sin_recargar(live_server, page, client, datos):
+    como_admin(page, live_server, client)
+    page.goto(live_server.url + reverse("usuarios:vinculos"))
+    page.fill("#vinculos-q", "pablo")
+    opciones = page.locator("#vinculos-est option")
+    assert opciones.count() == 1
+    assert opciones.first.inner_text() == "Pablo Díaz"
+    page.fill("#vinculos-q", "nadie")
+    assert page.locator("#vinculos-est option").first.inner_text() == "Ningún estudiante coincide"
+    page.fill("#vinculos-q", "lucia")  # sin tilde también la encuentra
+    page.click("text=Ver sus vínculos")
+    assert page.locator("h2", has_text="Lucía Fernández").is_visible()
+
+
+def test_vinculos_cambiar_familiar_y_guardar(live_server, page, client, datos):
+    """El recorrido completo: quitar a Carmen, añadir a Javier y guardar."""
+    como_admin(page, live_server, client)
+    page.goto(live_server.url + reverse("usuarios:vinculos") + "?estudiante=A01")
+    page.click("button[value=quitar]")
+    assert page.locator("text=Hay cambios sin guardar").is_visible()
+    page.select_option("#id_nuevo_familiar", label="Javier Ortega Ramos")
+    page.click("button[value=anadir]")
+    page.click("button[value=guardar]")
+    assert "Vínculos de Lucía Fernández guardados." in page.content()
+    assert page.locator(".vinculos__persona", has_text="Javier Ortega Ramos").is_visible()
