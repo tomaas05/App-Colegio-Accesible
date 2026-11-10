@@ -12,6 +12,12 @@ urlpatterns = [
     path("panel/", views.panel, name="panel"),
     # HU-01-08: el profesional elige los estudiantes que atiende (B26).
     path("panel/mis-estudiantes/", views.mis_estudiantes, name="mis_estudiantes"),
+    # HU-01-09: agenda de uno de ellos, solo consulta (B27).
+    path(
+        "panel/mis-estudiantes/<str:codigo>/agenda/",
+        views.agenda_estudiante,
+        name="agenda_estudiante",
+    ),
     # HU-01-06: la portada «¿Quién eres?» (B01) es la ruta "inicio" de config/urls.py.
     path("estudiante/", views.clases, name="clases"),
     path("estudiante/clase/<int:pk>/", views.avatares, name="avatares"),
