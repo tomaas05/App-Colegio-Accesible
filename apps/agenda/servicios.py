@@ -1,6 +1,7 @@
-"""Lógica de la agenda del estudiante: HU-02-01, HU-02-02, HU-02-03 y HU-02-04.
+"""Lógica de la agenda del estudiante: HU-02-01, HU-02-02, HU-02-03, HU-02-04 y HU-02-05.
 
-Dueño: Tomás. Las vistas (views.py) solo piden datos y llaman a estas funciones.
+Dueño: Tomás (HU-02-05, seguir los pasos: Javi). Las vistas (views.py) solo piden datos y
+llaman a estas funciones.
 Javi reutiliza `agenda_del_dia` en HU-01-09 (agenda de solo lectura del profesional):
 recibe un Estudiante, no mira quién está conectado.
 
@@ -133,9 +134,11 @@ class TareaDelDia:
     def texto_para_escuchar(self):
         """Lo que lee «Escuchar»: nombre, descripción y pasos, sin símbolos decorativos."""
         partes = [self.tarea.nombre, self.tarea.descripcion]
+        # Se numeran por su posición, como en la pantalla («Paso 2 de 4»), aunque el campo
+        # `orden` tenga huecos.
         partes += [
-            f"Paso {p.paso.orden}: {p.paso.descripcion or p.paso.descripcion_imagen}"
-            for p in self.pasos
+            f"Paso {i}: {p.paso.descripcion or p.paso.descripcion_imagen}"
+            for i, p in enumerate(self.pasos, start=1)
         ]
         return ". ".join(x.strip().rstrip(".") for x in partes if x and x.strip()) + "."
 
@@ -153,6 +156,19 @@ class TareaDelDia:
     @cached_property
     def pasos_pendientes(self):
         return sum(1 for p in self.pasos if not p.hecho)
+
+    @cached_property
+    def paso_actual(self):
+        """HU-02-05: el paso que toca hacer (el primero sin hacer), solo con la tarea en
+        marcha. None si la tarea no está en curso o ya están todos hechos."""
+        if not self.en_curso:
+            return None
+        return next((p for p in self.pasos if not p.hecho), None)
+
+    @property
+    def posicion_paso_actual(self):
+        """Número del paso que toca, contando desde 1 («Paso 2 de 4»)."""
+        return self.pasos.index(self.paso_actual) + 1 if self.paso_actual else None
 
     @property
     def puede_empezar(self):
@@ -373,3 +389,51 @@ def terminar(estudiante, asignacion_id, ahora_=None):
         ejecucion.fin_real = ahora_
         ejecucion.save(update_fields=["estado", "fin_real"])
     return ejecucion
+
+
+def marcar_paso_hecho(estudiante, asignacion_id, paso_id, ahora_=None):
+    """HU-02-05: «Hecho» en un paso. Solo vale para el paso que toca (RF2.4.3).
+
+    Se puede con la tarea en marcha (también con el tiempo agotado). Si el paso no es el
+    que toca, no cambia nada (RF2.4.4) y el mensaje dice cuál toca. Si ya estaba hecho
+    (p. ej. un doble toque), tampoco cambia nada y no es un error. No se guarda la hora de
+    cada paso: RF2.4.2 no está comprometido.
+
+    Lanza Asignacion.DoesNotExist si la tarea no es del estudiante o no toca hoy, y
+    Paso.DoesNotExist si el paso no es de esa tarea: la vista responde 404.
+    """
+    ahora_ = ahora_ or ahora()
+    hoy = ahora_.date()
+    asignacion = estudiante.asignaciones.select_related("tarea").get(pk=asignacion_id)
+    if not asignacion.aplica_el(hoy):
+        raise Asignacion.DoesNotExist  # como en tarea_del_dia: la pantalla daría 404
+    paso = asignacion.tarea.pasos.get(pk=paso_id)
+    with transaction.atomic():
+        try:
+            ejecucion = Ejecucion.objects.select_for_update().get(asignacion=asignacion, fecha=hoy)
+        except Ejecucion.DoesNotExist:
+            raise ErrorDeAgenda("Primero tienes que empezar la tarea.") from None
+        avance = ejecucion.pasos.filter(paso=paso).first()
+        if avance and avance.estado == EstadoPaso.HECHO:
+            return avance
+        if ejecucion.estado == EstadoEjecucion.PENDIENTE:
+            raise ErrorDeAgenda("Primero tienes que empezar la tarea.")
+        # «Tiempo agotado» se calcula y no se guarda, pero si algún día se guarda la tarea
+        # sigue en marcha, igual que en la pantalla (TareaDelDia.en_curso).
+        if ejecucion.estado not in (EstadoEjecucion.EN_CURSO, EstadoEjecucion.TIEMPO_AGOTADO):
+            raise ErrorDeAgenda("Esta tarea ya no está en marcha.")
+        # Solo con la tarea en marcha: crea el avance de los pasos añadidos tras empezar.
+        _asegurar_pasos(ejecucion)
+        avance = avance or ejecucion.pasos.get(paso=paso)
+        toca = (
+            ejecucion.pasos.filter(estado=EstadoPaso.PENDIENTE)
+            .select_related("paso")
+            .order_by("paso__orden")
+            .first()
+        )
+        if toca.pk != avance.pk:
+            numero = asignacion.tarea.pasos.filter(orden__lt=toca.paso.orden).count() + 1
+            raise ErrorDeAgenda(f"Primero haz el paso {numero}.")
+        avance.estado = EstadoPaso.HECHO
+        avance.save(update_fields=["estado"])
+    return avance
