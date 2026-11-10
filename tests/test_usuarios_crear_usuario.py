@@ -184,6 +184,13 @@ def test_pa2_tras_crear_sale_un_aviso_con_el_usuario(admin):
 # --- PA3: sin nombre o sin rol no se guarda y se indica qué falta ---
 
 
+def test_pa3_los_campos_obligatorios_llevan_asterisco(admin):
+    contenido = admin.get(reverse("usuarios:crear")).content.decode()
+    assert "Los campos con * son obligatorios." in contenido
+    assert '<label for="id_nombre">Nombre *</label>' in contenido
+    assert '<label for="id_apellidos">Apellidos</label>' in contenido  # opcional
+
+
 def test_pa3_sin_nombre_ni_rol_no_se_guarda(admin):
     antes = Usuario.objects.count()
     respuesta = admin.post(reverse("usuarios:crear"), {"rol": "", "nombre": ""})
@@ -421,6 +428,13 @@ def test_la_lista_filtra_por_rol_clase_y_texto(admin):
 
     por_codigo = admin.get(reverse("usuarios:lista"), {"q": "A02"}).content.decode()
     assert "Mateo" in por_codigo and "Lucía" not in por_codigo
+
+
+@pytest.mark.parametrize("texto", ["lucia", "LUCÍA", "lucia fernandez", "fernández"])
+def test_la_lista_busca_sin_mirar_tildes_ni_mayusculas(admin, texto):
+    contenido = admin.get(reverse("usuarios:lista"), {"q": texto}).content.decode()
+    assert "Lucía Fernández" in contenido
+    assert "Mateo" not in contenido
 
 
 def test_la_lista_ensena_tutor_y_familiar_de_cada_estudiante(admin):

@@ -14,6 +14,7 @@
     <div>
       <h1 id="panel-titulo">Hola, {{ user.first_name }}</h1>
       <p class="panel__rol">{{ user.get_rol_display }}</p>
+      {% now "l, j \d\e F · H:i" as ahora %}<p class="panel__fecha">{{ ahora|capfirst }}</p>
     </div>
   </section>
 
@@ -34,5 +35,24 @@
     <p>Todavía no hay opciones para tu perfil.</p>
     {% endif %}
   </section>
+
+  {# HU-01-04: cada adulto ve a sus estudiantes, y solo a los suyos (apps/usuarios/vinculos.py). #}
+  {% if estudiantes is not None %}
+  <section aria-labelledby="panel-estudiantes">
+    <h2 id="panel-estudiantes">Tus estudiantes</h2>
+    {% if estudiantes %}
+    <ul class="panel__estudiantes">
+      {% for estudiante in estudiantes %}
+      <li class="panel__estudiante">
+        <img src="{{ estudiante.avatar.url }}" alt="" width="56" height="56">
+        <span><b>{{ estudiante.usuario.get_full_name }}</b><span>{{ estudiante.clase.nombre }}</span></span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>Todavía no tienes ningún estudiante vinculado. Pídeselo al administrador del centro.</p>
+    {% endif %}
+  </section>
+  {% endif %}
 </div>
 {% endblock %}
