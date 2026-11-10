@@ -1,0 +1,9 @@
+{# Cabecera de las pantallas de los adultos: nombre de la app, quién ha entrado y «Salir». #}
+<div class="cabecera-adulto">
+  <p><strong>Despega</strong>{% if user.is_authenticated %} · {{ user.get_full_name }}{% endif %}</p>
+  {# Salir con POST: Django no cierra la sesión con un simple enlace. #}
+  <form method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+</div>

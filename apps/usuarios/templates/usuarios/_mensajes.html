@@ -1,0 +1,7 @@
+{% if messages %}
+<div class="avisos" role="status">
+  {% for mensaje in messages %}
+  <p class="aviso-ok"><span aria-hidden="true">✓</span> {{ mensaje }}</p>
+  {% endfor %}
+</div>
+{% endif %}
