@@ -148,3 +148,18 @@ def test_mis_estudiantes(live_server, page, client, datos, nombre):
     page.click("text=Guardar")
     assert page.locator("[role=status]").is_visible()
     revisar(page, nombre)
+
+
+# --- HU-01-09 · Agenda de un estudiante, solo consulta (Javi) ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_agenda_de_un_estudiante(live_server, page, client, datos, nombre):
+    """B27 · Agenda de Lucía vista por Luis, con los pasos de una tarea abiertos."""
+    con_sesion(page, live_server, client, Usuario.objects.get(username="profesional"))
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(live_server.url + reverse("usuarios:agenda_estudiante", args=["A01"]))
+    revisar(page, nombre)
+    if page.locator("summary").count():
+        page.locator("summary").first.click()
+        revisar(page, nombre)
