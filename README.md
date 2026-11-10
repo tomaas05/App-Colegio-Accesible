@@ -13,6 +13,7 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/entrar/` | Entrar como tutor, profesional, familiar o administrador (B12), con bloqueo tras 5 fallos | HU-01-07 | Manu |
 | `/panel/` | Pantalla principal del adulto, con su nombre y sus opciones (B13) | HU-01-07 | Manu |
 | `/usuarios/` | Cuentas con filtros (B20), crear cuenta (B21) y cargar una lista de estudiantes desde un CSV. Solo el administrador | HU-01-01 | Manu |
+| `/usuarios/vinculos/` | Tutor y familiar de cada estudiante (B25). Solo el administrador. Cada adulto ve a sus estudiantes en su panel | HU-01-04 | Manu |
 | `/agenda/` | Agenda del día del estudiante | HU-02-01 a HU-02-04 | Tomás |
 | `/agenda/tarea/<id>/` | Detalle de una tarea: pasos, Empezar y Terminar | HU-02-02 a HU-02-04 | Tomás |
 | `/tareas/crear/` · `/tareas/catalogo/` | Crear una tarea y ver las creadas | HU-03-01 | Úrsula |
@@ -148,6 +149,12 @@ Mateo;López Ruiz;;mateo2026
 ```
 
 En `imagenes` van 3 palabras de la rejilla separadas por espacios; si el estudiante entra con contraseña, se rellena `contrasena` y se deja `imagenes` vacía. Vale `;` (lo que guarda Excel en español) o `,`. Las filas correctas se crean y las que tienen algún error se listan con su número y el motivo, para corregirlas y cargarlas aparte. Las clases se siguen creando desde <http://localhost:8000/admin/>.
+
+### Vincular un estudiante con su tutor y su familiar
+
+Entra como `admin` → **Vínculos** (o **Cambiar** en la columna «Tutor · Familiar» de Usuarios). Busca al estudiante, elige su tutor y su familiar y pulsa **Guardar vínculos**. Cada estudiante tiene como mucho un familiar: para cambiarlo, primero **Quitar** y después **Añadir**; si se añade otro sin quitar el que tiene, sale un aviso y no se cambia nada. Un familiar sí puede tener a varios estudiantes (hermanos).
+
+Cada adulto ve a sus estudiantes en **Tus estudiantes**, en su panel: Ana ve PTVAL 1, Pedro PTVAL 2, Carmen solo a Lucía y Luis a Lucía y a Hugo. Esa regla está en un solo sitio, `estudiantes_de(usuario)` en `apps/usuarios/vinculos.py` (ver [docs/contribuir.md](docs/contribuir.md)).
 
 ## Documentación del equipo
 
