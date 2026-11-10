@@ -132,3 +132,29 @@ def test_contrasena_del_estudiante(live_server, page, datos, nombre):
     page.click("button[type=submit]")
     assert page.locator("[role=alert]").is_visible()
     revisar(page, nombre)
+
+
+# --- HU-03-11 · Horario escolar (Javi) ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_horario_escolar_del_administrador(live_server, page, client, datos, nombre):
+    """B37 · Horario escolar, también con el aviso de casilla ocupada (PA3)."""
+    con_sesion(page, live_server, client, Usuario.objects.get(username="admin"))
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(live_server.url + reverse("horario:cargar"))
+    revisar(page, nombre)
+    page.select_option("#asignatura", index=1)
+    page.click(".horario__form button[type=submit]")
+    assert page.locator("[role=alert]").is_visible()
+    revisar(page, nombre)
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_mi_horario_del_estudiante(live_server, page, client, datos, nombre):
+    """El estudiante ve el horario de su clase (PA1 y PA4)."""
+    lucia = Usuario.objects.get(username="est-a01")
+    con_sesion(page, live_server, client, lucia)
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(live_server.url + reverse("horario:mi_horario") + "?dia=1")
+    revisar(page, nombre)
