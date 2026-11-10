@@ -10,6 +10,8 @@ urlpatterns = [
     # Django solo deja salir con POST: un enlace no puede cerrar la sesión de nadie.
     path("salir/", LogoutView.as_view(), name="salir"),
     path("panel/", views.panel, name="panel"),
+    # HU-01-08: el profesional elige los estudiantes que atiende (B26).
+    path("panel/mis-estudiantes/", views.mis_estudiantes, name="mis_estudiantes"),
     # HU-01-06: la portada «¿Quién eres?» (B01) es la ruta "inicio" de config/urls.py.
     path("estudiante/", views.clases, name="clases"),
     path("estudiante/clase/<int:pk>/", views.avatares, name="avatares"),

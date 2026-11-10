@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Mis estudiantes · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{% block cabecera %}
+<div class="cabecera-adulto">
+  <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Volver</a>
+  <form method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block contenido %}
+{# Boceto B26 · Elegir mis estudiantes. HU-01-08 (AGENDA-154), pruebas de aceptación 1, 2 y 4. #}
+<div class="panel elegir">
+  <div>
+    <h1>Mis estudiantes</h1>
+    <p class="panel__rol">Solo podrás consultar la agenda de los estudiantes que elijas.</p>
+  </div>
+
+  {% if messages %}
+  <div class="aviso-ok" role="status">
+    {% for mensaje in messages %}<p><span aria-hidden="true">✓</span> {{ mensaje }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="elegir__cols">
+    <section class="elegir__tarjeta" aria-labelledby="elegir-todos">
+      <h2 id="elegir-todos">Estudiantes del centro</h2>
+
+      <form class="elegir__filtros" method="get" role="search" aria-label="Buscar estudiantes">
+        <div class="campo">
+          <label for="buscar">Nombre o apellidos</label>
+          <input id="buscar" type="search" name="q" value="{{ q }}">
+        </div>
+        <div class="campo">
+          <label for="clase">Clase</label>
+          <select id="clase" name="clase">
+            <option value="">Todas</option>
+            {% for clase in clases %}
+            <option value="{{ clase.pk }}"{% if clase.pk == clase_id %} selected{% endif %}>{{ clase.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="boton--aux" type="submit">Buscar</button>
+      </form>
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="consulta" value="{{ consulta }}">
+        {% if estudiantes %}
+        <fieldset class="elegir__lista">
+          <legend>Marca los estudiantes que atiendes ({{ estudiantes|length }} en la lista)</legend>
+          <ul>
+            {% for estudiante in estudiantes %}
+            <li>
+              <input type="hidden" name="mostrados" value="{{ estudiante.codigo_estudiante }}">
+              {# PA1: nombre y avatar del estudiante, nunca fotos. El avatar es decorativo. #}
+              <label class="elegir__estudiante">
+                <input type="checkbox" name="elegidos" value="{{ estudiante.codigo_estudiante }}"{% if estudiante.codigo_estudiante in actuales %} checked{% endif %}>
+                <img src="{{ estudiante.avatar.url }}" alt="" width="56" height="56">
+                <span>
+                  <b>{{ estudiante.usuario.get_full_name }}</b>
+                  <small>{{ estudiante.clase.nombre }}</small>
+                </span>
+              </label>
+            </li>
+            {% endfor %}
+          </ul>
+        </fieldset>
+        <button class="boton boton--principal" type="submit">Guardar</button>
+        {% else %}
+        <p>No hay ningún estudiante con esa búsqueda.</p>
+        {% endif %}
+      </form>
+    </section>
+
+    <section class="elegir__tarjeta" aria-labelledby="elegir-mios">
+      <h2 id="elegir-mios">Los que atiendo</h2>
+      {% if mios %}
+      <ul class="elegir__mios">
+        {% for estudiante in mios %}
+        <li>
+          <img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40">
+          <span class="elegir__nombre">{{ estudiante.usuario.get_full_name }} <small>{{ estudiante.clase.nombre }}</small></span>
+          {# PA4: quitarlo de mi lista. #}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="consulta" value="{{ consulta }}">
+            <button class="boton--aux" type="submit" name="quitar" value="{{ estudiante.codigo_estudiante }}" aria-label="Quitar a {{ estudiante.usuario.get_full_name }}">Quitar</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>Todavía no has elegido a ningún estudiante.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

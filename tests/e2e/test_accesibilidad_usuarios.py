@@ -255,3 +255,19 @@ def test_vinculos_cambiar_familiar_y_guardar(live_server, page, client, datos):
     page.click("button[value=guardar]")
     assert "Vínculos de Lucía Fernández guardados." in page.content()
     assert page.locator(".vinculos__persona", has_text="Javier Ortega Ramos").is_visible()
+
+
+# --- HU-01-08 · Elegir mis estudiantes (Javi) ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_mis_estudiantes(live_server, page, client, datos, nombre):
+    """B26 · Elegir mis estudiantes, tras guardar (con el aviso de «Guardado»)."""
+    con_sesion(page, live_server, client, Usuario.objects.get(username="profesional"))
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(live_server.url + reverse("usuarios:mis_estudiantes"))
+    revisar(page, nombre)
+    page.check("input[name=elegidos][value=A02]")
+    page.click("text=Guardar")
+    assert page.locator("[role=status]").is_visible()
+    revisar(page, nombre)
