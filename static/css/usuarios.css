@@ -409,3 +409,247 @@ a.boton {
 .aviso-vacio {
   font-size: 1.25rem;
 }
+
+/* --- HU-01-01 · Pantallas del administrador (B20 Usuarios, B21 Crear cuenta, cargar lista) --- */
+.admin {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: min(72rem, 100%);
+  margin-inline: auto;
+}
+.admin--estrecho {
+  width: min(48rem, 100%);
+}
+.admin h1,
+.admin h2,
+.admin p {
+  margin: 0;
+}
+.admin__cab {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+.admin__cab h1 {
+  flex: 1 1 8em;
+  font-size: 1.75rem;
+}
+.admin__acciones,
+.admin__botonera,
+.admin__filtros-botones,
+.admin__paginas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.admin__botonera {
+  justify-content: flex-end;
+}
+.boton--mediano {
+  min-height: var(--toque);
+  padding: 0.4rem 1.25rem;
+  font-size: 1.1rem;
+}
+.admin__tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--blanco);
+  border: 2px solid var(--menta);
+  border-radius: 1.25rem;
+}
+.admin__dos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem;
+}
+/* Un fieldset no encoge por defecto (min-inline-size: min-content): en el móvil
+   la rejilla lo ensanchaba y salía scroll horizontal. */
+.admin__seccion,
+.rejilla-acceso,
+.campo--opciones fieldset {
+  min-inline-size: 0;
+}
+.admin__seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: 2px solid var(--menta);
+  border-radius: 1rem;
+}
+.admin__seccion > legend,
+.rejilla-acceso > legend {
+  padding: 0 0.4rem;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.admin__nota,
+.helptext {
+  font-size: 1rem;
+  color: var(--gris);
+}
+.admin__nota p + p {
+  margin-top: 0.4rem;
+}
+
+/* Campos que pinta Django con as_field_group: <label>, ayuda, errores y el campo. */
+.campo select,
+.campo input[type="file"] {
+  min-height: var(--toque);
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  color: var(--texto);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 0.75rem;
+}
+.campo [aria-invalid="true"] {
+  border-color: var(--error);
+  border-width: 3px;
+}
+.errorlist {
+  margin: 0;
+  padding: 0;
+  font-weight: 700;
+  color: var(--error);
+  list-style: none;
+}
+.campo--opciones fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.campo--opciones legend {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.campo--opciones fieldset > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+.campo.campo--casilla {
+  flex-direction: row;
+}
+.campo--opciones label,
+.campo--casilla {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--toque);
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--texto);
+}
+.campo--casilla label {
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--texto);
+}
+.campo--opciones input,
+.campo--casilla input {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--petroleo);
+}
+.aviso-error__lista {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+.aviso-error:focus {
+  outline: var(--foco-grosor) solid var(--focus);
+  outline-offset: var(--foco-separacion);
+}
+
+.avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.aviso-ok {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--menta);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+
+/* B20 · filtros y tabla */
+.admin__filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  align-items: end;
+  gap: 0.75rem 1rem;
+}
+.admin__filtros input[type="search"] {
+  min-height: var(--toque);
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  border: 2px solid var(--petroleo);
+  border-radius: 0.75rem;
+}
+.admin__cuantas {
+  font-weight: 700;
+}
+.tabla-caja {
+  overflow-x: auto;
+  border: 2px solid var(--menta);
+  border-radius: 1rem;
+}
+.tabla-caja:focus-visible {
+  outline: var(--foco-grosor) solid var(--focus);
+  outline-offset: var(--foco-separacion);
+}
+.tabla {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+}
+.tabla th,
+.tabla td {
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--menta);
+}
+.tabla thead th {
+  font-family: var(--fuente-titulos);
+  color: var(--petroleo);
+  background: var(--menta-hover);
+}
+.tabla tbody th {
+  font-weight: 700;
+}
+.tabla__sub {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--gris);
+}
+.admin__paginas {
+  justify-content: center;
+}
+.admin__creados summary {
+  min-height: var(--toque);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Lo que esconde el JavaScript (sección del rol, rejilla o contraseña) no se ve aunque
+   la sección tenga su propio display. */
+[data-solo][hidden],
+[data-solo-metodo][hidden] {
+  display: none;
+}

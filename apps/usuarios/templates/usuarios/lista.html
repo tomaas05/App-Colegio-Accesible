@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Usuarios · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+{% block cabecera %}{% include "usuarios/_cabecera_adulto.html" %}{% endblock %}
+
+{% block contenido %}
+{# Boceto B20 · Usuarios. HU-01-01. Solo el administrador. #}
+<div class="admin">
+  <div class="admin__cab">
+    <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Panel</a>
+    <h1>Usuarios</h1>
+    <div class="admin__acciones">
+      <a class="boton boton--aux" href="{% url 'usuarios:cargar' %}">Cargar lista de estudiantes</a>
+      <a class="boton boton--principal boton--mediano" href="{% url 'usuarios:crear' %}"><span aria-hidden="true">+</span> Crear cuenta</a>
+    </div>
+  </div>
+
+  {% include "usuarios/_mensajes.html" %}
+
+  <form class="admin__filtros" method="get" role="search" aria-label="Buscar y filtrar cuentas">
+    <div class="campo">
+      <label for="filtro-q">Buscar</label>
+      <input type="search" id="filtro-q" name="q" value="{{ texto }}" placeholder="Nombre, apellidos, usuario o código">
+    </div>
+    <div class="campo">
+      <label for="filtro-rol">Rol</label>
+      <select id="filtro-rol" name="rol">
+        <option value="">Todos</option>
+        {% for valor, nombre in roles %}<option value="{{ valor }}"{% if valor == rol %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="filtro-clase">Clase</label>
+      <select id="filtro-clase" name="clase">
+        <option value="">Todas</option>
+        {% for clase in clases %}<option value="{{ clase.pk }}"{% if clase.pk|stringformat:"s" == clase_id %} selected{% endif %}>{{ clase.nombre }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="admin__filtros-botones">
+      <button class="boton--aux" type="submit">Filtrar</button>
+      {% if filtros_url %}<a class="boton boton--aux" href="{% url 'usuarios:lista' %}">Quitar filtros</a>{% endif %}
+    </div>
+  </form>
+
+  <p class="admin__cuantas" id="cuantas">{{ pagina.paginator.count }} cuenta{{ pagina.paginator.count|pluralize }}</p>
+  {% if pagina.object_list %}
+  {# La tabla puede ser más ancha que el móvil: se desplaza dentro de su caja, no la página. #}
+  <div class="tabla-caja" tabindex="0" role="region" aria-labelledby="cuantas">
+    <table class="tabla">
+      <thead>
+        <tr><th scope="col">Persona</th><th scope="col">Rol</th><th scope="col">Clase</th><th scope="col">Tutor · Familiar</th><th scope="col">Estado</th></tr>
+      </thead>
+      <tbody>
+        {% for cuenta in pagina %}
+        <tr>
+          <th scope="row">
+            {{ cuenta.get_full_name }}
+            <span class="tabla__sub">{% if cuenta.es_estudiante %}Código {{ cuenta.estudiante.codigo_estudiante }}{% else %}{{ cuenta.username }}{% endif %}</span>
+          </th>
+          <td>{{ cuenta.get_rol_display }}</td>
+          <td>{% if cuenta.es_estudiante %}{{ cuenta.estudiante.clase.nombre }}{% else %}—{% endif %}</td>
+          <td>
+            {% if cuenta.es_estudiante %}
+            {{ cuenta.estudiante.tutor.get_full_name|default:"Sin tutor" }} · {{ cuenta.estudiante.familiar.get_full_name|default:"Sin familiar" }}
+            {% else %}—{% endif %}
+          </td>
+          <td>{% if cuenta.is_active %}Activa{% else %}<strong>Desactivada</strong>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pagina.has_other_pages %}
+  <nav class="admin__paginas" aria-label="Páginas">
+    {% if pagina.has_previous %}<a class="boton boton--aux" href="?{% if filtros_url %}{{ filtros_url }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}"><span aria-hidden="true">‹</span> Anterior</a>{% endif %}
+    <span>Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}<a class="boton boton--aux" href="?{% if filtros_url %}{{ filtros_url }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">Siguiente <span aria-hidden="true">›</span></a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <p>No hay cuentas con esos filtros.</p>
+  {% endif %}
+</div>
+{% endblock %}
