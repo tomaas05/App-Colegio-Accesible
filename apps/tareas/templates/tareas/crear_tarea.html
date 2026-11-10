@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Crear nueva tarea - Despega{% endblock %}
+
+{% block estilos %}
+<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
+{% endblock %}
+
+{% block contenido %}
+<div class="crear-tarea-container">
+  <h1>Crear nueva tarea</h1>
+
+  {% if messages %}
+  <ul role="alert" aria-live="polite" class="mensajes-alerta">
+    {% for message in messages %}
+    <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <!-- Bloque visual para mostrar errores generales si el formulario no es válido -->
+  {% if form.errors or formset.non_form_errors %}
+  <div style="background-color: var(--error-fondo, #fee2e2); color: var(--error, #991b1b); padding: 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem; border: 1px solid #f87171;">
+    <strong>⚠️ Por favor, corrige los siguientes errores en la tarea:</strong>
+    {{ form.errors }}
+    {{ formset.non_form_errors }}
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" action="{% url 'tareas:crear_tarea' %}" autocomplete="off">
+    {% csrf_token %}
+
+    <!-- Bloque 1: Datos principales de la tarea -->
+    <fieldset>
+      <legend>Datos principales de la tarea</legend>
+
+      <p>{{ form.nombre.label_tag }} {{ form.nombre }} {{ form.nombre.errors }}</p>
+      <p>{{ form.descripcion.label_tag }} {{ form.descripcion }} {{ form.descripcion.errors }}</p>
+      <p>{{ form.ambito.label_tag }} {{ form.ambito }} {{ form.ambito.errors }}</p>
+
+      <hr>
+      <h3>Imagen de la tarea</h3>
+      <p>Sube un archivo de tu equipo o busca un pictograma en ARASAAC.</p>
+
+      <p>{{ form.imagen.label_tag }} {{ form.imagen }} {{ form.imagen.errors }}</p>
+
+      <!-- Buscador ARASAAC -->
+      <div class="buscador-arasaac-box">
+        <label for="buscador-arasaac">Buscar en ARASAAC:</label>
+        <div class="buscador-arasaac-flex">
+          <input type="text" id="buscador-arasaac" placeholder="Ej: lavarse las manos">
+          <button type="button" onclick="buscarArasaac()" class="principal">Buscar</button>
+        </div>
+
+        <div id="resultados-arasaac" class="resultados-arasaac-grid" aria-live="polite"></div>
+
+        <input type="hidden" name="arasaac_id_tarea" id="arasaac_id_tarea" value="">
+        <p id="mensaje-pictograma-seleccionado" class="mensaje-exito-pic" style="display: none;">
+          ✓ Pictograma seleccionado.
+        </p>
+      </div>
+
+      <p>{{ form.descripcion_imagen.label_tag }} {{ form.descripcion_imagen }} {{ form.descripcion_imagen.errors }}</p>
+    </fieldset>
+
+    <!-- Bloque 2: Pasos (Formset) -->
+    <fieldset>
+      <legend>Pasos de la tarea</legend>
+      {{ formset.management_form }}
+
+      {% if formset.errors %}
+      <div style="background-color: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem;">
+        ⚠️ Algunos pasos contienen errores o les falta información obligatoria. Revisa los campos marcados abajo.
+      </div>
+      {% endif %}
+
+      <div id="contenedor-pasos">
+      </div>
+
+      <button type="button"
+              hx-get="{% url 'tareas:anadir_paso' %}"
+              hx-target="#contenedor-pasos"
+              hx-swap="beforeend"
+              hx-vals="js:{'total_forms': document.getElementById('id_pasos-TOTAL_FORMS').value}"
+              class="secundario">
+        + Añadir paso
+      </button>
+    </fieldset>
+
+    <!-- Botones de acción inferiores -->
+    <div class="contenedor-botones-inferiores" style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
+
+      <button type="button" onclick="prepararYMostrarVistaPrevia()" class="secundario">
+        Guardar tarea
+      </button>
+      <a href="{% url 'tareas:catalogo' %}" class="peligro" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+        Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+
+<!-- VENTANA MODAL PARA LA VISTA PREVIA Y CONFIRMACIÓN -->
+<dialog id="modal-vista-previa" class="confirmar">
+  <div class="modal-header">
+    <h2>Revisa la tarea antes de guardar</h2>
+    <button type="button" onclick="cerrarVistaPrevia()" class="aux" style="padding: 0.25rem 0.75rem; min-height: auto;">X</button>
+  </div>
+
+  <div id="contenido-vista-previa" class="modal-body" style="text-align: left; margin-bottom: 1.5rem;"></div>
+
+  <div style="display: flex; gap: 1rem; justify-content: flex-end; border-top: 2px solid var(--gris); padding-top: 1rem;">
+    <button type="button" onclick="cerrarVistaPrevia()" class="aux">Seguir editando</button>
+    <button type="button" onclick="confirmarGuardado()" class="principal">Confirmar y guardar</button>
+  </div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
+<script src="{% static 'js/tarea.js' %}"></script>
+{% endblock %}

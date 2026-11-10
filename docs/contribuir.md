@@ -32,8 +32,8 @@ AGENDA-182 Corrige el contraste del botón Terminar
 
 1. `git push -u origin <tu-rama>` y abre el PR en GitHub hacia `main`.
 2. Rellena la plantilla: qué cambia, requisitos que cubre (RF/RNF) y cómo probarlo.
-3. Espera a que la CI pase (estilo, pruebas y accesibilidad).
-4. Revisión: Gestora de Calidad (Úrsula) en lo general; Gestoras de Accesibilidad (Lara-Marie, Kaya) cuando haya pantallas.
+3. Espera a que la CI pase (estilo, pruebas y accesibilidad). **Mientras GitHub Actions no se ejecute** (facturación bloqueada), pásalo tú en local antes de abrir el PR y pega el resultado en la descripción: `pytest`, `ruff check .` y `pytest -m e2e`.
+4. Revisión: un compañero y la Gestora de Calidad (Úrsula) revisan cada PR. Las Gestoras de Accesibilidad (Lara-Marie y Kaya) revisan la accesibilidad de todas las pantallas al cerrar la iteración.
 5. Fusiona con **Squash and merge** y borra la rama.
 
 ## Dónde va cada cosa
@@ -41,7 +41,9 @@ AGENDA-182 Corrige el contraste del botón Terminar
 - Modelos, vistas y plantillas: en la app de su dueño dentro de `apps/` (ver tabla del README). **Cada uno solo cambia su app**; si necesitas un cambio en una tabla de otro, pídeselo en Jira.
 - Si cambias un modelo, incluye la migración en el mismo PR y avisa al grupo para que ejecute `migrate`.
 - Lo que comparten varias apps (plantilla base, estilos comunes): `templates/` y `static/`.
-- Cada pantalla nueva se añade a `PANTALLAS` en `tests/e2e/test_accesibilidad.py` para que axe la revise en las tres resoluciones.
+- Cada pantalla nueva se añade a `PANTALLAS` en `tests/e2e/test_accesibilidad.py` para que axe la revise en las tres resoluciones. Si la pantalla pide sesión, haz como `tests/e2e/test_accesibilidad_usuarios.py` (entra con `force_login` y pasa la cookie al navegador).
+- **Sesión y permisos** (ver [decisiones/0002-entrada-y-sesion.md](decisiones/0002-entrada-y-sesion.md)): una vista que pide sesión lleva `@login_required`, que manda a la portada «¿Quién eres?» (`/`) a quien no ha entrado, y después de entrar le devuelve a la pantalla que pedía. Que haya sesión no basta: comprueba también el rol en el servidor (`request.user.rol`, `request.user.es_adulto`, `request.user.es_estudiante`) y que el usuario puede ver ese estudiante o esa tarea.
+- **Panel del adulto** (`/panel/`): para que tu pantalla aparezca en la pantalla principal de un rol, añade una línea a `OPCIONES_POR_ROL` en `apps/usuarios/views.py` dentro de tu PR y avisa a Manu. Es la única excepción a «cada uno solo cambia su app».
 - Colores, tamaños y fuentes: siempre con las variables de `static/css/tokens.css` y en `rem`, nunca valores sueltos. Es lo que permitirá aplicar el perfil de cada estudiante (RF4.1.x).
 - Decisiones técnicas que afecten a todo el equipo: un archivo nuevo en `docs/decisiones/`.
 

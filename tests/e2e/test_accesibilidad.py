@@ -20,6 +20,7 @@ RESOLUCIONES = {
 
 PANTALLAS = [
     "/",
+    "/entrar/",  # B12 · Entrar (adultos), HU-01-07
 ]
 
 ETIQUETAS_WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
