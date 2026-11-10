@@ -1,0 +1,16 @@
+{# Resumen de errores al principio del formulario, con enlace a cada campo (WCAG 3.3.1). #}
+{# Las casillas y los botones de opción no tienen id_for_label: se enlaza a su lista (auto_id). #}
+{% if form.errors %}
+<div class="aviso-error" role="alert" tabindex="-1" data-enfocar>
+  <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
+  <div>
+    <p><strong>Revisa {% if form.errors|length == 1 %}este dato{% else %}estos datos{% endif %}:</strong></p>
+    <ul class="aviso-error__lista">
+      {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+      {% for campo in form %}{% for error in campo.errors %}
+      <li><a href="#{{ campo.id_for_label|default:campo.auto_id }}">{{ campo.label }}</a>: {{ error }}</li>
+      {% endfor %}{% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}

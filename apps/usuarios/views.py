@@ -2,14 +2,20 @@
 
 HU-01-07: entrar como tutor, profesional o familiar (B12) y su pantalla principal (B13).
 HU-01-06: entrar como estudiante: clase (B02), avatar (B03) y 3 imágenes o contraseña.
+HU-01-01: usuarios (B20), crear cuenta (B21) y cargar una lista de estudiantes (solo admin).
 La portada «¿Quién eres?» (B01) es una plantilla sin lógica: usuarios/portada.html.
 Bocetos: docs/iteracion-1/bocetos/despega_mockup_v3.html.
 """
 
+from urllib.parse import urlencode
+
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import NoReverseMatch, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -17,8 +23,16 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.perfil.models import MetodoAcceso
 
-from .forms import EntrarAdultoForm, EntrarConContrasenaForm, EntrarConImagenesForm
-from .models import Clase, Estudiante, Rol
+from .carga import PLANTILLA, cargar_lista
+from .forms import (
+    CargarListaForm,
+    CrearCuentaForm,
+    EntrarAdultoForm,
+    EntrarConContrasenaForm,
+    EntrarConImagenesForm,
+)
+from .models import Clase, Estudiante, ImagenAcceso, Rol, Usuario
+from .permisos import admin_requerido
 
 # login() necesita saber con qué backend se ha comprobado al usuario. El estudiante
 # no pasa por authenticate() (no tiene usuario y contraseña), así que se indica aquí.
@@ -30,9 +44,14 @@ BACKEND_ESTUDIANTE = "django.contrib.auth.backends.ModelBackend"
 OPCIONES_POR_ROL = {
     Rol.ADMINISTRADOR: [
         (
-            "Usuarios, clases y vínculos",
-            "Mientras no estén sus pantallas, desde la administración de Django.",
-            "admin:index",
+            "Usuarios",
+            "Ver las cuentas, crear una o cargar una lista de estudiantes.",
+            "usuarios:lista",
+        ),
+        (
+            "Clases",
+            "Crear y editar clases, desde la administración de Django.",
+            "admin:usuarios_clase_changelist",
         ),
     ],
     Rol.TUTOR: [
@@ -173,3 +192,114 @@ def entrar_estudiante(request, codigo):
             "next": _siguiente(request),
         },
     )
+
+
+# --- HU-01-01 · Crear un usuario (solo el administrador) -------------------------
+
+CUENTAS_POR_PAGINA = 25
+
+
+@admin_requerido
+@require_GET
+def lista_usuarios(request):
+    """B20 · Usuarios. Todas las cuentas, con filtro por rol, clase y texto."""
+    rol = request.GET.get("rol", "")
+    clase_id = request.GET.get("clase", "")
+    texto = request.GET.get("q", "").strip()
+
+    cuentas = Usuario.objects.select_related(
+        "estudiante__clase", "estudiante__tutor", "estudiante__familiar"
+    ).order_by("first_name", "last_name", "pk")  # pk: mismo orden en cada página
+    if rol in Rol.values:
+        cuentas = cuentas.filter(rol=rol)
+    if clase_id.isdigit():
+        cuentas = cuentas.filter(estudiante__clase_id=int(clase_id))
+    if texto:
+        cuentas = cuentas.filter(
+            Q(first_name__icontains=texto)
+            | Q(last_name__icontains=texto)
+            | Q(username__icontains=texto)
+            | Q(estudiante__codigo_estudiante__iexact=texto)
+        )
+
+    pagina = Paginator(cuentas, CUENTAS_POR_PAGINA).get_page(request.GET.get("pagina"))
+    filtros = {k: v for k, v in {"rol": rol, "clase": clase_id, "q": texto}.items() if v}
+    return render(
+        request,
+        "usuarios/lista.html",
+        {
+            "pagina": pagina,
+            "roles": Rol.choices,
+            "clases": Clase.objects.all(),
+            "rol": rol,
+            "clase_id": clase_id,
+            "texto": texto,
+            "filtros_url": urlencode(filtros),
+        },
+    )
+
+
+@admin_requerido
+@require_http_methods(["GET", "POST"])
+def crear_cuenta(request):
+    """B21 · Crear cuenta (PA1, PA2, PA3)."""
+    if request.method == "POST":
+        form = CrearCuentaForm(request.POST, request.FILES)
+    else:
+        form = CrearCuentaForm()
+    if form.is_bound and form.is_valid():
+        usuario = form.crear()
+        if usuario.es_estudiante:
+            estudiante = usuario.estudiante
+            como = (
+                "con sus 3 imágenes"
+                if estudiante.perfil.metodo_acceso == MetodoAcceso.IMAGENES
+                else "con su contraseña"
+            )
+            messages.success(
+                request,
+                f"Cuenta creada: {usuario.get_full_name()}, código {estudiante.codigo_estudiante}. "
+                f"Entra desde «Estudiante» → {estudiante.clase.nombre} → su avatar, {como}.",
+            )
+            destino = {"clase": estudiante.clase_id}
+        else:
+            messages.success(
+                request,
+                f"Cuenta creada: {usuario.get_full_name()} ({usuario.get_rol_display()}). "
+                f"Entra en «Adulto» con el usuario «{usuario.username}».",
+            )
+            destino = {"rol": usuario.rol}
+        return redirect(reverse("usuarios:lista") + "?" + urlencode(destino))
+
+    return render(request, "usuarios/crear_cuenta.html", {"form": form})
+
+
+@admin_requerido
+@require_http_methods(["GET", "POST"])
+def cargar_estudiantes(request):
+    """Cargar una lista de estudiantes en una clase (PA4)."""
+    if request.method == "POST":
+        form = CargarListaForm(request.POST, request.FILES)
+    else:
+        form = CargarListaForm()
+    resultado = None
+    if form.is_bound and form.is_valid():
+        resultado = cargar_lista(form.cleaned_data["archivo"], form.cleaned_data["clase"])
+    return render(
+        request,
+        "usuarios/cargar_lista.html",
+        {
+            "form": form,
+            "resultado": resultado,
+            "imagenes": ImagenAcceso.objects.filter(activa=True),
+        },
+    )
+
+
+@admin_requerido
+@require_GET
+def plantilla_csv(request):
+    """Plantilla para rellenar en Excel o LibreOffice (con BOM para que respete las tildes)."""
+    respuesta = HttpResponse("\ufeff" + PLANTILLA, content_type="text/csv; charset=utf-8")
+    respuesta["Content-Disposition"] = 'attachment; filename="plantilla_estudiantes.csv"'
+    return respuesta
