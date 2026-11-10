@@ -12,6 +12,7 @@ import pytest
 from axe_playwright_python.sync_playwright import Axe
 from django.urls import reverse
 from django.utils import timezone
+from playwright.sync_api import expect
 
 from apps.agenda import servicios
 from apps.usuarios.models import Estudiante
@@ -191,7 +192,8 @@ def test_con_otra_pestana_desfasada_sale_el_aviso_sin_recargar(live_server, page
     aviso.wait_for()
     assert "Esta tarea ya no está en marcha." in aviso.inner_text()
     assert page.locator("[data-paso] button").count() == 0
-    assert es_el_foco(page.locator("#pasos"))
+    # El aviso llega en el swap y el foco se mueve en htmx:afterSettle, un poco después.
+    expect(page.locator("#pasos")).to_be_focused()
     assert page.evaluate("() => window.misma_pagina === true")
     assert estados(mochila) == ["pendiente"] * 4
 
