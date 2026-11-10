@@ -12,9 +12,11 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/estudiante/` | ¿Cuál es tu clase? (B02) → avatares de la clase (B03) → 3 imágenes o contraseña | HU-01-06 | Manu |
 | `/entrar/` | Entrar como tutor, profesional, familiar o administrador (B12), con bloqueo tras 5 fallos | HU-01-07 | Manu |
 | `/panel/` | Pantalla principal del adulto, con su nombre y sus opciones (B13) | HU-01-07 | Manu |
+| `/usuarios/` | Cuentas con filtros (B20), crear cuenta (B21) y cargar una lista de estudiantes desde un CSV. Solo el administrador | HU-01-01 | Manu |
 | `/agenda/` | Agenda del día del estudiante | HU-02-01 a HU-02-04 | Tomás |
 | `/agenda/tarea/<id>/` | Detalle de una tarea: pasos, Empezar y Terminar | HU-02-02 a HU-02-04 | Tomás |
 | `/tareas/crear/` · `/tareas/catalogo/` | Crear una tarea y ver las creadas | HU-03-01 | Úrsula |
+| `/perfil/` · `/perfil/<codigo>/` | Elegir estudiante y configurar su perfil visual (B52) | HU-04-01 | Jorge |
 | `/panel/mis-estudiantes/` | El profesional elige en la lista del centro los estudiantes que atiende (B26) | HU-01-08 | Javi |
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
@@ -135,6 +137,18 @@ Los estudiantes entran desde la portada: **Estudiante → su clase → su avatar
 > Por ejemplo, Lucía: <http://localhost:8000> → Estudiante → PTVAL 1 → Lucía → perro, sol y flor → su agenda. Al equivocarse sale «No es correcto. Vuelve a intentarlo.» y puede repetir sin límite: a los estudiantes no se les bloquea (ver la decisión 0002).
 >
 > El atajo de desarrollo `/agenda/?como=A01` (con `AGENDA_ENTRAR_COMO=1` en el `.env`) ya no hace falta y se quitará.
+
+### Crear cuentas y cargar una lista de estudiantes
+
+Entra como `admin` → **Usuarios**. Desde ahí, **Crear cuenta** da de alta a un estudiante (clase, avatar, código automático y 3 imágenes o contraseña) o a un adulto (usuario y contraseña inicial). Un administrador creado así también entra en <http://localhost:8000/admin/>, igual que `admin`. Los usuarios que empiezan por `est-` están reservados a los estudiantes (`est-a01` es Lucía por dentro). **Cargar lista de estudiantes** crea una clase entera desde un CSV con estas columnas (hay una plantilla para descargar en la propia pantalla):
+
+```text
+nombre;apellidos;imagenes;contrasena
+Lucía;García Pérez;perro sol flor;
+Mateo;López Ruiz;;mateo2026
+```
+
+En `imagenes` van 3 palabras de la rejilla separadas por espacios; si el estudiante entra con contraseña, se rellena `contrasena` y se deja `imagenes` vacía. Vale `;` (lo que guarda Excel en español) o `,`. Las filas correctas se crean y las que tienen algún error se listan con su número y el motivo, para corregirlas y cargarlas aparte. Las clases se siguen creando desde <http://localhost:8000/admin/>.
 
 ## Documentación del equipo
 

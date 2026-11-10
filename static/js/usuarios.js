@@ -37,3 +37,29 @@ document.querySelectorAll("[data-rejilla-acceso]").forEach((rejilla) => {
   casillas.forEach((c) => c.addEventListener("change", actualizar));
   actualizar();
 });
+
+/*
+ * HU-01-01 · Crear cuenta (B21): solo se ve la sección del rol elegido y, para un
+ * estudiante, la rejilla o la contraseña según «Cómo entra». Sin JavaScript se ve
+ * todo y el servidor comprueba igualmente qué hace falta para cada rol.
+ */
+document.querySelectorAll("[data-crear-cuenta]").forEach((form) => {
+  const rol = form.querySelector('select[name="rol"]');
+  const metodos = [...form.querySelectorAll('input[name="metodo_acceso"]')];
+  const actualizar = () => {
+    const tipo = !rol.value ? "" : rol.value === "estudiante" ? "estudiante" : "adulto";
+    form.querySelectorAll("[data-solo]").forEach((seccion) => {
+      seccion.hidden = seccion.dataset.solo !== tipo;
+    });
+    const metodo = (metodos.find((m) => m.checked) || {}).value || "imagenes";
+    form.querySelectorAll("[data-solo-metodo]").forEach((parte) => {
+      parte.hidden = parte.dataset.soloMetodo !== metodo;
+    });
+  };
+  rol.addEventListener("change", actualizar);
+  metodos.forEach((m) => m.addEventListener("change", actualizar));
+  actualizar();
+});
+
+/* Si el formulario vuelve con errores, el foco va al resumen para que se lea primero. */
+document.querySelector("[data-enfocar]")?.focus();
