@@ -21,4 +21,6 @@ urlpatterns = [
     path("usuarios/nueva/", views.crear_cuenta, name="crear"),
     path("usuarios/cargar/", views.cargar_estudiantes, name="cargar"),
     path("usuarios/cargar/plantilla.csv", views.plantilla_csv, name="plantilla"),
+    # HU-01-04: tutor y familiar de cada estudiante (solo el administrador).
+    path("usuarios/vinculos/", views.vinculos, name="vinculos"),
 ]

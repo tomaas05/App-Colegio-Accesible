@@ -4,6 +4,8 @@ HU-01-07: entrar como tutor, profesional o familiar (B12) y su pantalla principa
 HU-01-06: entrar como estudiante: clase (B02), avatar (B03) y 3 imágenes o contraseña.
 HU-01-08 (Javi): el profesional elige los estudiantes que atiende (B26).
 HU-01-01: usuarios (B20), crear cuenta (B21) y cargar una lista de estudiantes (solo admin).
+HU-01-04: vínculos de cada estudiante con su tutor y su familiar (B25, solo admin) y
+«Tus estudiantes» en el panel de cada adulto.
 La portada «¿Quién eres?» (B01) es una plantilla sin lógica: usuarios/portada.html.
 Bocetos: docs/iteracion-1/bocetos/despega_mockup_v3.html.
 """
@@ -33,9 +35,12 @@ from .forms import (
     EntrarAdultoForm,
     EntrarConContrasenaForm,
     EntrarConImagenesForm,
+    VinculosForm,
 )
 from .models import Clase, Estudiante, ImagenAcceso, Rol, Usuario
 from .permisos import admin_requerido
+from .texto import coincide, normalizar
+from .vinculos import estudiantes_de, guardar_vinculos
 
 # login() necesita saber con qué backend se ha comprobado al usuario. El estudiante
 # no pasa por authenticate() (no tiene usuario y contraseña), así que se indica aquí.
@@ -56,6 +61,7 @@ OPCIONES_POR_ROL = {
             "Crear y editar clases, desde la administración de Django.",
             "admin:usuarios_clase_changelist",
         ),
+        ("Vínculos", "Tutor y familiar de cada estudiante.", "usuarios:vinculos"),
     ],
     Rol.TUTOR: [
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
@@ -120,13 +126,20 @@ def _opciones(rol):
 @login_required
 @require_GET
 def panel(request):
-    """HU-01-07. Pantalla principal del adulto, con su nombre (B13)."""
+    """HU-01-07. Pantalla principal del adulto, con su nombre (B13).
+
+    HU-01-04: el tutor, el profesional y el familiar ven también a sus estudiantes,
+    y solo a los suyos (PA1, PA3 y PA4).
+    """
     if request.user.es_estudiante:
         return redirect("agenda:dia")
+    estudiantes = None
+    if request.user.rol != Rol.ADMINISTRADOR:
+        estudiantes = estudiantes_de(request.user)
     return render(
         request,
         "usuarios/panel.html",
-        {"opciones": _opciones(request.user.rol)},
+        {"opciones": _opciones(request.user.rol), "estudiantes": estudiantes},
     )
 
 
@@ -147,14 +160,34 @@ def _estudiantes_activos():
     return Q(estudiantes__usuario__is_active=True)
 
 
+def _tutor_corto(nombre, apellidos):
+    """«Ana», «Martín Ruiz» → «A. Martín», como en el boceto B02."""
+    primero = (apellidos or "").split()
+    return f"{nombre[:1]}. {primero[0]}" if nombre and primero else nombre
+
+
 @require_GET
 def clases(request):
-    """B02 · ¿Cuál es tu clase? Solo las clases con algún estudiante que pueda entrar."""
-    lista = (
+    """B02 · ¿Cuál es tu clase? Solo las clases con algún estudiante que pueda entrar.
+
+    Debajo de cada clase, su tutor (HU-01-04), para que el estudiante la reconozca.
+    Si la clase tiene más de un tutor, no se pone ninguno.
+    """
+    lista = list(
         Clase.objects.annotate(activos=Count("estudiantes", filter=_estudiantes_activos()))
         .filter(activos__gt=0)
         .order_by("nombre")
     )
+    tutores = {}
+    for clase_id, nombre, apellidos in (
+        Estudiante.objects.filter(usuario__is_active=True, tutor__isnull=False)
+        .values_list("clase_id", "tutor__first_name", "tutor__last_name")
+        .distinct()
+    ):
+        tutores.setdefault(clase_id, set()).add(_tutor_corto(nombre, apellidos))
+    for clase in lista:
+        de_la_clase = tutores.get(clase.pk, set())
+        clase.tutor_corto = next(iter(de_la_clase)) if len(de_la_clase) == 1 else ""
     return render(request, "usuarios/clases.html", {"clases": lista, "next": _siguiente(request)})
 
 
@@ -212,6 +245,15 @@ def entrar_estudiante(request, codigo):
 CUENTAS_POR_PAGINA = 25
 
 
+def _cuenta_coincide(cuenta, texto):
+    """Nombre completo o usuario que contiene el texto, o el código exacto del estudiante."""
+    if coincide(texto, cuenta.get_full_name(), cuenta.username):
+        return True
+    return cuenta.es_estudiante and normalizar(texto) == normalizar(
+        cuenta.estudiante.codigo_estudiante
+    )
+
+
 @admin_requerido
 @require_GET
 def lista_usuarios(request):
@@ -220,20 +262,24 @@ def lista_usuarios(request):
     clase_id = request.GET.get("clase", "")
     texto = request.GET.get("q", "").strip()
 
-    cuentas = Usuario.objects.select_related(
-        "estudiante__clase", "estudiante__tutor", "estudiante__familiar"
-    ).order_by("first_name", "last_name", "pk")  # pk: mismo orden en cada página
+    cuentas = (
+        Usuario.objects.select_related(
+            "estudiante__clase", "estudiante__tutor", "estudiante__familiar"
+        )
+        # Columna «Vínculos» de los adultos (HU-01-04): cuántos estudiantes tiene cada uno.
+        .annotate(
+            n_tutorizados=Count("estudiantes_tutorizados", distinct=True),
+            n_familiares=Count("estudiantes_familiares", distinct=True),
+            n_atendidos=Count("atenciones", distinct=True),
+        )
+        .order_by("first_name", "last_name", "pk")  # pk: mismo orden en cada página
+    )
     if rol in Rol.values:
         cuentas = cuentas.filter(rol=rol)
     if clase_id.isdigit():
         cuentas = cuentas.filter(estudiante__clase_id=int(clase_id))
-    if texto:
-        cuentas = cuentas.filter(
-            Q(first_name__icontains=texto)
-            | Q(last_name__icontains=texto)
-            | Q(username__icontains=texto)
-            | Q(estudiante__codigo_estudiante__iexact=texto)
-        )
+    if texto:  # sin mirar tildes: «lucia» encuentra a Lucía (ver texto.py)
+        cuentas = [cuenta for cuenta in cuentas if _cuenta_coincide(cuenta, texto)]
 
     pagina = Paginator(cuentas, CUENTAS_POR_PAGINA).get_page(request.GET.get("pagina"))
     filtros = {k: v for k, v in {"rol": rol, "clase": clase_id, "q": texto}.items() if v}
@@ -316,6 +362,86 @@ def plantilla_csv(request):
     respuesta = HttpResponse("\ufeff" + PLANTILLA, content_type="text/csv; charset=utf-8")
     respuesta["Content-Disposition"] = 'attachment; filename="plantilla_estudiantes.csv"'
     return respuesta
+
+
+# --- HU-01-04 · Vínculos con el tutor y el familiar (solo el administrador) -------
+
+
+def _grupos_por_clase(estudiantes):
+    """[(clase, [estudiantes])] en orden de clase, para los <optgroup> del selector."""
+    grupos = {}
+    for estudiante in estudiantes:
+        grupos.setdefault(estudiante.clase, []).append(estudiante)
+    return sorted(grupos.items(), key=lambda grupo: grupo[0].nombre)
+
+
+def _buscar(estudiantes, texto):
+    """Por nombre y apellidos o por el código exacto, sin mirar tildes ni mayúsculas."""
+    if not texto:
+        return list(estudiantes)
+    return [
+        uno
+        for uno in estudiantes
+        if coincide(texto, uno.usuario.get_full_name())
+        or normalizar(texto) == normalizar(uno.codigo_estudiante)
+    ]
+
+
+@admin_requerido
+@require_http_methods(["GET", "POST"])
+def vinculos(request):
+    """B25 · Vínculos: el tutor y el familiar de cada estudiante (PA1 y PA2).
+
+    Se elige el estudiante con ?estudiante=<código> (y ?q= para buscarlo). «Quitar» y
+    «Añadir» cambian el familiar sin guardar; «Guardar vínculos» guarda tutor y familiar.
+    """
+    texto = request.GET.get("q", "").strip()
+    todos = estudiantes_de(request.user)
+    encontrados = _buscar(todos, texto)
+    codigo = request.GET.get("estudiante", "").upper()
+    estudiante = next((uno for uno in encontrados if uno.codigo_estudiante == codigo), None)
+    if estudiante is None and encontrados and texto and request.method == "GET":
+        estudiante = encontrados[0]  # al buscar sin elegir, el primero que coincide
+
+    form = None
+    if estudiante is not None:
+        accion = request.POST.get("accion", "guardar")
+        if request.method == "POST" and accion in VinculosForm.ACCIONES:
+            form = VinculosForm(request.POST, estudiante=estudiante)
+            if accion == "guardar" and form.is_valid():
+                nombre = estudiante.usuario.get_full_name()
+                cambia_tutor = guardar_vinculos(
+                    estudiante,
+                    tutor=form.cleaned_data["tutor"],
+                    familiar=form.cleaned_data["familiar"],
+                )
+                aviso = f"Vínculos de {nombre} guardados."
+                if cambia_tutor and estudiante.tutor:
+                    aviso += f" Su tutor ahora es {estudiante.tutor.get_full_name()}."
+                messages.success(request, aviso)
+                return redirect(
+                    reverse("usuarios:vinculos")
+                    + "?"
+                    + urlencode({"estudiante": estudiante.codigo_estudiante})
+                )
+            if accion != "guardar":
+                datos = form.datos_tras(accion)
+                if datos is not None:
+                    form = VinculosForm(datos, estudiante=estudiante)
+        else:
+            form = VinculosForm(estudiante=estudiante)
+
+    return render(
+        request,
+        "usuarios/vinculos.html",
+        {
+            "texto": texto,
+            "grupos": _grupos_por_clase(encontrados),
+            "estudiante": estudiante,
+            "form": form,
+            "hay_estudiantes": todos.exists(),
+        },
+    )
 
 
 # --- HU-01-08 · Elegir los estudiantes que atiendo (Javi) ------------------------

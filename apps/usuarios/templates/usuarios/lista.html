@@ -50,7 +50,7 @@
   <div class="tabla-caja" tabindex="0" role="region" aria-labelledby="cuantas">
     <table class="tabla">
       <thead>
-        <tr><th scope="col">Persona</th><th scope="col">Rol</th><th scope="col">Clase</th><th scope="col">Tutor · Familiar</th><th scope="col">Estado</th></tr>
+        <tr><th scope="col">Persona</th><th scope="col">Rol</th><th scope="col">Clase</th><th scope="col">Vínculos</th><th scope="col">Estado</th></tr>
       </thead>
       <tbody>
         {% for cuenta in pagina %}
@@ -64,6 +64,11 @@
           <td>
             {% if cuenta.es_estudiante %}
             {{ cuenta.estudiante.tutor.get_full_name|default:"Sin tutor" }} · {{ cuenta.estudiante.familiar.get_full_name|default:"Sin familiar" }}
+            <a class="tabla__enlace" href="{% url 'usuarios:vinculos' %}?estudiante={{ cuenta.estudiante.codigo_estudiante|urlencode }}">Cambiar<span class="visualmente-oculto"> los vínculos de {{ cuenta.get_full_name }}</span></a>
+            {% elif cuenta.rol == "tutor" %}{{ cuenta.n_tutorizados }} estudiante{{ cuenta.n_tutorizados|pluralize }} a su cargo
+            {% elif cuenta.rol == "familiar" %}Familiar de {{ cuenta.n_familiares }} estudiante{{ cuenta.n_familiares|pluralize }}
+            {% elif cuenta.rol == "profesional" %}Atiende a {{ cuenta.n_atendidos }} estudiante{{ cuenta.n_atendidos|pluralize }}
+            {% elif cuenta.rol == "administrador" %}Toda la administración
             {% else %}—{% endif %}
           </td>
           <td>{% if cuenta.is_active %}Activa{% else %}<strong>Desactivada</strong>{% endif %}</td>

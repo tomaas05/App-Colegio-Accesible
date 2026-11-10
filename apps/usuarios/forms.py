@@ -3,11 +3,13 @@
 HU-01-07: entrada de tutor, profesional, familiar y administrador (boceto B12).
 HU-01-06: entrada del estudiante con 3 imágenes o con contraseña.
 HU-01-01: crear una cuenta (B21) y cargar una lista de estudiantes.
+HU-01-04: vínculos de un estudiante con su tutor y su familiar (B25).
 """
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
+from django.db.models import Q
 
 from apps.perfil.models import MetodoAcceso
 
@@ -200,9 +202,14 @@ class CrearCuentaForm(forms.Form):
     )
     correo = forms.EmailField(label="Correo electrónico (opcional)", required=False)
 
+    # Obligatorios (algunos solo para un rol): la etiqueta lleva « *», como en el boceto B21.
+    OBLIGATORIOS = ("rol", "nombre", "clase", "contrasena_estudiante", "usuario", "contrasena")
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("label_suffix", "")
         super().__init__(*args, **kwargs)
+        for nombre in self.OBLIGATORIOS:
+            self.fields[nombre].label_suffix = " *"
 
     def clean_avatar(self):
         avatar = self.cleaned_data.get("avatar")
@@ -293,6 +300,8 @@ class CargarListaForm(forms.Form):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("label_suffix", "")
         super().__init__(*args, **kwargs)
+        for campo in self.fields.values():
+            campo.label_suffix = " *"  # los dos son obligatorios
 
     clase = forms.ModelChoiceField(
         label="Clase",
@@ -313,3 +322,122 @@ class CargarListaForm(forms.Form):
         if not archivo.name.lower().endswith((".csv", ".txt")):
             raise forms.ValidationError("Tiene que ser un archivo .csv.")
         return archivo
+
+
+# --- HU-01-04 · Vínculos del estudiante con su tutor y su familiar (B25) ------
+
+
+def solo_un_familiar(estudiante, familiar):
+    """Mensaje de PA2: el estudiante ya tiene un familiar y no puede tener otro."""
+    return (
+        f"{estudiante.usuario.get_full_name()} ya tiene un familiar vinculado "
+        f"({familiar.get_full_name()}). Solo puede tener uno: quita el vínculo actual "
+        "para añadir otro."
+    )
+
+
+class OpcionPersona(forms.ModelChoiceField):
+    """Opción con el nombre completo y «(actual)» si es el vínculo guardado."""
+
+    def __init__(self, *args, actual_id=None, **kwargs):
+        self.actual_id = actual_id
+        super().__init__(*args, **kwargs)
+
+    def label_from_instance(self, usuario):
+        nombre = usuario.get_full_name() or usuario.username
+        return f"{nombre} (actual)" if usuario.pk == self.actual_id else nombre
+
+
+class VinculosForm(forms.Form):
+    """B25 · Vínculos de un estudiante.
+
+    El familiar elegido viaja en un campo oculto mientras no se guarda: «Quitar» y
+    «Añadir» cambian solo ese valor y «Guardar vínculos» lo guarda todo junto, como
+    en el boceto. Así funciona también sin JavaScript.
+    """
+
+    ACCIONES = ("guardar", "anadir", "quitar")
+
+    def __init__(self, *args, estudiante, **kwargs):
+        kwargs.setdefault("label_suffix", "")
+        kwargs.setdefault(
+            "initial", {"tutor": estudiante.tutor_id, "familiar": estudiante.familiar_id}
+        )
+        super().__init__(*args, **kwargs)
+        self.estudiante = estudiante
+        orden = ("first_name", "last_name")
+        # Los activos con el rol, más el vínculo actual aunque se haya desactivado:
+        # si no, guardar sin tocar nada le quitaría el tutor sin avisar.
+        tutores = Usuario.objects.filter(
+            Q(rol=Rol.TUTOR, is_active=True) | Q(pk=estudiante.tutor_id, rol=Rol.TUTOR)
+        ).order_by(*orden)
+        familiares = Usuario.objects.filter(
+            Q(rol=Rol.FAMILIAR, is_active=True) | Q(pk=estudiante.familiar_id, rol=Rol.FAMILIAR)
+        ).order_by(*orden)
+        self.fields["tutor"] = OpcionPersona(
+            label="Su tutor",
+            queryset=tutores,
+            required=False,
+            empty_label="Sin tutor",
+            actual_id=estudiante.tutor_id,
+            error_messages={"invalid_choice": "Elige un tutor de la lista."},
+        )
+        self.fields["familiar"] = forms.ModelChoiceField(
+            queryset=familiares,
+            required=False,
+            widget=forms.HiddenInput,
+            error_messages={"invalid_choice": "Elige un familiar de la lista."},
+        )
+        self.fields["nuevo_familiar"] = OpcionPersona(
+            label="Añadir familiar",
+            queryset=familiares.filter(is_active=True),
+            required=False,
+            empty_label="Elige un familiar",
+            actual_id=estudiante.familiar_id,
+            error_messages={"invalid_choice": "Elige un familiar de la lista."},
+        )
+
+    def datos_tras(self, accion):
+        """Los datos del formulario después de «Quitar» o «Añadir» el familiar.
+
+        Devuelve None si no se puede, con el motivo puesto como error del campo.
+        """
+        if not self.is_valid():
+            return None
+        datos = self.data.copy()
+        if accion == "quitar":
+            datos["familiar"] = ""
+        elif accion == "anadir":
+            pendiente = self.cleaned_data["familiar"]
+            nuevo = self.cleaned_data["nuevo_familiar"]
+            if pendiente:  # PA2: un segundo familiar se rechaza con un mensaje
+                self.add_error("nuevo_familiar", solo_un_familiar(self.estudiante, pendiente))
+                return None
+            if not nuevo:
+                self.add_error("nuevo_familiar", "Elige el familiar que quieres añadir.")
+                return None
+            datos["familiar"] = str(nuevo.pk)
+        datos["nuevo_familiar"] = ""
+        return datos
+
+    @property
+    def tutor_elegido(self):
+        if self.is_bound and self.is_valid():
+            return self.cleaned_data["tutor"]
+        return self.estudiante.tutor
+
+    @property
+    def familiar_elegido(self):
+        if self.is_bound and self.is_valid():
+            return self.cleaned_data["familiar"]
+        return self.estudiante.familiar
+
+    @property
+    def sin_guardar(self):
+        """Hay cambios hechos con «Añadir», «Quitar» o el tutor que aún no se han guardado."""
+        if not self.is_bound or not self.is_valid():
+            return False
+        tutor, familiar = self.tutor_elegido, self.familiar_elegido
+        return (tutor.pk if tutor else None) != self.estudiante.tutor_id or (
+            familiar.pk if familiar else None
+        ) != self.estudiante.familiar_id
