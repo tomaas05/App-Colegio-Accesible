@@ -1,0 +1,278 @@
+/*
+ * Despega · Perfil visual del estudiante (Jorge, HU-04-01).
+ * Boceto B52 · Tutor · Perfil visual. Solo variables de tokens.css y rem.
+ */
+
+.perfil-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: min(72rem, 100%);
+  margin-inline: auto;
+}
+.perfil-pagina h1,
+.perfil-pagina h2,
+.perfil-pagina p {
+  margin: 0;
+}
+.perfil-intro {
+  color: var(--gris);
+}
+
+/* --- Lista de estudiantes del tutor (/perfil/) --- */
+.perfil-estudiantes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.perfil-estudiantes > li {
+  display: flex;
+}
+.perfil-estudiante-card {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: var(--toque-grande);
+  padding: 0.85rem 1rem;
+  color: var(--texto);
+  text-decoration: none;
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.perfil-estudiante-card:hover {
+  background: var(--menta-hover);
+}
+.perfil-estudiante-card__avatar {
+  flex: none;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+}
+.perfil-estudiante-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.perfil-estudiante-card__info b {
+  font-family: var(--fuente-titulos);
+  font-size: 1.15rem;
+  color: var(--petroleo);
+}
+.perfil-estudiante-card__info span {
+  font-size: 0.95rem;
+  color: var(--gris);
+}
+
+/* --- Aviso de guardado --- */
+.aviso-ok {
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  color: var(--petroleo);
+  background: var(--menta);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+
+/* --- B52 · Formulario y vista previa --- */
+.perfil-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.grupo-opciones {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.grupo-opciones legend {
+  padding: 0 0.4rem;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.opciones-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.opcion-radio,
+.opcion-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--toque);
+  padding: 0.4rem 0.85rem;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+.opcion-radio:hover,
+.opcion-check:hover {
+  background: var(--menta-hover);
+}
+.opcion-radio:has(input:checked),
+.opcion-check:has(input:checked) {
+  color: var(--petroleo);
+  background: var(--menta);
+  border-width: 3px;
+}
+.opcion-radio input,
+.opcion-check input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  accent-color: var(--petroleo);
+}
+
+/* --- Recuadro de vista previa en vivo --- */
+.perfil-previa {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem;
+  color: var(--texto);
+  background: var(--blanco);
+  border: 3px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+  font-family: var(--fuente-texto);
+}
+.perfil-previa h2 {
+  font-size: 1.35rem;
+  color: var(--petroleo);
+}
+.perfil-previa__resumen {
+  font-size: 0.95rem;
+  color: var(--gris);
+}
+.perfil-previa__marco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  font-size: var(--tamano-base);
+  background: var(--blanco);
+  border: 2px dashed var(--verde-oscuro);
+  border-radius: 1rem;
+}
+.perfil-previa__tarjeta {
+  padding: 0.65rem 0.85rem;
+  color: var(--texto);
+  background: var(--menta);
+  border: 3px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.perfil-previa__hora {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 0.95em;
+  color: var(--verde-oscuro);
+}
+.perfil-previa__nombre {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.perfil-previa__boton {
+  width: 100%;
+  min-height: var(--toque);
+  padding-block: 0.2rem;
+  line-height: 1.1;
+  font-size: var(--tamano-base);
+  color: var(--blanco);
+  background: var(--petroleo);
+  border-color: var(--petroleo);
+}
+.perfil-previa__boton:hover {
+  background: var(--verde-oscuro);
+}
+
+/* Variables de la vista previa según lo elegido en el formulario */
+.perfil-previa[data-paleta="suave"] {
+  --petroleo: #164652;
+  --verde-oscuro: #216b67;
+  --menta: #edf6f3;
+  --texto: #233135;
+  --gris: #526368;
+  --blanco: #fafdfb;
+}
+.perfil-previa[data-paleta="alto_contraste"] {
+  --petroleo: #002233;
+  --verde-oscuro: #003d52;
+  --menta: #e6f2ff;
+  --texto: #000000;
+  --gris: #222b2e;
+  --blanco: #ffffff;
+}
+.perfil-previa[data-tema="oscuro"] {
+  --petroleo: #b8ece3;
+  --verde-oscuro: #88d9cb;
+  --menta: #182f37;
+  --texto: #f2f7f6;
+  --gris: #b8ccd0;
+  --blanco: #0f1d22;
+}
+.perfil-previa[data-tema="oscuro"][data-paleta="suave"] {
+  --petroleo: #c4efe7;
+  --verde-oscuro: #96dfd2;
+  --menta: #1f333a;
+  --texto: #eaf2f0;
+  --gris: #c2d4d8;
+  --blanco: #162429;
+}
+.perfil-previa[data-tema="oscuro"][data-paleta="alto_contraste"] {
+  --petroleo: #ffffff;
+  --verde-oscuro: #99f2e6;
+  --menta: #0d1f26;
+  --texto: #ffffff;
+  --gris: #d9e6e8;
+  --blanco: #000000;
+}
+.perfil-previa[data-fuente="nunito"] {
+  --fuente-texto: "Nunito", Arial, sans-serif;
+  --fuente-titulos: "Nunito", Arial, sans-serif;
+}
+.perfil-previa[data-fuente="open_sans"] {
+  --fuente-texto: "Open Sans", Arial, sans-serif;
+  --fuente-titulos: "Open Sans", Arial, sans-serif;
+}
+.perfil-previa[data-fuente="atkinson"] {
+  --fuente-texto: "Atkinson Hyperlegible", Verdana, sans-serif;
+  --fuente-titulos: "Atkinson Hyperlegible", Verdana, sans-serif;
+}
+.perfil-previa[data-fuente="lexend"] {
+  --fuente-texto: "Lexend", "Trebuchet MS", sans-serif;
+  --fuente-titulos: "Lexend", "Trebuchet MS", sans-serif;
+}
+.perfil-previa[data-letra="16"] {
+  --tamano-base: 1rem;
+}
+.perfil-previa[data-letra="20"] {
+  --tamano-base: 1.25rem;
+}
+.perfil-previa[data-letra="24"] {
+  --tamano-base: 1.5rem;
+}
+.perfil-previa[data-letra="32"] {
+  --tamano-base: 2rem;
+}
+.perfil-previa[data-botones="48"] {
+  --toque: 3rem;
+}
+.perfil-previa[data-botones="64"] {
+  --toque: 4rem;
+}
+.perfil-previa[data-botones="80"] {
+  --toque: 5rem;
+}

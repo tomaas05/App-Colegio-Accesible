@@ -134,6 +134,76 @@ def test_contrasena_del_estudiante(live_server, page, datos, nombre):
     revisar(page, nombre)
 
 
+# --- HU-01-01 · Pantallas del administrador ---
+
+
+def como_admin(page, live_server, client):
+    con_sesion(page, live_server, client, Usuario.objects.get(username="admin"))
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_lista_de_usuarios(live_server, page, client, datos, nombre):
+    """B20 · Usuarios, con la tabla y los filtros."""
+    como_admin(page, live_server, client)
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + reverse("usuarios:lista"))
+    revisar(page, nombre)
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_crear_cuenta_con_errores_y_por_rol(live_server, page, client, datos, nombre):
+    """B21 · Crear cuenta: vacía con errores, y con las secciones de estudiante y de adulto."""
+    como_admin(page, live_server, client)
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + reverse("usuarios:crear"))
+    page.click("main form button[type=submit]")
+    assert page.locator("[role=alert]").is_visible()
+    revisar(page, nombre)
+
+    page.select_option("#id_rol", "estudiante")
+    assert page.locator('[data-solo="estudiante"]').is_visible()
+    assert not page.locator('[data-solo="adulto"]').is_visible()
+    revisar(page, nombre)
+
+    page.select_option("#id_rol", "tutor")
+    assert page.locator('[data-solo="adulto"]').is_visible()
+    assert not page.locator('[data-solo="estudiante"]').is_visible()
+    revisar(page, nombre)
+
+
+def test_crear_un_estudiante_desde_el_navegador(live_server, page, client, datos):
+    """El recorrido completo con JavaScript: rol, clase, 3 imágenes y crear."""
+    como_admin(page, live_server, client)
+    page.goto(live_server.url + reverse("usuarios:crear"))
+    page.select_option("#id_rol", "estudiante")
+    page.fill("#id_nombre", "Noa")
+    page.select_option("#id_clase", label="PTVAL 1 (2026-2027)")
+    for palabra in ("luna", "pez", "casa"):
+        page.locator("label.loseta--marcar", has_text=palabra).click()
+    page.click("main form button[type=submit]")
+    page.wait_for_url("**/usuarios/?clase=*")
+    assert "Cuenta creada: Noa" in page.content()
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_cargar_lista_con_resultado(live_server, page, client, datos, nombre, tmp_path):
+    """Cargar una lista: el resultado con una fila buena y una mala."""
+    como_admin(page, live_server, client)
+    archivo = tmp_path / "lista.csv"
+    archivo.write_text(
+        "nombre;apellidos;imagenes;contrasena\nIris;Sol;gato luna pez;\nMal;Uno;perro;\n",
+        encoding="utf-8",
+    )
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + reverse("usuarios:cargar"))
+    revisar(page, nombre)
+    page.select_option("#id_clase", label="PTVAL 1 (2026-2027)")
+    page.set_input_files("#id_archivo", str(archivo))
+    page.click("main form button[type=submit]")
+    assert "Se ha creado 1 cuenta" in page.content()
+    revisar(page, nombre)
+
+
 # --- HU-01-08 · Elegir mis estudiantes (Javi) ---
 
 
