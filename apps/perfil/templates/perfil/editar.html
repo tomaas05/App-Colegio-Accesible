@@ -83,6 +83,29 @@
         </div>
       </fieldset>
 
+            <fieldset class="grupo-opciones">
+        <legend>Tipo de temporizador visual</legend>
+        <div class="opciones-lista">
+          {% for radio in form.tipo_temporizador %}
+          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="grupo-opciones">
+        <legend>Visibilidad del temporizador</legend>
+        <div class="opciones-lista">
+          <label class="opcion-check">
+            {{ form.temporizador_visible }}
+            <span>Mostrar el temporizador visible al abrir una tarea</span>
+          </label>
+          <label class="opcion-check">
+            {{ form.puede_ocultar_temporizador }}
+            <span>Permitir que el estudiante oculte y muestre el temporizador</span>
+          </label>
+        </div>
+      </fieldset>
+
       <fieldset class="grupo-opciones">
         <legend>Lector de pantalla</legend>
         <label class="opcion-check">

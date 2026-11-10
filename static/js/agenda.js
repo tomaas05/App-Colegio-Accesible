@@ -151,4 +151,66 @@
     aviso.textContent = "No se ha podido guardar. Vuelve a pulsar «Hecho».";
     mensajes.replaceChildren(aviso);
   });
+
+    // 4. Temporizador de la tarea en curso (HU-07-01)
+  var cajaTiempo = document.querySelector("[data-temporizador]");
+  if (cajaTiempo) {
+    var restanteInicial = parseInt(cajaTiempo.dataset.restanteSeg || "0", 10);
+    var duracionTotal = Math.max(1, parseInt(cajaTiempo.dataset.duracionSeg || "1", 10));
+    var instanteCarga = Date.now();
+    var nodoTexto = cajaTiempo.querySelector("[data-temporizador-texto]");
+    var nodoCorto = cajaTiempo.querySelector("[data-temporizador-corto]");
+    var nodoReloj = cajaTiempo.querySelector("[data-temporizador-reloj]");
+    var nodoBarra = cajaTiempo.querySelector("[data-temporizador-barra]");
+    var nodoRelleno = cajaTiempo.querySelector("[data-temporizador-relleno]");
+    var nodoArco = cajaTiempo.querySelector("[data-temporizador-arco]");
+    var botonOcultar = cajaTiempo.querySelector("[data-ocultar-temporizador]");
+    var cuerpoTiempo = cajaTiempo.querySelector("[data-temporizador-cuerpo]");
+    var circunferencia = 226.19;
+
+    var actualizarTemporizador = function () {
+      var transcurridos = Math.floor((Date.now() - instanteCarga) / 1000);
+      var quedan = Math.max(0, restanteInicial - transcurridos);
+      var pct = Math.max(0, Math.min(100, Math.round((quedan * 100) / duracionTotal)));
+      var minRestantes = quedan > 0 ? Math.ceil(quedan / 60) : 0;
+      var mm = dos(Math.floor(quedan / 60));
+      var ss = dos(quedan % 60);
+
+      cajaTiempo.dataset.restanteActual = String(quedan);
+
+      if (nodoTexto) {
+        nodoTexto.textContent =
+          quedan > 0 ? "Quedan " + minRestantes + " min" : "Se acabó el tiempo";
+      }
+      if (nodoCorto) {
+        nodoCorto.textContent = minRestantes + " min";
+      }
+      if (nodoReloj) {
+        nodoReloj.textContent = mm + ":" + ss;
+      }
+      if (nodoBarra) {
+        nodoBarra.setAttribute("aria-valuenow", String(pct));
+      }
+      if (nodoRelleno) {
+        nodoRelleno.style.width = pct + "%";
+      }
+      if (nodoArco) {
+        var offset = ((circunferencia * (100 - pct)) / 100).toFixed(2);
+        nodoArco.setAttribute("stroke-dashoffset", String(offset));
+      }
+    };
+
+    actualizarTemporizador();
+    window.setInterval(actualizarTemporizador, 1000);
+
+    if (botonOcultar && cuerpoTiempo) {
+      botonOcultar.addEventListener("click", function () {
+        var ocultar = !cuerpoTiempo.hidden;
+        cuerpoTiempo.hidden = ocultar;
+        botonOcultar.setAttribute("aria-expanded", ocultar ? "false" : "true");
+        botonOcultar.textContent = ocultar ? "Mostrar tiempo" : "Ocultar tiempo";
+      });
+    }
+  }
+
 })();

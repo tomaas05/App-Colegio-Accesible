@@ -87,9 +87,7 @@
 
     <div class="col">
       {% if t.en_curso %}
-        {# JORGE (HU-07-01): aquí va el temporizador. Cuando exista perfil/_temporizador.html, #}
-        {# sustituye este comentario por:  include "perfil/_temporizador.html" with fin=t.fin perfil=perfil #}
-        {# (entre llaves y porcentaje, como cualquier etiqueta de Django).                    #}
+        {% include "perfil/_temporizador.html" with fin=t.fin perfil=perfil %}
       {% endif %}
 
       {# Botón principal: siempre en este sitio y lo más grande de la pantalla (RNF4.1.7).     #}
