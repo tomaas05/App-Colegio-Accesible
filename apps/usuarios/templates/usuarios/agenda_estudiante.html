@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Agenda de {{ estudiante.usuario.first_name }} · {{ fecha_texto }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{% block cabecera %}
+<div class="cabecera-adulto">
+  <a class="boton boton--aux" href="{% url 'usuarios:mis_estudiantes' %}"><span aria-hidden="true">‹</span> Mis estudiantes</a>
+  <form method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block contenido %}
+{# Boceto B27 · Agenda de un estudiante (profesional). HU-01-09 (AGENDA-159), PA1 y PA2. #}
+<div class="panel consulta">
+  <section class="panel__saludo" aria-labelledby="consulta-titulo">
+    <img class="consulta__avatar" src="{{ estudiante.avatar.url }}" alt="" width="72" height="72">
+    <div>
+      <h1 id="consulta-titulo">Agenda de {{ estudiante.usuario.get_full_name }}</h1>
+      <p class="panel__rol">{{ estudiante.clase.nombre }} · Solo consulta: no puedes cambiar lo que han creado otros.</p>
+    </div>
+  </section>
+
+  <nav class="consulta__dias" aria-label="Cambiar de día">
+    <a class="boton boton--aux" href="?dia={{ anterior|date:'Y-m-d' }}"><span aria-hidden="true">‹</span> Día anterior</a>
+    <h2 class="consulta__fecha" aria-live="polite">{{ fecha_texto }}{% if es_hoy %} (hoy){% endif %}</h2>
+    {% if not es_hoy %}<a class="boton boton--aux" href="?">Hoy</a>{% endif %}
+    <a class="boton boton--aux" href="?dia={{ siguiente|date:'Y-m-d' }}">Día siguiente <span aria-hidden="true">›</span></a>
+  </nav>
+
+  <section aria-labelledby="consulta-tareas">
+    <h2 id="consulta-tareas">Tareas</h2>
+    {% if tareas %}
+    <ol class="consulta__tareas">
+      {% for t in tareas %}
+      <li class="consulta__tarea">
+        <p class="consulta__hora">{{ t.asignacion.hora_inicio|time:"H:i" }} – {{ t.asignacion.hora_fin|time:"H:i" }}</p>
+        <div class="consulta__cuerpo">
+          <img src="{{ t.tarea.imagen.url }}" alt="" width="64" height="64">
+          <div>
+            <h3>{{ t.tarea.nombre }}</h3>
+            <p class="consulta__estado">Estado: <b>{{ t.estado }}</b></p>
+            <p class="consulta__quien">
+              Creada por {{ t.tarea.creador.get_full_name }}{% if t.asignacion.asignado_por_id != t.tarea.creador_id %} · puesta en la agenda por {{ t.asignacion.asignado_por.get_full_name }}{% endif %}
+            </p>
+            {# PA2: lo de otros se marca como solo consulta; no hay botones de cambiar ni borrar. #}
+            {% if t.modificable %}
+            <p class="consulta__marca consulta__marca--mia">Creada por ti</p>
+            {% else %}
+            <p class="consulta__marca"><span aria-hidden="true">🔒</span> Solo consulta</p>
+            {% endif %}
+            {% with pasos=t.tarea.pasos.all %}
+            {% if pasos %}
+            <details class="consulta__pasos">
+              <summary>Ver sus {{ pasos|length }} pasos</summary>
+              <ol>
+                {% for paso in pasos %}<li>{{ paso.descripcion|default:paso.descripcion_imagen }}</li>{% endfor %}
+              </ol>
+            </details>
+            {% endif %}
+            {% endwith %}
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p>Este día no tiene tareas.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="consulta-horario">
+    <h2 id="consulta-horario">Horario de clase</h2>
+    {% if horario %}
+    <ul class="consulta__horario">
+      {% for casilla in horario %}
+      <li>
+        <span class="consulta__hora">{{ casilla.franja.hora_inicio|time:"H:i" }} – {{ casilla.franja.hora_fin|time:"H:i" }}</span>
+        <img src="{{ casilla.asignatura.imagen.url }}" alt="" width="40" height="40">
+        <span>{{ casilla.asignatura.nombre }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>Este día no hay horario de clase.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

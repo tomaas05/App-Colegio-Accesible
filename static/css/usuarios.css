@@ -241,7 +241,7 @@ a.boton {
 /* Losetas: botones grandes con dibujo y nombre (avatares, clases, Estudiante/Adulto). */
 .losetas {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
   gap: var(--separacion);
   margin: 0;
   padding: 0;
@@ -249,8 +249,15 @@ a.boton {
 }
 .losetas--grandes {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
-  width: min(32rem, 100%);
+  width: min(36rem, 100%);
   margin-inline: auto;
+}
+/* B01: «Estudiante» y «Adulto» ocupan casi toda la pantalla, como en el boceto. */
+.losetas--grandes .loseta {
+  min-height: 12rem;
+}
+.losetas--grandes .loseta__dibujo {
+  font-size: clamp(5rem, 18vw, 8rem);
 }
 /* 4 columnas en el móvil: las 12 imágenes y «Entrar» caben sin desplazarse. */
 .losetas--acceso {
@@ -294,12 +301,17 @@ a.boton {
   background: var(--menta);
 }
 .loseta__imagen {
-  width: 6rem;
+  width: 7.5rem;
   max-width: 100%;
   height: auto;
   aspect-ratio: 1;
   object-fit: contain;
   border-radius: 0.75rem;
+}
+.loseta__sub {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gris);
 }
 .loseta__imagen--avatar {
   border-radius: 50%;
@@ -604,6 +616,9 @@ a.boton {
   font-weight: 700;
 }
 .tabla-caja {
+  /* relative: el texto oculto (.visualmente-oculto, absolute) se queda dentro de la caja
+     que se desplaza; si no, ensancha la página en el móvil. */
+  position: relative;
   overflow-x: auto;
   border: 2px solid var(--menta);
   border-radius: 1rem;
@@ -652,4 +667,346 @@ a.boton {
 [data-solo][hidden],
 [data-solo-metodo][hidden] {
   display: none;
+}
+
+/* --- HU-01-04 · B25 Vínculos y «Tus estudiantes» en el panel --- */
+.admin__titulo {
+  flex: 1 1 12em;
+}
+.admin__titulo h1 {
+  font-size: 1.75rem;
+}
+.admin__seccion h3 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-size: 1.2rem;
+  color: var(--petroleo);
+}
+/* Cambios sin guardar y aviso de cambio de tutor: texto y borde, no solo color. */
+.aviso-pendiente {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--aviso-fondo);
+  border: 2px dashed var(--petroleo);
+  border-radius: 1rem;
+}
+.aviso-pendiente[hidden] {
+  display: none;
+}
+.vinculos__ficha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+.vinculos__ficha h2 {
+  font-size: 1.4rem;
+}
+.vinculos__avatar {
+  flex: none;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.vinculos__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vinculos__persona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  min-height: var(--toque);
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--menta);
+  border-radius: 0.75rem;
+}
+.vinculos__persona > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.vinculos__persona--vacio {
+  color: var(--gris);
+}
+/* 12rem: en el móvil el botón baja a la línea siguiente y el texto del select se lee entero. */
+.campo__fila select {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.campo__fila {
+  flex-wrap: wrap;
+}
+.tabla__enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
+  font-weight: 700;
+  color: var(--petroleo);
+}
+
+.panel__estudiantes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.panel__estudiante {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid var(--menta);
+  border-radius: 1rem;
+}
+.panel__estudiante img {
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.panel__estudiante > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.panel__estudiante b {
+  font-family: var(--fuente-titulos);
+  color: var(--petroleo);
+}
+.panel__estudiante span span {
+  font-size: 1rem;
+  color: var(--gris);
+}
+
+/* B21 y cargar lista: «Los campos con * son obligatorios». */
+.admin__titulo .admin__nota {
+  margin-top: 0.15rem;
+}
+.panel__fecha {
+  font-size: 1rem;
+  color: var(--gris);
+}
+
+/* --- HU-01-08 · B26 Elegir mis estudiantes (Javi) --- */
+.elegir__cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+.elegir__tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 2px solid var(--menta);
+  border-radius: 1.25rem;
+}
+.elegir__tarjeta form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.elegir__tarjeta .elegir__filtros {
+  flex-flow: row wrap;
+  align-items: flex-end;
+}
+.elegir__filtros .campo {
+  flex: 1 1 10rem;
+}
+.elegir__filtros .boton--aux {
+  min-height: var(--toque);
+}
+.elegir__lista {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.elegir__lista legend {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+.elegir__lista ul,
+.elegir__mios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.elegir__estudiante {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--toque-grande);
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.elegir__estudiante:hover {
+  background: var(--menta-hover);
+}
+/* Elegido = casilla marcada + fondo menta + borde doble (no solo el color). */
+.elegir__estudiante:has(input:checked) {
+  background: var(--menta);
+  border-width: 0.375rem;
+  border-style: double;
+}
+.elegir__estudiante input {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  accent-color: var(--petroleo);
+}
+.elegir__estudiante img,
+.elegir__mios img {
+  flex: none;
+  border-radius: 50%;
+}
+.elegir__estudiante span,
+.elegir__nombre {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.elegir__estudiante b {
+  font-family: var(--fuente-titulos);
+  color: var(--petroleo);
+}
+.elegir__estudiante small,
+.elegir__nombre small {
+  color: var(--gris);
+}
+.elegir__mios li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.elegir__nombre {
+  flex: 1;
+}
+.elegir__mios li {
+  flex-wrap: wrap;
+}
+.elegir__mios form {
+  margin: 0;
+}
+.elegir__mios .boton--aux,
+.cabecera-adulto .boton--aux {
+  min-height: var(--toque);
+}
+
+/* --- HU-01-09 · B27 Agenda de un estudiante, solo consulta (Javi) --- */
+.consulta__avatar {
+  flex: none;
+  border-radius: 50%;
+}
+.consulta__dias {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+.consulta__dias .boton--aux {
+  min-height: var(--toque);
+}
+.consulta__fecha {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-size: 1.25rem;
+  text-align: center;
+}
+.consulta__tareas,
+.consulta__horario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.consulta__tarea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid var(--petroleo);
+  border-left-width: 0.5rem;
+  border-radius: 1rem;
+}
+.consulta__tarea p,
+.consulta__tarea h3 {
+  margin: 0;
+}
+.consulta__hora {
+  font-weight: 700;
+  color: var(--petroleo);
+}
+.consulta__cuerpo {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.consulta__cuerpo > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.consulta__cuerpo img,
+.consulta__horario img {
+  flex: none;
+  border-radius: 0.75rem;
+}
+.consulta__quien {
+  color: var(--gris);
+}
+.consulta__marca {
+  align-self: flex-start;
+  padding: 0.1rem 0.75rem;
+  font-weight: 700;
+  color: var(--petroleo);
+  background: var(--menta);
+  border-radius: var(--radio-boton);
+}
+.consulta__marca--mia {
+  color: var(--blanco);
+  background: var(--verde-oscuro);
+}
+.consulta__pasos summary {
+  min-height: var(--toque);
+  padding-block: 0.6rem;
+  font-weight: 700;
+  color: var(--petroleo);
+  cursor: pointer;
+}
+.consulta__horario li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+.consulta__horario .consulta__hora {
+  white-space: nowrap;
+}
+.elegir__mios .boton {
+  min-height: var(--toque);
+  white-space: nowrap;
 }

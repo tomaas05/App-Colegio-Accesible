@@ -10,7 +10,10 @@
 <div class="admin admin--estrecho">
   <div class="admin__cab">
     <a class="boton boton--aux" href="{% url 'usuarios:lista' %}"><span aria-hidden="true">‹</span> Usuarios</a>
-    <h1>Crear cuenta</h1>
+    <div class="admin__titulo">
+      <h1>Crear cuenta</h1>
+      <p class="admin__nota">Los campos con * son obligatorios.</p>
+    </div>
   </div>
 
   <form class="formulario admin__tarjeta" method="post" enctype="multipart/form-data" novalidate data-crear-cuenta>
@@ -34,7 +37,7 @@
       <div class="campo campo--opciones">{{ form.metodo_acceso.as_field_group }}</div>
 
       <fieldset class="rejilla-acceso" data-rejilla-acceso data-solo-metodo="imagenes"{% if form.imagenes.errors %} aria-describedby="id_imagenes_error"{% endif %}>
-        <legend>Sus 3 imágenes, en cualquier orden</legend>
+        <legend>Sus 3 imágenes, en cualquier orden *</legend>
         {% if form.imagenes.errors %}<p class="campo__error" id="id_imagenes_error">{{ form.imagenes.errors.0 }}</p>{% endif %}
         <ul class="losetas losetas--acceso" id="id_imagenes">
           {% for imagen in form.fields.imagenes.queryset %}

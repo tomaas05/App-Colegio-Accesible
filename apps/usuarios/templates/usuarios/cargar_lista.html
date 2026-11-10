@@ -10,7 +10,10 @@
 <div class="admin admin--estrecho">
   <div class="admin__cab">
     <a class="boton boton--aux" href="{% url 'usuarios:lista' %}"><span aria-hidden="true">‹</span> Usuarios</a>
-    <h1>Cargar lista de estudiantes</h1>
+    <div class="admin__titulo">
+      <h1>Cargar lista de estudiantes</h1>
+      <p class="admin__nota">Los campos con * son obligatorios.</p>
+    </div>
   </div>
 
   {% if resultado %}

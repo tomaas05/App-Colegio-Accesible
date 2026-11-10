@@ -12,7 +12,6 @@ Una de las dos, no las dos. Separador «;» (el Excel en español) o «,».
 
 import csv
 import io
-import unicodedata
 from dataclasses import dataclass, field
 
 from django.db import transaction
@@ -21,6 +20,7 @@ from apps.perfil.models import MetodoAcceso
 
 from .forms import CrearCuentaForm
 from .models import ImagenAcceso, Rol
+from .texto import normalizar
 
 MAXIMO_FILAS = 500
 COLUMNAS = ["nombre", "apellidos", "imagenes", "contrasena"]
@@ -40,11 +40,6 @@ class ResultadoCarga:
     creados: list = field(default_factory=list)  # Estudiante
     errores: list = field(default_factory=list)  # (número de fila, nombre, motivo)
     error_archivo: str = ""
-
-
-def _normalizar(texto):
-    sin_tildes = unicodedata.normalize("NFD", texto or "")
-    return "".join(c for c in sin_tildes if unicodedata.category(c) != "Mn").strip().lower()
 
 
 def _leer(archivo):
@@ -75,7 +70,7 @@ def cargar_lista(archivo, clase):
         resultado.error_archivo = "El archivo está vacío."
         return resultado
 
-    cabecera = [_normalizar(c) for c in filas[0]]
+    cabecera = [normalizar(c) for c in filas[0]]
     if "nombre" not in cabecera:
         resultado.error_archivo = (
             "La primera fila tiene que tener los nombres de las columnas: "
@@ -88,7 +83,7 @@ def cargar_lista(archivo, clase):
 
     posicion = {nombre: cabecera.index(nombre) for nombre in COLUMNAS if nombre in cabecera}
     imagenes_por_palabra = {
-        _normalizar(i.descripcion_imagen): i.pk for i in ImagenAcceso.objects.filter(activa=True)
+        normalizar(i.descripcion_imagen): i.pk for i in ImagenAcceso.objects.filter(activa=True)
     }
 
     for numero, fila in enumerate(filas[1:], start=2):
@@ -110,7 +105,7 @@ def cargar_lista(archivo, clase):
         if not palabras and not contrasena:
             resultado.errores.append((numero, nombre, "Pon sus 3 imágenes o su contraseña."))
             continue
-        desconocidas = [p for p in palabras if _normalizar(p) not in imagenes_por_palabra]
+        desconocidas = [p for p in palabras if normalizar(p) not in imagenes_por_palabra]
         if desconocidas:
             resultado.errores.append(
                 (numero, nombre, f"No hay ninguna imagen «{desconocidas[0]}» en la rejilla.")
@@ -124,7 +119,7 @@ def cargar_lista(archivo, clase):
                 "apellidos": celda("apellidos"),
                 "clase": clase.pk,
                 "metodo_acceso": MetodoAcceso.CONTRASENA if contrasena else MetodoAcceso.IMAGENES,
-                "imagenes": [imagenes_por_palabra[_normalizar(p)] for p in palabras],
+                "imagenes": [imagenes_por_palabra[normalizar(p)] for p in palabras],
                 "contrasena_estudiante": contrasena,
             }
         )

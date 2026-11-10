@@ -202,3 +202,113 @@ def test_cargar_lista_con_resultado(live_server, page, client, datos, nombre, tm
     page.click("main form button[type=submit]")
     assert "Se ha creado 1 cuenta" in page.content()
     revisar(page, nombre)
+
+
+# --- HU-03-11 · Horario escolar (Javi) ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_horario_escolar_del_administrador(live_server, page, client, datos, nombre):
+    """B37 · Horario escolar, también con el aviso de casilla ocupada (PA3)."""
+    con_sesion(page, live_server, client, Usuario.objects.get(username="admin"))
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(live_server.url + reverse("horario:cargar"))
+    revisar(page, nombre)
+    page.select_option("#asignatura", index=1)
+    page.click(".horario__form button[type=submit]")
+    assert page.locator("[role=alert]").is_visible()
+    revisar(page, nombre)
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_mi_horario_del_estudiante(live_server, page, client, datos, nombre):
+    """El estudiante ve el horario de su clase (PA1 y PA4)."""
+    lucia = Usuario.objects.get(username="est-a01")
+    con_sesion(page, live_server, client, lucia)
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(live_server.url + reverse("horario:mi_horario") + "?dia=1")
+    revisar(page, nombre)
+
+
+# --- HU-01-04 · Vínculos (B25) y «Tus estudiantes» en el panel ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_vinculos_con_el_aviso_de_un_segundo_familiar(live_server, page, client, datos, nombre):
+    """B25 con Lucía elegida, el aviso de cambio de tutor y el error de un segundo familiar."""
+    como_admin(page, live_server, client)
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + reverse("usuarios:vinculos"))
+    revisar(page, nombre)
+    page.goto(live_server.url + reverse("usuarios:vinculos") + "?estudiante=A01")
+    revisar(page, nombre)
+
+    page.select_option("#id_tutor", label="Pedro Gómez Sanz")
+    aviso = page.locator("[data-aviso-tutor]")
+    assert aviso.is_visible()
+    assert "de Ana Martín Ruiz a Pedro Gómez Sanz" in aviso.inner_text()
+    revisar(page, nombre)
+
+    page.select_option("#id_nuevo_familiar", label="Javier Ortega Ramos")
+    page.click("button[value=anadir]")
+    assert page.locator("[role=alert]").is_visible()
+    assert "Solo puede tener uno" in page.content()
+    revisar(page, nombre)
+
+
+def test_vinculos_buscar_filtra_la_lista_sin_recargar(live_server, page, client, datos):
+    como_admin(page, live_server, client)
+    page.goto(live_server.url + reverse("usuarios:vinculos"))
+    page.fill("#vinculos-q", "pablo")
+    opciones = page.locator("#vinculos-est option")
+    assert opciones.count() == 1
+    assert opciones.first.inner_text() == "Pablo Díaz"
+    page.fill("#vinculos-q", "nadie")
+    assert page.locator("#vinculos-est option").first.inner_text() == "Ningún estudiante coincide"
+    page.fill("#vinculos-q", "lucia")  # sin tilde también la encuentra
+    page.click("text=Ver sus vínculos")
+    assert page.locator("h2", has_text="Lucía Fernández").is_visible()
+
+
+def test_vinculos_cambiar_familiar_y_guardar(live_server, page, client, datos):
+    """El recorrido completo: quitar a Carmen, añadir a Javier y guardar."""
+    como_admin(page, live_server, client)
+    page.goto(live_server.url + reverse("usuarios:vinculos") + "?estudiante=A01")
+    page.click("button[value=quitar]")
+    assert page.locator("text=Hay cambios sin guardar").is_visible()
+    page.select_option("#id_nuevo_familiar", label="Javier Ortega Ramos")
+    page.click("button[value=anadir]")
+    page.click("button[value=guardar]")
+    assert "Vínculos de Lucía Fernández guardados." in page.content()
+    assert page.locator(".vinculos__persona", has_text="Javier Ortega Ramos").is_visible()
+
+
+# --- HU-01-08 · Elegir mis estudiantes (Javi) ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_mis_estudiantes(live_server, page, client, datos, nombre):
+    """B26 · Elegir mis estudiantes, tras guardar (con el aviso de «Guardado»)."""
+    con_sesion(page, live_server, client, Usuario.objects.get(username="profesional"))
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(live_server.url + reverse("usuarios:mis_estudiantes"))
+    revisar(page, nombre)
+    page.check("input[name=elegidos][value=A02]")
+    page.click("text=Guardar")
+    assert page.locator("[role=status]").is_visible()
+    revisar(page, nombre)
+
+
+# --- HU-01-09 · Agenda de un estudiante, solo consulta (Javi) ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_agenda_de_un_estudiante(live_server, page, client, datos, nombre):
+    """B27 · Agenda de Lucía vista por Luis, con los pasos de una tarea abiertos."""
+    con_sesion(page, live_server, client, Usuario.objects.get(username="profesional"))
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(live_server.url + reverse("usuarios:agenda_estudiante", args=["A01"]))
+    revisar(page, nombre)
+    if page.locator("summary").count():
+        page.locator("summary").first.click()
+        revisar(page, nombre)

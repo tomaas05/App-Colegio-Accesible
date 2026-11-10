@@ -19,6 +19,7 @@
         {# El nombre ya se lee: la imagen es decorativa para el lector de pantalla. #}
         {% if clase.imagen %}<img class="loseta__imagen" src="{{ clase.imagen.url }}" alt="" width="96" height="96">{% else %}<span class="loseta__dibujo" aria-hidden="true">🏫</span>{% endif %}
         <span class="loseta__nombre">{{ clase.nombre }}</span>
+        {% if clase.tutor_corto %}<span class="loseta__sub">{{ clase.tutor_corto }}</span>{% endif %}
       </a>
     </li>
     {% endfor %}
