@@ -531,10 +531,111 @@ a.boton {
 .elegir__nombre {
   flex: 1;
 }
+.elegir__mios li {
+  flex-wrap: wrap;
+}
 .elegir__mios form {
-  margin-left: auto;
+  margin: 0;
 }
 .elegir__mios .boton--aux,
 .cabecera-adulto .boton--aux {
   min-height: var(--toque);
+}
+
+/* --- HU-01-09 · B27 Agenda de un estudiante, solo consulta (Javi) --- */
+.consulta__avatar {
+  flex: none;
+  border-radius: 50%;
+}
+.consulta__dias {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+.consulta__dias .boton--aux {
+  min-height: var(--toque);
+}
+.consulta__fecha {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-size: 1.25rem;
+  text-align: center;
+}
+.consulta__tareas,
+.consulta__horario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.consulta__tarea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid var(--petroleo);
+  border-left-width: 0.5rem;
+  border-radius: 1rem;
+}
+.consulta__tarea p,
+.consulta__tarea h3 {
+  margin: 0;
+}
+.consulta__hora {
+  font-weight: 700;
+  color: var(--petroleo);
+}
+.consulta__cuerpo {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.consulta__cuerpo > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.consulta__cuerpo img,
+.consulta__horario img {
+  flex: none;
+  border-radius: 0.75rem;
+}
+.consulta__quien {
+  color: var(--gris);
+}
+.consulta__marca {
+  align-self: flex-start;
+  padding: 0.1rem 0.75rem;
+  font-weight: 700;
+  color: var(--petroleo);
+  background: var(--menta);
+  border-radius: var(--radio-boton);
+}
+.consulta__marca--mia {
+  color: var(--blanco);
+  background: var(--verde-oscuro);
+}
+.consulta__pasos summary {
+  min-height: var(--toque);
+  padding-block: 0.6rem;
+  font-weight: 700;
+  color: var(--petroleo);
+  cursor: pointer;
+}
+.consulta__horario li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+.consulta__horario .consulta__hora {
+  white-space: nowrap;
+}
+.elegir__mios .boton {
+  min-height: var(--toque);
+  white-space: nowrap;
 }

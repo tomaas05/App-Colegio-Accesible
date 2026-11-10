@@ -87,8 +87,10 @@
         <li>
           <img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40">
           <span class="elegir__nombre">{{ estudiante.usuario.get_full_name }} <small>{{ estudiante.clase.nombre }}</small></span>
+          {# HU-01-09: abrir su agenda en modo consulta. #}
+          <a class="boton boton--aux" href="{% url 'usuarios:agenda_estudiante' estudiante.codigo_estudiante %}" aria-label="Ver la agenda de {{ estudiante.usuario.get_full_name }}">Ver agenda</a>
           {# PA4: quitarlo de mi lista. #}
-          <form method="post">
+          <form class="elegir__quitar" method="post">
             {% csrf_token %}
             <input type="hidden" name="consulta" value="{{ consulta }}">
             <button class="boton--aux" type="submit" name="quitar" value="{{ estudiante.codigo_estudiante }}" aria-label="Quitar a {{ estudiante.usuario.get_full_name }}">Quitar</button>
