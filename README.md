@@ -16,13 +16,16 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/usuarios/vinculos/` | Tutor y familiar de cada estudiante (B25). Solo el administrador. Cada adulto ve a sus estudiantes en su panel | HU-01-04 | Manu |
 | `/agenda/` | Agenda del día del estudiante | HU-02-01 a HU-02-04 | Tomás |
 | `/agenda/tarea/<id>/` | Detalle de una tarea: pasos, temporizador, Empezar y Terminar | HU-02-02 a HU-02-04 · HU-07-01 | Tomás · Jorge |
-| `/tareas/crear/` · `/tareas/catalogo/` | Crear una tarea y ver las creadas | HU-03-01 | Úrsula |
+| `/tareas/crear/` · `/tareas/catalogo/` · `/tareas/asignar/` | Crear una tarea, ver las creadas y asignarlas a mis estudiantes. Solo tutor, profesional y familiar | HU-03-01 · HU-03-03 | Úrsula |
+| `/pictogramas/buscar/` · `/pictogramas/<id>.png` | Buscador de pictogramas de ARASAAC en el servidor y copia local de cada uno. Solo adultos ([decisión 0004](docs/decisiones/0004-pictogramas-arasaac.md)) | HU-03-01 | Úrsula |
 | `/perfil/` · `/perfil/<codigo>/` | Elegir estudiante y configurar su perfil visual y temporizador (B52, B54) | HU-04-01 · HU-07-01 | Jorge |
 | `/horario/` · `/horario/mi-horario/` | El administrador carga el horario de cada clase (B37); el estudiante ve el de su clase | HU-03-11 | Javi |
 | `/panel/mis-estudiantes/` | El profesional elige en la lista del centro los estudiantes que atiende (B26) | HU-01-08 | Javi |
 | `/panel/mis-estudiantes/<código>/agenda/` | Agenda de un estudiante que atiendo, solo consulta, día a día (B27) | HU-01-09 | Javi |
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
+
+Todas las pantallas comparten cabecera (el logotipo lleva a la pantalla principal de cada uno), pie y, para los adultos, un panel lateral con sus opciones: [decisión 0003](docs/decisiones/0003-estructura-y-navegacion.md). La auditoría de interfaz está en [docs/iteracion-1/auditoria-ui.md](docs/iteracion-1/auditoria-ui.md).
 
 ## Tecnologías
 
@@ -85,10 +88,11 @@ App-Colegio-Accesible/
 ├── config/                  # Proyecto Django
 │   ├── settings/            #   base.py · dev.py · test.py
 │   └── urls.py
-├── templates/               # base.html (estructura accesible común)
+├── templates/               # base.html y sus parciales (_cabecera, _aside, _pie); 403, 404 y 500
 ├── static/
 │   ├── css/                 #   tokens.css (paleta y tamaños) · base.css (foco, botones…)
 │   ├── fonts/               #   Open Sans y Nunito servidas por nosotros (RNF1.1.2)
+│   ├── img/                 #   Logotipo, icono y pictogramas de la interfaz
 │   ├── js/
 │   └── vendor/htmx/
 ├── tests/                   # Pruebas de humo, de la base de datos y e2e de accesibilidad
@@ -118,6 +122,7 @@ App-Colegio-Accesible/
 | Volver a cargarlos desde cero | `… cargar_datos_prueba --reiniciar` | ídem |
 | Tarea para Lucía en 1 minuto | `… cargar_datos_prueba --tarea-ahora` | ídem |
 | Revisar estilo | `docker compose exec web ruff check .` | `ruff check .` |
+| Descargar los pictogramas de la interfaz | `docker compose exec web python manage.py descargar_pictogramas` | `python manage.py descargar_pictogramas` |
 | Desbloquear a quien ha fallado 5 veces | `docker compose exec web python manage.py axes_reset` | `python manage.py axes_reset` |
 
 ## Datos de prueba
@@ -164,3 +169,9 @@ Cada adulto ve a sus estudiantes en **Tus estudiantes**, en su panel: Ana ve PTV
 - [Manual de Coordinación](docs/manual-coordinacion.md)
 - [Cómo contribuir](docs/contribuir.md)
 - [Iteración 1: bocetos y base de datos](docs/iteracion-1/README.md)
+
+## Pictogramas
+
+Pictogramas: Sergio Palao. Origen: ARASAAC (arasaac.org). Licencia: CC BY-NC-SA. Propiedad: Gobierno de Aragón.
+
+La licencia es de atribución, **uso no comercial** y compartir igual. El navegador nunca habla con ARASAAC: el servidor busca y guarda una copia de cada pictograma elegido ([decisión 0004](docs/decisiones/0004-pictogramas-arasaac.md)).
