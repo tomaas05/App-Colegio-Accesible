@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var boton = document.querySelector("[data-menu]");
   var panel = boton && document.getElementById(boton.getAttribute("aria-controls"));
   if (!boton || !panel) return;
-  boton.hidden = false;
 
   function abrir(si) {
     boton.setAttribute("aria-expanded", si ? "true" : "false");

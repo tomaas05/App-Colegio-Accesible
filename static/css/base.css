@@ -126,6 +126,14 @@ button:hover,
 .cabecera__salir {
   margin: 0;
 }
+/* El botón «Menú» solo sirve con JavaScript: html.js se pone antes de pintar (base.js),
+   así que aparece desde el primer momento y no mueve la cabecera (CLS). */
+.cabecera__menu {
+  display: none;
+}
+.js .cabecera__menu {
+  display: inline-block;
+}
 .marco {
   flex: 1;
   display: flex;
@@ -223,7 +231,7 @@ main:focus {
   .con-lateral main {
     min-width: 0;
   }
-  .cabecera__menu {
+  .js .cabecera__menu {
     display: none;
   }
 }

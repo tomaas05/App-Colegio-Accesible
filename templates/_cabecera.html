@@ -7,8 +7,8 @@
   </a>
   {% if user.is_authenticated %}
   {% if nav_principal %}
-  {# Solo en pantallas estrechas y con JavaScript (base.js le quita el hidden). #}
-  <button class="boton--aux cabecera__menu" type="button" data-menu aria-expanded="false" aria-controls="lateral" hidden>Menú</button>
+  {# Solo en pantallas estrechas y con JavaScript: lo enseña el CSS con html.js, sin mover nada. #}
+  <button class="boton--aux cabecera__menu" type="button" data-menu aria-expanded="false" aria-controls="lateral">Menú</button>
   {% endif %}
   <p class="cabecera__quien">
     <b>{% if user.es_estudiante %}{{ user.first_name }}{% else %}{{ user.get_full_name|default:user.username }}{% endif %}</b>

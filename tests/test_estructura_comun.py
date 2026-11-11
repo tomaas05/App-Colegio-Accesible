@@ -111,7 +111,7 @@ def test_una_opcion_cuya_url_no_existe_no_se_ensena(monkeypatch):
 def test_el_boton_menu_dice_que_controla_y_si_esta_abierto(client, datos):
     html = pagina(client, "tutor", reverse("usuarios:panel"))
     assert re.search(
-        r'<button[^>]*data-menu aria-expanded="false" aria-controls="lateral" hidden>Menú</button>',
+        r'<button[^>]*data-menu aria-expanded="false" aria-controls="lateral">Menú</button>',
         html,
     )
     assert '<aside class="lateral" id="lateral">' in html

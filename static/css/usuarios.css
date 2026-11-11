@@ -270,7 +270,7 @@ a.boton {
 }
 .loseta__nombre--acceso {
   max-width: 100%;
-  font-size: 0.95rem;
+  font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
   overflow-wrap: normal;
   hyphens: auto; /* «estre-lla» y no «estrell-a» (lang="es" en base.html) */
 }
@@ -649,7 +649,7 @@ a.boton {
 }
 .tabla__sub {
   display: block;
-  font-size: 0.9rem;
+  font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
   font-weight: 400;
   color: var(--gris);
 }
