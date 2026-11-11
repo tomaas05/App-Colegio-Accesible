@@ -23,7 +23,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import NoReverseMatch, reverse
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods
@@ -41,6 +41,7 @@ from .forms import (
     VinculosForm,
 )
 from .models import Clase, Estudiante, ImagenAcceso, Rol, Usuario
+from .navegacion import OPCIONES_POR_ROL, opciones_de  # noqa: F401 (se importaba de aquí)
 from .permisos import admin_requerido
 from .texto import coincide, normalizar
 from .vinculos import estudiantes_de, guardar_vinculos
@@ -48,53 +49,6 @@ from .vinculos import estudiantes_de, guardar_vinculos
 # login() necesita saber con qué backend se ha comprobado al usuario. El estudiante
 # no pasa por authenticate() (no tiene usuario y contraseña), así que se indica aquí.
 BACKEND_ESTUDIANTE = "django.contrib.auth.backends.ModelBackend"
-
-# Opciones de la pantalla principal de cada rol (B13): (texto, descripción, nombre de la URL).
-# Cada dueño añade aquí la entrada de su pantalla cuando la tenga. Si la URL todavía no
-# existe, la opción no se enseña (así nadie rompe el panel de otro).
-OPCIONES_POR_ROL = {
-    Rol.ADMINISTRADOR: [
-        (
-            "Usuarios",
-            "Ver las cuentas, crear una o cargar una lista de estudiantes.",
-            "usuarios:lista",
-        ),
-        (
-            "Clases",
-            "Crear y editar clases, desde la administración de Django.",
-            "admin:usuarios_clase_changelist",
-        ),
-        (
-            "Horario escolar",
-            "Qué asignatura o taller tiene cada clase en cada franja.",
-            "horario:cargar",
-        ),
-        ("Vínculos", "Tutor y familiar de cada estudiante.", "usuarios:vinculos"),
-    ],
-    Rol.TUTOR: [
-        ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
-        ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
-        (
-            "Perfil visual",
-            "Tema, colores, letra, botones y lector de pantalla de tus estudiantes.",
-            "perfil:lista",
-        ),
-    ],
-    Rol.PROFESIONAL: [
-        (
-            "Mis estudiantes",
-            "Elige a qué estudiantes atiendes y consulta su agenda.",
-            "usuarios:mis_estudiantes",
-        ),
-        ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
-        ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
-    ],
-    Rol.FAMILIAR: [
-        ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
-        ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
-    ],
-}
-
 
 def destino_tras_entrar(usuario):
     """A dónde va cada usuario al entrar: el estudiante a su agenda, el adulto a su panel."""
@@ -119,18 +73,6 @@ class EntrarAdultoView(LoginView):
         return destino_tras_entrar(self.request.user)
 
 
-def _opciones(rol):
-    opciones = []
-    for texto, descripcion, nombre_url in OPCIONES_POR_ROL.get(rol, []):
-        try:
-            opciones.append(
-                {"texto": texto, "descripcion": descripcion, "url": reverse(nombre_url)}
-            )
-        except NoReverseMatch:
-            continue
-    return opciones
-
-
 @login_required
 @require_GET
 def panel(request):
@@ -147,7 +89,7 @@ def panel(request):
     return render(
         request,
         "usuarios/panel.html",
-        {"opciones": _opciones(request.user.rol), "estudiantes": estudiantes},
+        {"opciones": opciones_de(request.user.rol), "estudiantes": estudiantes},
     )
 
 

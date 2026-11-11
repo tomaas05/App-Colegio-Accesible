@@ -1,0 +1,25 @@
+{% load static %}
+{# Cabecera común (decisión 0003). El logotipo lleva a la pantalla principal de cada uno:  #}
+{# el estudiante a su agenda, el adulto a su panel y quien no ha entrado a la portada.     #}
+<header class="cabecera">
+  <a class="cabecera__logo" href="{{ inicio_url }}">
+    <img src="{% static 'img/logo-despega.webp' %}" alt="Despega, ir al inicio" width="337" height="140">
+  </a>
+  {% if user.is_authenticated %}
+  {% if nav_principal %}
+  {# Solo en pantallas estrechas y con JavaScript (base.js le quita el hidden). #}
+  <button class="boton--aux cabecera__menu" type="button" data-menu aria-expanded="false" aria-controls="lateral" hidden>Menú</button>
+  {% endif %}
+  <p class="cabecera__quien">
+    <b>{% if user.es_estudiante %}{{ user.first_name }}{% else %}{{ user.get_full_name|default:user.username }}{% endif %}</b>
+    {% if not user.es_estudiante %}<span>{{ user.get_rol_display }}</span>{% endif %}
+  </p>
+  {% if not nav_principal %}
+  {# El estudiante no tiene panel lateral: su «Salir» está siempre a la vista. Con POST. #}
+  <form class="cabecera__salir" method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</header>

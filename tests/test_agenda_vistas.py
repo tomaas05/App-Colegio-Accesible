@@ -87,7 +87,9 @@ def test_mensajes_sin_anterior_ni_siguiente(client, lucia, hora):
 def test_la_agenda_no_ofrece_modificar_ni_borrar(client, lucia, hora):
     hora(10, 35)
     html = client.get(reverse("agenda:dia")).content.decode()
-    assert "<form" not in html
+    # El único formulario es el de «Salir» de la cabecera (fallo 10 de la mejora de interfaz).
+    assert html.count("<form") == 1
+    assert f'action="{reverse("usuarios:salir")}"' in html
 
 
 def test_detalle_con_pasos_e_imagenes(client, lucia, hora):

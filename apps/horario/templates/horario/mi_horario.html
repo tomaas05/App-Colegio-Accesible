@@ -4,11 +4,9 @@
 {% block titulo %}Mi horario · {{ dia.label }} · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}"><link rel="stylesheet" href="{% static 'css/horario.css' %}">{% endblock %}
 
-{% block cabecera %}
-<a class="boton boton--aux" href="{% url 'agenda:dia' %}"><span aria-hidden="true">‹</span> Mi agenda</a>
-{% endblock %}
 
 {% block contenido %}
+<p class="volver"><a class="boton boton--aux" href="{% url 'agenda:dia' %}"><span aria-hidden="true">‹</span> Mi agenda</a></p>
 {# HU-03-11, PA1 y PA4: el estudiante ve el horario de su clase, con imagen y nombre. #}
 <div class="mi-horario">
   <h1>Mi horario{% if es_hoy %}: hoy, {{ dia.label|lower }}{% else %}: {{ dia.label|lower }}{% endif %}</h1>
