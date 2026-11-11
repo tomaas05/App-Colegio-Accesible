@@ -13,12 +13,14 @@ La mayoría de usuarios usa móvil o tableta, con el dedo.
 
 ## Decisión
 
-- **Un esqueleto único** en `templates/base.html` con tres parciales: `_cabecera.html`, `_aside.html`
-  y `_pie.html`. Las plantillas ya no tienen bloque `cabecera`. Regiones: `header`, `aside` > `nav`,
-  `main` y `footer`, una vez cada una, y se conserva «Saltar al contenido».
-- **El logotipo es un enlace** con el nombre accesible «Despega, ir al inicio». Lleva a la pantalla
-  principal de cada uno: el estudiante a `agenda:dia`, el adulto a `usuarios:panel` y quien no ha
-  entrado a `/` (`inicio_de()` en `apps/usuarios/navegacion.py`).
+- **Un esqueleto único** en `templates/base.html` con dos parciales: `_cabecera.html` y `_aside.html`.
+  Las plantillas ya no tienen bloque `cabecera`. Se conserva «Saltar al contenido».
+- **Como en los bocetos, la barra superior es solo de los adultos** (`header`, `aside` > `nav` y `main`).
+  Las pantallas de entrada (B01 a B03) y las del estudiante van **sin barra**: solo `main`, con su fila
+  de título. En la portada el logotipo va junto a «¿Quién eres?». No hay pie.
+- **El logotipo de la barra es un enlace** con el nombre accesible «Despega, ir al inicio» que lleva al
+  adulto a `usuarios:panel`. `inicio_de()` (`apps/usuarios/navegacion.py`) da también el inicio del
+  estudiante (`agenda:dia`) y de quien no ha entrado (`/`): lo usan las páginas de error.
 - **Logotipo e icono** salen del boceto v3 (PNG en base64): `static/img/logo-despega.webp` (337×140,
   6 kB), `icono-despega.png` y `favicon.ico`. No es SVG porque no tenemos el original vectorial.
 - **Panel lateral solo para adultos**: `<aside id="lateral">` con `<nav aria-label="Principal">`.
@@ -37,12 +39,16 @@ La mayoría de usuarios usa móvil o tableta, con el dedo.
 - **Sin JavaScript** el panel se ve siempre (encima del contenido en pantallas estrechas) y el botón
   no aparece. `static/js/base.js` (1 kB) se carga sin `defer` para poner `html.js` antes de pintar:
   así nada cambia de sitio al cargar (CLS 0,002).
-- **El estudiante no tiene panel lateral.** Su cabecera: logotipo, su nombre y «Salir».
+- **El estudiante no tiene barra ni panel lateral.** «Salir» está al principio de la fila del título de
+  su agenda (`templates/_salir_estudiante.html`), donde el boceto B06 pone «‹ Menú», junto a su nombre.
 - **«Volver»** deja la cabecera y pasa al principio del contenido en las 4 pantallas que lo tenían arriba.
-- **Pie** con la atribución de ARASAAC como texto, sin enlace: no añade una parada de foco ni saca al
-  estudiante de la aplicación.
+- **Sin pie.** La atribución que exige la licencia de ARASAAC va, como texto, al final del panel
+  lateral de los adultos y en el README. El estudiante no la ve: no le aporta nada.
+- **Tarjetas de entrada como en B01 a B03:** fondo menta con borde, el dibujo en un recuadro blanco y
+  el nombre debajo; la rejilla se centra en la pantalla. En la portada, dos tarjetas una al lado de
+  otra si caben y, si no, una debajo de otra.
 - **CSS primero móvil:** la base es una columna; `min-width` en rem añade la segunda. `100dvh`,
-  `viewport-fit=cover` y `env(safe-area-inset-*)` en cabecera, panel, contenido y pie.
+  `viewport-fit=cover` y `env(safe-area-inset-*)` en cabecera, panel y contenido.
 - Foco de 4 px (`--foco-grosor`), como dicen los bocetos.
 
 ## Alternativas descartadas

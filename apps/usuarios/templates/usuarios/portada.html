@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static pictos %}
 
 {% block titulo %}¿Quién eres? · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
@@ -9,18 +9,19 @@
 {% with siguiente=request.GET.next %}
 <div class="acceso-est">
   <div class="cab-acceso cab-acceso--centro">
+    <img class="cab-acceso__logo" src="{% static 'img/logo-despega.webp' %}" alt="Despega" width="337" height="140">
     <h1>¿Quién eres?</h1>
   </div>
   <ul class="losetas losetas--grandes">
     <li>
       <a class="loseta" href="{% url 'usuarios:clases' %}{% if siguiente %}?next={{ siguiente|urlencode }}{% endif %}">
-        <span class="loseta__dibujo" aria-hidden="true">🎒</span>
+        {% pictograma "mochila" "🎒" %}
         <span class="loseta__nombre">Estudiante</span>
       </a>
     </li>
     <li>
-      <a class="loseta loseta--adulto" href="{% url 'usuarios:entrar' %}{% if siguiente %}?next={{ siguiente|urlencode }}{% endif %}">
-        <span class="loseta__dibujo" aria-hidden="true">🔑</span>
+      <a class="loseta" href="{% url 'usuarios:entrar' %}{% if siguiente %}?next={{ siguiente|urlencode }}{% endif %}">
+        {% pictograma "llave" "🔑" %}
         <span class="loseta__nombre">Adulto</span>
       </a>
     </li>

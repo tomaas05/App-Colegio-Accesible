@@ -32,9 +32,13 @@ sin límite de tamaño, y el HTML del paso se escribía en Python con estilos y 
   Sin `onclick`, sin estilos en línea y sin HTML en Python: `tareas/_buscador_pictograma.html`,
   `tareas/_paso.html` y `comun/_pictogramas_resultados.html`.
 - **Pictogramas de la interfaz:** `python manage.py descargar_pictogramas` lee
-  `static/img/pictogramas/listado.csv` (`id;nombre`) y los guarda una vez en `static/img/pictogramas/`.
-  La aplicación no depende de Internet al ejecutarse.
-- **Licencia y atribución:** CC BY-NC-SA. La atribución está en el pie de todas las pantallas, en el
+  `static/img/pictogramas/listado.csv` (`nombre;palabra;id`) y los guarda una vez en
+  `static/img/pictogramas/`. Si una línea no trae `id`, busca la palabra y toma el primer resultado
+  (lo mismo que hace el boceto v3) y apunta el número en el listado. La aplicación no depende de
+  Internet al ejecutarse: `{% pictograma "mochila" "🎒" %}` enseña el archivo local y, mientras no
+  esté descargado, el emoji. `cargar_datos_prueba` usa esos pictogramas para clases, avatares,
+  rejilla de entrada, asignaturas, tareas y pasos; si faltan, dibuja los marcadores de siempre.
+- **Licencia y atribución:** CC BY-NC-SA. La atribución está al final del panel lateral de los adultos, en el
   README y en `static/img/pictogramas/LEEME.md`: «Pictogramas: Sergio Palao. Origen: ARASAAC
   (arasaac.org). Licencia: CC BY-NC-SA. Propiedad: Gobierno de Aragón.»
 - **Pruebas sin Internet:** el fixture `arasaac` (`tests/arasaac_falso.py`) sustituye la red. Si una prueba
@@ -53,7 +57,8 @@ Esta decisión se escribió en un entorno sin salida a `arasaac.org`:
 - No se conocen límites de uso publicados; por eso la caché y el límite por usuario.
 - La licencia se ha contrastado en fuentes secundarias (CATEDU, Aula Abierta de ARASAAC), no en las
   condiciones de uso de arasaac.org.
-- El listado de pictogramas de la interfaz está vacío: hay que elegir los números mirándolos en arasaac.org.
+- Los pictogramas de la interfaz no están descargados: el listado trae 47 palabras y hay que lanzar
+  `descargar_pictogramas` con Internet, mirar el resultado y cambiar por `id` los que no convenzan.
 
 ## Alternativas descartadas
 

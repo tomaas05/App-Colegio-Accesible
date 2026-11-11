@@ -1,6 +1,6 @@
 {% load static %}<!DOCTYPE html>
-{# Estructura común de todas las pantallas (decisión 0003): saltar al contenido, cabecera #}
-{# con el logotipo, panel lateral de los adultos, contenido y pie.                        #}
+{# Estructura común (decisión 0003). Como en los bocetos: los adultos tienen barra con el  #}
+{# logotipo y panel lateral; las pantallas de entrada y las del estudiante van sin barra.  #}
 <html lang="es"{% if perfil_activo %} data-tema="{{ perfil_activo.tema }}" data-paleta="{{ perfil_activo.paleta }}" data-fuente="{{ perfil_activo.tipo_letra }}" data-letra="{{ perfil_activo.tamano_letra }}" data-botones="{{ perfil_activo.tamano_botones }}"{% endif %}>
   <head>
   <meta charset="utf-8">
@@ -22,7 +22,7 @@
 <body{% if nav_principal %} class="con-lateral"{% endif %} hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <a class="saltar" href="#contenido">Saltar al contenido</a>
 
-  {% include "_cabecera.html" %}
+  {% if nav_principal %}{% include "_cabecera.html" %}{% endif %}
 
   <div class="marco">
     {% if nav_principal %}{% include "_aside.html" %}{% endif %}
@@ -31,7 +31,6 @@
     </main>
   </div>
 
-  {% include "_pie.html" %}
   {% block scripts %}{% endblock %}
 </body>
 </html>

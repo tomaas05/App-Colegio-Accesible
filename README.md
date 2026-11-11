@@ -25,7 +25,7 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
 
-Todas las pantallas comparten cabecera (el logotipo lleva a la pantalla principal de cada uno), pie y, para los adultos, un panel lateral con sus opciones: [decisión 0003](docs/decisiones/0003-estructura-y-navegacion.md). La auditoría de interfaz está en [docs/iteracion-1/auditoria-ui.md](docs/iteracion-1/auditoria-ui.md).
+Los adultos tienen una barra con el logotipo (lleva a su pantalla principal) y un panel lateral con sus opciones; las pantallas de entrada y las del estudiante van sin barra, como en los bocetos: [decisión 0003](docs/decisiones/0003-estructura-y-navegacion.md). La auditoría de interfaz está en [docs/iteracion-1/auditoria-ui.md](docs/iteracion-1/auditoria-ui.md).
 
 ## Tecnologías
 
@@ -88,7 +88,7 @@ App-Colegio-Accesible/
 ├── config/                  # Proyecto Django
 │   ├── settings/            #   base.py · dev.py · test.py
 │   └── urls.py
-├── templates/               # base.html y sus parciales (_cabecera, _aside, _pie); 403, 404 y 500
+├── templates/               # base.html y sus parciales (_cabecera, _aside); 403, 404 y 500
 ├── static/
 │   ├── css/                 #   tokens.css (paleta y tamaños) · base.css (foco, botones…)
 │   ├── fonts/               #   Open Sans y Nunito servidas por nosotros (RNF1.1.2)
@@ -173,5 +173,7 @@ Cada adulto ve a sus estudiantes en **Tus estudiantes**, en su panel: Ana ve PTV
 ## Pictogramas
 
 Pictogramas: Sergio Palao. Origen: ARASAAC (arasaac.org). Licencia: CC BY-NC-SA. Propiedad: Gobierno de Aragón.
+
+Los de la interfaz (portada, clases, avatares, rejilla de entrada y tareas de prueba) se descargan una vez, con Internet: `python manage.py descargar_pictogramas` y después `python manage.py cargar_datos_prueba`. Mientras no se descarguen se ven emojis y marcadores.
 
 La licencia es de atribución, **uso no comercial** y compartir igual. El navegador nunca habla con ARASAAC: el servidor busca y guarda una copia de cada pictograma elegido ([decisión 0004](docs/decisiones/0004-pictogramas-arasaac.md)).

@@ -123,9 +123,6 @@ button:hover,
   font-size: 1rem;
   color: var(--gris);
 }
-.cabecera__salir {
-  margin: 0;
-}
 /* El botón «Menú» solo sirve con JavaScript: html.js se pone antes de pintar (base.js),
    así que aparece desde el primer momento y no mueve la cabecera (CLS). */
 .cabecera__menu {
@@ -149,16 +146,6 @@ main {
 }
 main:focus {
   outline: none; /* recibe el foco desde «Saltar al contenido»; no es un control */
-}
-.pie {
-  padding: 0.5rem max(1rem, env(safe-area-inset-right)) max(0.5rem, env(safe-area-inset-bottom))
-    max(1rem, env(safe-area-inset-left));
-  border-top: 2px solid var(--menta-hover);
-  color: var(--gris);
-  font-size: 1rem;
-}
-.pie p {
-  margin: 0;
 }
 .volver {
   margin: 0 0 1rem;
@@ -215,6 +202,16 @@ main:focus {
 .lateral__salir button {
   width: 100%;
 }
+.lateral__credito {
+  margin: 1rem 0 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--gris);
+}
+/* «Salir» del estudiante, en la fila del título de su agenda. */
+.salir-est {
+  margin: 0;
+}
 @media (min-width: 64rem) {
   .con-lateral .marco {
     flex-direction: row;
@@ -239,7 +236,7 @@ main:focus {
   .saltar,
   .lateral,
   .cabecera__menu,
-  .cabecera__salir {
+  .salir-est {
     display: none !important;
   }
 }

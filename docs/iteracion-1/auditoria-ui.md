@@ -24,8 +24,8 @@ Las pantallas del boceto que no tienen URL son de la iteración 2 y no se implem
 
 | Boceto | URL real | Estado tras la mejora | Diferencias que quedan |
 | --- | --- | --- | --- |
-| B01 Inicio | `/` | Alineada | Los dibujos son emojis; pasarán a pictogramas con `descargar_pictogramas` (apartado 7) |
-| B02 ¿Cuál es tu clase? | `/estudiante/` | Alineada | Igual que B01 para las clases sin imagen |
+| B01 Inicio | `/` | Alineada (sin barra, logotipo junto al título, tarjetas del boceto) | Emojis hasta lanzar `descargar_pictogramas` (apartado 7) |
+| B02 ¿Cuál es tu clase? | `/estudiante/` | Alineada (mismas tarjetas) | Marcadores «P1» hasta lanzar `descargar_pictogramas` y `cargar_datos_prueba` |
 | B03 ¿Quién eres? (avatares) | `/estudiante/clase/<id>/` | Alineada | El boceto pagina la rejilla para que quepa sin desplazarse; la app se desplaza en vertical |
 | — (3 imágenes o contraseña) | `/estudiante/<código>/entrar/` | Sin boceto | Rejilla de 12 imágenes con marcadores; pendiente de pictogramas |
 | B12 Entrar (adultos) | `/entrar/` | Alineada | — |
@@ -38,7 +38,7 @@ Las pantallas del boceto que no tienen URL son de la iteración 2 y no se implem
 | B27 Agenda de un estudiante | `/panel/mis-estudiantes/<código>/agenda/` | Parcial | El boceto tiene vista Día/Semana/Mes y huecos libres; la app, solo día (It2). Corregido el estado «Vencida» |
 | B37 Horario escolar | `/horario/` | Alineada | — |
 | B05 Horario | `/horario/mi-horario/` | Alineada | Lista hacia abajo, como pidió la profesora |
-| B06 Tareas de hoy | `/agenda/` | Alineada | El boceto tiene «‹ Menú», «Semana» y «Ocio» (B04, B30 y B31 son de It2). Añadido «Salir» |
+| B06 Tareas de hoy | `/agenda/` | Alineada (sin barra) | El boceto tiene «‹ Menú», «Semana» y «Ocio» (B04, B30 y B31 son de It2). «Salir» ocupa el sitio de «‹ Menú» |
 | B07 Tarea · B08 ¿Has terminado? | `/agenda/tarea/<id>/` | Alineada | «No puedo hacerla» y plan B son de It2 |
 | B40 Crear tarea · B41 Pasos | `/tareas/crear/` | Rehecha | El boceto es un asistente de 5 pasos con plan B; la app, un formulario con vista previa. Manda la función |
 | B43 Asignar a estudiantes | `/tareas/asignar/` | Rehecha | El boceto asigna al terminar de crear; la app, desde el catálogo |
@@ -140,8 +140,8 @@ pasadas (se midió con dos Lighthouse a la vez). «Buenas prácticas» sube de 9
   contrastado en fuentes secundarias (CATEDU, Aula Abierta de ARASAAC), no en `arasaac.org/terms-of-use`.
   **Alguien con Internet debe probar una búsqueda real antes de la demo.**
 - **Descargar los pictogramas de la interfaz y el catálogo de avatares (Fase 4.6 y Fase 5).** Por lo mismo.
-  Está el comando `descargar_pictogramas` (probado con red simulada) y el listado vacío. Portada, rejilla
-  de entrada y avatares siguen con emojis y marcadores. De la Fase 5 solo está hecho el arreglo de las tildes.
+  Está el comando `descargar_pictogramas` (probado con red simulada) y un listado de 47 palabras; hay que
+  lanzarlo con Internet. Hasta entonces portada, clases, rejilla de entrada y avatares enseñan emojis y marcadores. De la Fase 5 solo está hecho el arreglo de las tildes.
 - **Logotipo en SVG.** El boceto trae un PNG de 337×140; vectorizarlo sin el original lo deformaría. Va en WebP (6 kB).
 - **Fase 2 completa.** Hechas la estructura común y las tres pantallas de tareas. El resto ya seguía el
   boceto en lo esencial; las diferencias que quedan están en el apartado 2.

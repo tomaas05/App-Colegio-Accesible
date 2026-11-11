@@ -392,24 +392,61 @@ def test_la_cache_de_cada_prueba_empieza_vacia():
 # --- Comando descargar_pictogramas -------------------------------------------------
 
 
-def test_descargar_pictogramas_baja_cada_uno_una_sola_vez(arasaac, tmp_path, capsys):
+def test_descargar_pictogramas_busca_por_palabra_y_apunta_el_id(arasaac, tmp_path, capsys):
     from django.core.management import call_command
 
     listado = tmp_path / "listado.csv"
-    listado.write_text("id;nombre\n2349;perro\n7202;sol\n", encoding="utf-8")
+    listado.write_text("nombre;palabra;id\nperro;perro;\nsol;sol;7202\n", encoding="utf-8")
     for _ in range(2):
         call_command("descargar_pictogramas", listado=str(listado), destino=str(tmp_path))
     assert (tmp_path / "perro.png").read_bytes() == png()
-    assert len(arasaac.pedidas) == 2  # la segunda vez no se pide nada
+    # Una búsqueda (perro) y dos imágenes; la segunda vez no se pide nada.
+    assert [p["url"].rsplit("/", 1)[-1] for p in arasaac.pedidas] == [
+        "perro",
+        "2349_300.png",
+        "7202_300.png",
+    ]
+    # El primer resultado de «perro» queda apuntado para la próxima vez.
+    assert (
+        listado.read_text(encoding="utf-8") == "nombre;palabra;id\nperro;perro;2349\nsol;sol;7202\n"
+    )
     assert "ARASAAC" in capsys.readouterr().out  # recuerda la atribución
 
 
-@pytest.mark.parametrize("linea", ["abc;perro", "12;../../fuera", "12;Con Espacios"])
+@pytest.mark.parametrize(
+    "linea", ["perro;;abc", "../../fuera;perro;12", "Con Espacios;perro;", "perro;;"]
+)
 def test_descargar_pictogramas_rechaza_lineas_no_validas(arasaac, tmp_path, linea):
     from django.core.management import CommandError, call_command
 
     listado = tmp_path / "listado.csv"
-    listado.write_text(f"id;nombre\n{linea}\n", encoding="utf-8")
+    listado.write_text(f"nombre;palabra;id\n{linea}\n", encoding="utf-8")
     with pytest.raises(CommandError):
         call_command("descargar_pictogramas", listado=str(listado), destino=str(tmp_path))
     assert arasaac.pedidas == []
+
+
+def test_el_listado_del_repositorio_es_valido(settings):
+    """Nombres de archivo válidos y sin repetir; con palabra o id en cada línea."""
+    import csv
+
+    from apps.comun import pictos_interfaz
+
+    ruta = settings.BASE_DIR / "static" / "img" / "pictogramas" / "listado.csv"
+    with open(ruta, encoding="utf-8", newline="") as archivo:
+        filas = list(csv.DictReader(archivo, delimiter=";"))
+    nombres = [fila["nombre"] for fila in filas]
+    assert len(nombres) == len(set(nombres)) > 40
+    for fila in filas:
+        assert pictos_interfaz.nombre_de_archivo(fila["nombre"]) == fila["nombre"]
+        assert fila["id"] or pictogramas.texto_valido(fila["palabra"])
+
+
+def test_los_datos_de_prueba_usan_el_pictograma_si_esta_descargado(monkeypatch, tmp_path):
+    from apps.comun import pictos_interfaz
+    from apps.comun.management.commands.cargar_datos_prueba import imagen
+
+    monkeypatch.setattr(pictos_interfaz, "CARPETA", tmp_path)
+    assert imagen("Hu", "#0b3c49", "x", picto="Educación física").read() != png()  # marcador
+    (tmp_path / "educacion-fisica.png").write_bytes(png())
+    assert imagen("Hu", "#0b3c49", "x", picto="Educación física").read() == png()

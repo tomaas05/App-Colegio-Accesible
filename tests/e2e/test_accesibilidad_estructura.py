@@ -196,7 +196,8 @@ def test_el_estudiante_tiene_salir_y_no_tiene_panel(
         page, live_server, client, "est-a01", nombre, ruta=reverse("agenda:dia"), letra_32=letra_32
     )
     assert page.locator("#lateral").count() == 0
-    salir = page.locator("header").get_by_role("button", name="Salir")
+    assert page.locator("header").count() == 0  # sin barra, como en los bocetos
+    salir = page.get_by_role("button", name="Salir")
     assert salir.is_visible()
     caja = salir.bounding_box()
     assert caja["width"] >= 48 and caja["height"] >= 48

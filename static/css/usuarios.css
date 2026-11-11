@@ -210,6 +210,7 @@ a.boton {
   flex-direction: column;
   gap: 1rem;
   width: min(72rem, 100%);
+  min-height: calc(100dvh - 2rem); /* la rejilla se centra en lo que queda de pantalla */
   margin-inline: auto;
 }
 .acceso-est h1,
@@ -232,32 +233,39 @@ a.boton {
   justify-content: center;
   text-align: center;
 }
+.cab-acceso--centro h1 {
+  flex: 0 1 auto;
+}
+/* B01: el logotipo va junto al título. Fondo blanco fijo: la imagen lo trae. */
+.cab-acceso__logo {
+  flex: none;
+  width: auto;
+  height: 3rem;
+  background: #ffffff;
+  border-radius: 0.5rem;
+}
 .cab-acceso__sub {
   font-family: var(--fuente-titulos);
   font-weight: 800;
   color: var(--gris);
 }
 
-/* Losetas: botones grandes con dibujo y nombre (avatares, clases, Estudiante/Adulto). */
+/* Losetas: botones grandes con dibujo y nombre (Estudiante/Adulto, clases, avatares).
+   Como en los bocetos B01 a B03: tarjeta menta con borde, el dibujo en un recuadro blanco
+   y el nombre debajo; la rejilla va centrada en la pantalla. --lado es el ancho de cada una. */
 .losetas {
+  --lado: min(12rem, 44vw);
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
-  gap: var(--separacion);
-  margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(0, var(--lado)));
+  justify-content: center;
+  gap: 0.7rem;
+  margin: auto 0;
   padding: 0;
   list-style: none;
 }
+/* B01: dos tarjetas grandes; una al lado de otra si caben y, si no, una debajo de otra. */
 .losetas--grandes {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
-  width: min(36rem, 100%);
-  margin-inline: auto;
-}
-/* B01: «Estudiante» y «Adulto» ocupan casi toda la pantalla, como en el boceto. */
-.losetas--grandes .loseta {
-  min-height: 12rem;
-}
-.losetas--grandes .loseta__dibujo {
-  font-size: clamp(5rem, 18vw, 8rem);
+  --lado: min(15rem, 80vw, 36dvh);
 }
 /* 4 columnas en el móvil: las 12 imágenes y «Entrar» caben sin desplazarse. */
 .losetas--acceso {
@@ -282,14 +290,13 @@ a.boton {
   flex: 1;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   min-height: var(--toque-muy-grande);
-  padding: 0.75rem 0.5rem;
-  color: var(--texto);
+  padding: 0.4rem;
+  color: var(--petroleo);
   text-align: center;
   text-decoration: none;
-  background: var(--blanco);
+  background: var(--menta);
   border: 3px solid var(--petroleo);
   border-radius: 1.25rem;
   cursor: pointer;
@@ -297,37 +304,38 @@ a.boton {
 .loseta:hover {
   background: var(--menta-hover);
 }
-.loseta--adulto {
-  background: var(--menta);
-}
-.loseta__imagen {
-  width: 7.5rem;
-  max-width: 100%;
+/* El dibujo: pictograma, avatar o, mientras no se descarguen los pictogramas, un emoji.
+   Siempre en un recuadro blanco, que es el fondo para el que están hechos los pictogramas. */
+.loseta__imagen,
+.loseta__dibujo {
+  width: 100%;
   height: auto;
   aspect-ratio: 1;
+  padding: 6%;
   object-fit: contain;
-  border-radius: 0.75rem;
+  background: #ffffff;
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.loseta__dibujo {
+  display: grid;
+  place-items: center;
+  font-size: clamp(3rem, 16vw, 6rem);
+  line-height: 1;
 }
 .loseta__sub {
   font-size: 1rem;
-  font-weight: 700;
-  color: var(--gris);
-}
-.loseta__imagen--avatar {
-  border-radius: 50%;
-}
-.loseta__dibujo {
-  font-size: 3.5rem;
-  line-height: 1;
+  font-weight: 600;
+  color: var(--texto);
 }
 .loseta__nombre {
   font-family: var(--fuente-titulos);
   font-size: 1.25rem;
   font-weight: 800;
+  line-height: 1.2;
   color: var(--petroleo);
   overflow-wrap: anywhere;
 }
-
 /* Rejilla de imágenes. La casilla sigue ahí para el teclado y el lector de pantalla, pero
    no se dibuja: tapaba la imagen en el móvil. Elegida = ✓ + borde doble + fondo menta
    (no depende solo del color). */

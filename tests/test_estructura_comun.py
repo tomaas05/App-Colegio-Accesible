@@ -35,10 +35,14 @@ def lateral(html):
 # --- Logotipo ---------------------------------------------------------------------
 
 
-def test_sin_sesion_el_logotipo_lleva_a_la_portada(client, db):
-    html = client.get(reverse("usuarios:entrar")).content.decode()
-    assert enlace_del_logotipo(html) == reverse("inicio")
-    assert 'alt="Despega, ir al inicio"' in html
+def test_la_portada_ensena_el_logotipo_junto_al_titulo_y_no_tiene_barra(client, db):
+    """Boceto B01: sin barra superior; el logotipo va al lado de «¿Quién eres?»."""
+    html = client.get(reverse("inicio")).content.decode()
+    assert "<header" not in html and "<footer" not in html
+    assert re.search(
+        r'<img class="cab-acceso__logo" src="[^"]*logo-despega[^"]*" alt="Despega" width="\d+" height="\d+">\s*<h1>',  # noqa: E501
+        html,
+    )
 
 
 @pytest.mark.parametrize("usuario", ADULTOS)
@@ -48,13 +52,8 @@ def test_el_logotipo_del_adulto_lleva_a_su_panel(client, datos, usuario):
     )
 
 
-def test_el_logotipo_del_estudiante_lleva_a_su_agenda(client, datos):
-    html = pagina(client, "est-a01", reverse("horario:mi_horario"))
-    assert enlace_del_logotipo(html) == reverse("agenda:dia")
-
-
-def test_el_logotipo_tiene_tamano_para_no_mover_la_pagina(client, db):
-    html = client.get(reverse("inicio")).content.decode()
+def test_el_logotipo_del_adulto_tiene_tamano_para_no_mover_la_pagina(client, datos):
+    html = pagina(client, "tutor", reverse("usuarios:panel"))
     assert re.search(
         r'<img src="[^"]*logo-despega[^"]*" alt="[^"]+" width="\d+" height="\d+">', html
     )
@@ -121,13 +120,17 @@ def test_el_boton_menu_dice_que_controla_y_si_esta_abierto(client, datos):
 
 
 @pytest.mark.parametrize("nombre_url", ["agenda:dia", "horario:mi_horario"])
-def test_el_estudiante_no_tiene_lateral_y_tiene_salir(client, datos, nombre_url):
+def test_el_estudiante_no_tiene_barra_ni_lateral(client, datos, nombre_url):
+    """Como en los bocetos: sus pantallas van sin barra superior y sin panel."""
     html = pagina(client, "est-a01", reverse(nombre_url))
-    assert lateral(html) == ""
-    assert "data-menu" not in html
-    cabecera = re.search(r"<header.*?</header>", html, re.S).group(0)
-    assert f'method="post" action="{reverse("usuarios:salir")}"' in cabecera
-    assert ">Salir</button>" in cabecera
+    assert lateral(html) == "" and "<header" not in html and "data-menu" not in html
+
+
+def test_el_estudiante_tiene_salir_en_su_agenda(client, datos):
+    html = pagina(client, "est-a01", reverse("agenda:dia"))
+    fila = re.search(r'<div class="cab-est">.*?</div>', html, re.S).group(0)
+    assert f'method="post" action="{reverse("usuarios:salir")}"' in fila
+    assert ">Salir</button>" in fila and fila.index("Salir") < fila.index("<h1")
 
 
 def test_sin_sesion_no_hay_lateral_ni_salir(client, db):
@@ -138,13 +141,29 @@ def test_sin_sesion_no_hay_lateral_ni_salir(client, db):
 # --- Regiones y pie ---------------------------------------------------------------
 
 
-@pytest.mark.parametrize("usuario, ruta", [("tutor", "/panel/"), ("est-a01", "/agenda/")])
-def test_cada_pantalla_tiene_sus_regiones_una_sola_vez(client, datos, usuario, ruta):
-    html = pagina(client, usuario, ruta)
-    for etiqueta in ("<header", "<main", "<footer", "<h1"):
+def test_el_adulto_tiene_sus_regiones_una_sola_vez(client, datos):
+    html = pagina(client, "tutor", "/panel/")
+    for etiqueta in ("<header", "<aside", "<main", "<h1"):
         assert html.count(etiqueta) == 1, etiqueta
     assert html.index('class="saltar"') < html.index("<header") < html.index("<main")
-    assert "ARASAAC" in re.search(r"<footer.*?</footer>", html, re.S).group(0)
+    assert "<footer" not in html  # sin pie: la atribución va en el panel lateral
+
+
+def test_la_atribucion_de_arasaac_esta_en_el_lateral_y_no_la_ve_el_estudiante(client, datos):
+    assert "Origen: ARASAAC" in lateral(pagina(client, "tutor", "/panel/"))
+    assert "ARASAAC" not in pagina(client, "est-a01", "/agenda/")
+
+
+def test_la_portada_usa_el_pictograma_descargado_y_si_no_el_emoji(
+    client, db, monkeypatch, tmp_path
+):
+    from apps.comun import pictos_interfaz
+
+    monkeypatch.setattr(pictos_interfaz, "CARPETA", tmp_path)
+    assert "🎒" in client.get(reverse("inicio")).content.decode()
+    (tmp_path / "mochila.png").write_bytes(b"png")
+    html = client.get(reverse("inicio")).content.decode()
+    assert 'src="/static/img/pictogramas/mochila.png" alt=""' in html and "🎒" not in html
 
 
 def test_la_navegacion_no_consulta_la_base_de_datos(datos, rf, django_assert_num_queries):

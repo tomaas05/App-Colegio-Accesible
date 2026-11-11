@@ -2,14 +2,20 @@
 
 Pictogramas: Sergio Palao. Origen: ARASAAC (arasaac.org). Licencia: CC BY-NC-SA. Propiedad: Gobierno de Aragón.
 
-Aquí van los pictogramas que usa la propia interfaz (portada, rejilla de entrada del
-estudiante, avatares). Se descargan **una sola vez** y se suben al repositorio, para que
-la aplicación no dependa de Internet al ejecutarse (decisión 0004):
+Aquí van los pictogramas que usa la propia interfaz (portada, clases, avatares, rejilla de
+entrada, tareas de prueba). Se descargan **una sola vez** y se suben al repositorio, para que
+la aplicación no dependa de Internet al ejecutarse (decisión 0004).
 
-1. Añade a `listado.csv` una línea por pictograma: `id;nombre` (el número es el de la
-   dirección del pictograma en arasaac.org; el nombre, en minúsculas y sin espacios).
-2. `python manage.py descargar_pictogramas`
-3. Sube al repositorio los `.png` nuevos junto con `listado.csv`.
+`listado.csv` tiene una línea por pictograma: `nombre;palabra;id`.
 
-El listado está vacío porque los números hay que comprobarlos uno a uno en arasaac.org
-(ver «Preguntas para el equipo» en docs/iteracion-1/auditoria-ui.md).
+- `nombre`: el nombre del archivo (`mochila` → `mochila.png`).
+- `palabra`: lo que se busca en ARASAAC si no hay `id` (se toma el primer resultado, como hace el boceto v3).
+- `id`: el número del pictograma. Si lo pones, se descarga ese y no se busca.
+
+```bash
+python manage.py descargar_pictogramas          # descarga los que falten y apunta su id
+python manage.py cargar_datos_prueba            # los datos de prueba ya salen con pictogramas
+```
+
+Si un pictograma no te gusta: busca otro en arasaac.org, pon su número en `id`, borra el
+`.png` y vuelve a lanzar el comando.
