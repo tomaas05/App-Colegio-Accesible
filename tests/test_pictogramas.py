@@ -387,3 +387,29 @@ def test_el_catalogo_no_hace_una_consulta_por_tarea(client, datos, django_assert
 
 def test_la_cache_de_cada_prueba_empieza_vacia():
     assert cache.get("picto:buscar:cualquiera") is None
+
+
+# --- Comando descargar_pictogramas -------------------------------------------------
+
+
+def test_descargar_pictogramas_baja_cada_uno_una_sola_vez(arasaac, tmp_path, capsys):
+    from django.core.management import call_command
+
+    listado = tmp_path / "listado.csv"
+    listado.write_text("id;nombre\n2349;perro\n7202;sol\n", encoding="utf-8")
+    for _ in range(2):
+        call_command("descargar_pictogramas", listado=str(listado), destino=str(tmp_path))
+    assert (tmp_path / "perro.png").read_bytes() == png()
+    assert len(arasaac.pedidas) == 2  # la segunda vez no se pide nada
+    assert "ARASAAC" in capsys.readouterr().out  # recuerda la atribución
+
+
+@pytest.mark.parametrize("linea", ["abc;perro", "12;../../fuera", "12;Con Espacios"])
+def test_descargar_pictogramas_rechaza_lineas_no_validas(arasaac, tmp_path, linea):
+    from django.core.management import CommandError, call_command
+
+    listado = tmp_path / "listado.csv"
+    listado.write_text(f"id;nombre\n{linea}\n", encoding="utf-8")
+    with pytest.raises(CommandError):
+        call_command("descargar_pictogramas", listado=str(listado), destino=str(tmp_path))
+    assert arasaac.pedidas == []
