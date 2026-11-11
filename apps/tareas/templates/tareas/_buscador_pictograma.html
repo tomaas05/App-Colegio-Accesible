@@ -1,0 +1,27 @@
+{# Buscador de pictogramas de ARASAAC (decisión 0004). Recibe: campo (nombre del campo   #}
+{# del formulario) y elegido (número ya elegido, si el formulario vuelve con errores).   #}
+{# La búsqueda la hace nuestro servidor: el navegador no habla con ARASAAC (RNF1.1.2).   #}
+{# Necesita JavaScript (HTMX). Sin él, se sube una imagen con el campo «Imagen».         #}
+<div class="buscador-picto">
+  <label for="q-{{ campo }}">Buscar un pictograma en ARASAAC</label>
+  <div class="campo__fila">
+    <input type="search" id="q-{{ campo }}" name="q" maxlength="40" autocomplete="off" autocapitalize="none" enterkeyhint="search" aria-describedby="ayuda-{{ campo }}" data-buscar-picto="#buscar-{{ campo }}">
+    <button class="boton--aux" type="button" id="buscar-{{ campo }}"
+            hx-get="{% url 'pictogramas:buscar' %}" hx-include="#q-{{ campo }}" hx-vals='{"campo": "{{ campo }}"}'
+            hx-target="#resultados-{{ campo }}" hx-swap="innerHTML" hx-sync="this:replace">Buscar</button>
+  </div>
+  <p class="campo__ayuda" id="ayuda-{{ campo }}">Por ejemplo: lavarse las manos.</p>
+  {# Región viva: dice cuántos pictogramas hay o qué ha fallado, sin mover el foco. #}
+  <p class="buscador-picto__estado" id="estado-{{ campo }}" role="status"></p>
+  <div class="buscador-picto__resultados" id="resultados-{{ campo }}">
+    {% if elegido %}
+    <fieldset class="pictos">
+      <legend>Pictograma elegido</legend>
+      <ul class="pictos__lista">
+        <li><label class="picto picto--ninguno"><input type="radio" name="{{ campo }}" value=""><span class="picto__nombre">Ninguno</span></label></li>
+        <li><label class="picto"><input type="radio" name="{{ campo }}" value="{{ elegido }}" checked><img src="{% url 'pictogramas:vista_previa' elegido %}" alt="" width="96" height="96"><span class="picto__nombre">El que has elegido</span></label></li>
+      </ul>
+    </fieldset>
+    {% endif %}
+  </div>
+</div>

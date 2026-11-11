@@ -36,6 +36,8 @@ class AsignacionTareaTests(TestCase):
             codigo_estudiante="est_1",
             clase=self.clase,
             avatar="perro.png",
+            tutor=self.tutor_user,
+            fecha_alta_tutor=date.today(),
         )
 
         self.usuario_estudiante2 = Usuario.objects.create_user(
@@ -50,6 +52,8 @@ class AsignacionTareaTests(TestCase):
             codigo_estudiante="est_2",
             clase=self.clase,
             avatar="sol.png",
+            tutor=self.tutor_user,
+            fecha_alta_tutor=date.today(),
         )
 
         self.tarea = Tarea.objects.create(

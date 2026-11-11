@@ -1,123 +1,75 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block titulo %}Crear nueva tarea - Despega{% endblock %}
-
-{% block estilos %}
-<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
-{% endblock %}
+{% block titulo %}Crear tarea · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
 
 {% block contenido %}
-<div class="crear-tarea-container">
-  <h1>Crear nueva tarea</h1>
-
-  {% if messages %}
-  <ul role="alert" aria-live="polite" class="mensajes-alerta">
-    {% for message in messages %}
-    <li>{{ message }}</li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-
-  <!-- Bloque visual para mostrar errores generales si el formulario no es válido -->
-  {% if form.errors or formset.non_form_errors %}
-  <div style="background-color: var(--error-fondo, #fee2e2); color: var(--error, #991b1b); padding: 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem; border: 1px solid #f87171;">
-    <strong>⚠️ Por favor, corrige los siguientes errores en la tarea:</strong>
-    {{ form.errors }}
-    {{ formset.non_form_errors }}
+{# Bocetos B40 · Crear tarea y B41 · Pasos de una tarea. HU-03-01. #}
+<div class="admin tarea-form">
+  <div class="admin__cab">
+    <a class="boton boton--aux" href="{% url 'tareas:catalogo' %}"><span aria-hidden="true">‹</span> Tareas creadas</a>
+    <h1>Crear tarea</h1>
   </div>
-  {% endif %}
 
-  <form method="post" enctype="multipart/form-data" action="{% url 'tareas:crear_tarea' %}" autocomplete="off">
+  {% include "usuarios/_mensajes.html" %}
+
+  <form class="formulario" method="post" enctype="multipart/form-data" novalidate data-form-tarea>
     {% csrf_token %}
+    {% include "usuarios/_errores.html" %}
+    {% if formset.total_error_count %}
+    <div class="aviso-error" role="alert">
+      <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
+      <p>A algún paso le falta un dato. Revisa los pasos marcados más abajo.</p>
+    </div>
+    {% endif %}
 
-    <!-- Bloque 1: Datos principales de la tarea -->
-    <fieldset>
-      <legend>Datos principales de la tarea</legend>
-
-      <p>{{ form.nombre.label_tag }} {{ form.nombre }} {{ form.nombre.errors }}</p>
-      <p>{{ form.descripcion.label_tag }} {{ form.descripcion }} {{ form.descripcion.errors }}</p>
-      <p>{{ form.ambito.label_tag }} {{ form.ambito }} {{ form.ambito.errors }}</p>
-
-      <hr>
-      <h3>Imagen de la tarea</h3>
-      <p>Sube un archivo de tu equipo o busca un pictograma en ARASAAC.</p>
-
-      <p>{{ form.imagen.label_tag }} {{ form.imagen }} {{ form.imagen.errors }}</p>
-
-      <!-- Buscador ARASAAC -->
-      <div class="buscador-arasaac-box">
-        <label for="buscador-arasaac">Buscar en ARASAAC:</label>
-        <div class="buscador-arasaac-flex">
-          <input type="text" id="buscador-arasaac" placeholder="Ej: lavarse las manos">
-          <button type="button" onclick="buscarArasaac()" class="principal">Buscar</button>
-        </div>
-
-        <div id="resultados-arasaac" class="resultados-arasaac-grid" aria-live="polite"></div>
-
-        <input type="hidden" name="arasaac_id_tarea" id="arasaac_id_tarea" value="">
-        <p id="mensaje-pictograma-seleccionado" class="mensaje-exito-pic" style="display: none;">
-          ✓ Pictograma seleccionado.
-        </p>
-      </div>
-
-      <p>{{ form.descripcion_imagen.label_tag }} {{ form.descripcion_imagen }} {{ form.descripcion_imagen.errors }}</p>
+    <fieldset class="admin__tarjeta">
+      <legend>Datos de la tarea</legend>
+      {% include "tareas/_campo.html" with campo=form.nombre %}
+      {% include "tareas/_campo.html" with campo=form.descripcion %}
+      {% include "tareas/_campo.html" with campo=form.ambito %}
     </fieldset>
 
-    <!-- Bloque 2: Pasos (Formset) -->
-    <fieldset>
-      <legend>Pasos de la tarea</legend>
+    <fieldset class="admin__tarjeta">
+      <legend>Imagen de la tarea</legend>
+      <p>Sube una imagen de tu equipo o busca un pictograma.</p>
+      {% include "tareas/_campo.html" with campo=form.imagen %}
+      {% include "tareas/_buscador_pictograma.html" with campo=form.arasaac_id_tarea.html_name elegido=form.pictograma_elegido %}
+      {% include "tareas/_campo.html" with campo=form.descripcion_imagen %}
+    </fieldset>
+
+    <fieldset class="admin__tarjeta">
+      <legend>Pasos</legend>
       {{ formset.management_form }}
-
-      {% if formset.errors %}
-      <div style="background-color: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem;">
-        ⚠️ Algunos pasos contienen errores o les falta información obligatoria. Revisa los campos marcados abajo.
-      </div>
-      {% endif %}
-
-      <div id="contenedor-pasos">
-      </div>
-
-      <button type="button"
-              hx-get="{% url 'tareas:anadir_paso' %}"
-              hx-target="#contenedor-pasos"
-              hx-swap="beforeend"
-              hx-vals="js:{'total_forms': document.getElementById('id_pasos-TOTAL_FORMS').value}"
-              class="secundario">
-        + Añadir paso
+      {% for error in formset.non_form_errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+      <ol class="pasos-form" id="contenedor-pasos" role="list">
+        {% for paso_form in formset %}{% include "tareas/_paso.html" with numero=forloop.counter %}{% endfor %}
+      </ol>
+      {# Solo con JavaScript (tarea.js le quita el hidden): HTMX pide un paso vacío. #}
+      <button class="boton--aux" type="button" data-anadir-paso hidden
+              hx-get="{% url 'tareas:anadir_paso' %}" hx-target="#contenedor-pasos" hx-swap="beforeend">
+        <span aria-hidden="true">+</span> Añadir paso
       </button>
+      <p class="buscador-picto__estado" role="status" data-pasos-estado></p>
     </fieldset>
 
-    <!-- Botones de acción inferiores -->
-    <div class="contenedor-botones-inferiores" style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
-
-      <button type="button" onclick="prepararYMostrarVistaPrevia()" class="secundario">
-        Guardar tarea
-      </button>
-      <a href="{% url 'tareas:catalogo' %}" class="peligro" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
-        Cancelar
-      </a>
+    <div class="tarea-form__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-revisar>Guardar tarea</button>
+      <a class="boton boton--aux" href="{% url 'tareas:catalogo' %}">Cancelar</a>
     </div>
   </form>
 </div>
 
-<!-- VENTANA MODAL PARA LA VISTA PREVIA Y CONFIRMACIÓN -->
-<dialog id="modal-vista-previa" class="confirmar">
-  <div class="modal-header">
-    <h2>Revisa la tarea antes de guardar</h2>
-    <button type="button" onclick="cerrarVistaPrevia()" class="aux" style="padding: 0.25rem 0.75rem; min-height: auto;">X</button>
-  </div>
-
-  <div id="contenido-vista-previa" class="modal-body" style="text-align: left; margin-bottom: 1.5rem;"></div>
-
-  <div style="display: flex; gap: 1rem; justify-content: flex-end; border-top: 2px solid var(--gris); padding-top: 1rem;">
-    <button type="button" onclick="cerrarVistaPrevia()" class="aux">Seguir editando</button>
-    <button type="button" onclick="confirmarGuardado()" class="principal">Confirmar y guardar</button>
+{# Vista previa antes de guardar (B40, paso 5). Solo con JavaScript; sin él se guarda directamente. #}
+<dialog class="confirmar" id="vista-previa" aria-labelledby="vista-previa-titulo">
+  <h2 id="vista-previa-titulo">Revisa la tarea antes de guardar</h2>
+  <div class="vista-previa" data-vista-previa></div>
+  <div class="tarea-form__acciones">
+    <button class="boton--principal boton--mediano" type="button" data-confirmar-guardar>Guardar</button>
+    <form method="dialog"><button class="boton--aux" type="submit">Seguir editando</button></form>
   </div>
 </dialog>
 {% endblock %}
 
-{% block scripts %}
-<script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
-<script src="{% static 'js/tarea.js' %}"></script>
-{% endblock %}
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script><script src="{% static 'js/tarea.js' %}" defer></script>{% endblock %}
