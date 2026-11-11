@@ -466,13 +466,21 @@ def _texto_cambios(anadidos, quitados):
 # --- HU-01-09 · Consultar la agenda de mis estudiantes (Javi) --------------------
 
 
+DIAS_CONSULTABLES = 366
+
+
 def _fecha_pedida(request):
     """La fecha de ?dia=AAAA-MM-DD, o hoy si no viene o no es válida."""
     hoy = timezone.localdate()
     try:
-        return date.fromisoformat(request.GET.get("dia", "")), hoy
+        fecha = date.fromisoformat(request.GET.get("dia", ""))
     except ValueError:
         return hoy, hoy
+    # Como mucho un año antes o después: fuera de ahí no hay agenda que consultar, y con
+    # 9999-12-31 sumar un día desbordaba y la página daba un error 500.
+    if abs((fecha - hoy).days) > DIAS_CONSULTABLES:
+        return hoy, hoy
+    return fecha, hoy
 
 
 @login_required

@@ -18,9 +18,10 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from apps.agenda.models import Ejecucion, EjecucionPaso, EstadoEjecucion, EstadoPaso
+from apps.comun.fuentes import fuente_titulos
 from apps.horario.models import Asignatura, Franja, HorarioClase, TipoAsignatura
 from apps.perfil.models import (
     MetodoAcceso,
@@ -71,7 +72,7 @@ def imagen(texto, color, nombre, redonda=False):
     else:
         dibujo.rounded_rectangle((0, 0, lado - 1, lado - 1), radius=40, fill=color)
     tamano = 120 if len(texto) <= 2 else 46
-    fuente = ImageFont.load_default(size=tamano)
+    fuente = fuente_titulos(tamano)  # Nunito: la de Pillow no dibuja las tildes
     caja = dibujo.textbbox((0, 0), texto, font=fuente)
     x = (lado - (caja[2] - caja[0])) / 2 - caja[0]
     y = (lado - (caja[3] - caja[1])) / 2 - caja[1]

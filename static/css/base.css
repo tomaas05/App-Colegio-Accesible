@@ -259,3 +259,14 @@ main:focus {
     scroll-behavior: auto !important;
   }
 }
+
+/* --- Páginas de error 403, 404 y 500 --- */
+.error-pagina {
+  width: min(40rem, 100%);
+  margin: 2rem auto;
+}
+.error-pagina .boton {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}

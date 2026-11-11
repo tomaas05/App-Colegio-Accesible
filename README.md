@@ -19,7 +19,6 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/tareas/crear/` · `/tareas/catalogo/` | Crear una tarea y ver las creadas | HU-03-01 | Úrsula |
 | `/perfil/` · `/perfil/<codigo>/` | Elegir estudiante y configurar su perfil visual y temporizador (B52, B54) | HU-04-01 · HU-07-01 | Jorge |
 | `/horario/` · `/horario/mi-horario/` | El administrador carga el horario de cada clase (B37); el estudiante ve el de su clase | HU-03-11 | Javi |
-| `/perfil/` · `/perfil/<codigo>/` | Elegir estudiante y configurar su perfil visual (B52) | HU-04-01 | Jorge |
 | `/panel/mis-estudiantes/` | El profesional elige en la lista del centro los estudiantes que atiende (B26) | HU-01-08 | Javi |
 | `/panel/mis-estudiantes/<código>/agenda/` | Agenda de un estudiante que atiendo, solo consulta, día a día (B27) | HU-01-09 | Javi |
 
