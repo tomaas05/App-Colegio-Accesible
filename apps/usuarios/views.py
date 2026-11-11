@@ -50,6 +50,7 @@ from .vinculos import estudiantes_de, guardar_vinculos
 # no pasa por authenticate() (no tiene usuario y contraseña), así que se indica aquí.
 BACKEND_ESTUDIANTE = "django.contrib.auth.backends.ModelBackend"
 
+
 def destino_tras_entrar(usuario):
     """A dónde va cada usuario al entrar: el estudiante a su agenda, el adulto a su panel."""
     if usuario.es_estudiante:
