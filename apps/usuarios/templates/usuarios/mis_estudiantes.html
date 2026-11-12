@@ -4,17 +4,9 @@
 {% block titulo %}Mis estudiantes · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
-{% block cabecera %}
-<div class="cabecera-adulto">
-  <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Volver</a>
-  <form method="post" action="{% url 'usuarios:salir' %}">
-    {% csrf_token %}
-    <button class="boton--aux" type="submit">Salir</button>
-  </form>
-</div>
-{% endblock %}
 
 {% block contenido %}
+<p class="volver"><a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Volver</a></p>
 {# Boceto B26 · Elegir mis estudiantes. HU-01-08 (AGENDA-154), pruebas de aceptación 1, 2 y 4. #}
 <div class="panel elegir">
   <div>

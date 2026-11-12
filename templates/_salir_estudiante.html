@@ -1,0 +1,5 @@
+{# «Salir» del estudiante: siempre a la vista en su agenda y su horario. Con POST (decisión 0002). #}
+<form class="salir-est" method="post" action="{% url 'usuarios:salir' %}">
+  {% csrf_token %}
+  <button class="boton--aux" type="submit">Salir</button>
+</form>

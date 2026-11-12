@@ -53,6 +53,13 @@ a.boton {
   min-width: 0;
   font-size: 1.75rem;
 }
+.cab-est h1 {
+  flex: 0 1 auto;
+}
+.cab-est__quien {
+  font-weight: 600;
+  color: var(--gris);
+}
 .reloj {
   margin-left: auto;
   font-family: var(--fuente-titulos);

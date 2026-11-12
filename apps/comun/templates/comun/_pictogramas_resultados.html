@@ -1,0 +1,27 @@
+{# Resultados del buscador de pictogramas (decisión 0004). Lo pide HTMX y sustituye al   #}
+{# contenido de la zona de resultados. Cada pictograma es un botón de opción con su      #}
+{# palabra: se elige con un toque o con el teclado y el lector lee la palabra.           #}
+{# El aviso va en una región role="status" que ya está en la página (se cambia aparte).  #}
+<p id="estado-{{ campo }}" hx-swap-oob="innerHTML">{% if aviso %}{{ aviso }}{% elif resultados %}{{ resultados|length }} pictograma{{ resultados|length|pluralize }} de «{{ texto }}». Elige uno.{% else %}No hay pictogramas de «{{ texto }}». Prueba con otra palabra o sube una imagen.{% endif %}</p>
+{% if resultados %}
+<fieldset class="pictos">
+  <legend>Pictogramas de «{{ texto }}»</legend>
+  <ul class="pictos__lista">
+    <li>
+      <label class="picto picto--ninguno">
+        <input type="radio" name="{{ campo }}" value="" checked>
+        <span class="picto__nombre">Ninguno</span>
+      </label>
+    </li>
+    {% for picto in resultados %}
+    <li>
+      <label class="picto">
+        <input type="radio" name="{{ campo }}" value="{{ picto.id }}" data-picto-nombre="{{ picto.nombre }}">
+        <img src="{% url 'pictogramas:vista_previa' picto.id %}" alt="" width="96" height="96" loading="lazy">
+        <span class="picto__nombre">{{ picto.nombre }}</span>
+      </label>
+    </li>
+    {% endfor %}
+  </ul>
+</fieldset>
+{% endif %}

@@ -1,96 +1,47 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block estilos %}
-<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
-{% endblock %}
-
-{% block titulo %}Asignar Tarea a la Agenda{% endblock %}
+{% block titulo %}Asignar {% if tarea %}«{{ tarea.nombre }}»{% else %}una tarea{% endif %} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
 
 {% block contenido %}
-<main id="contenido" class="contenedor-principal">
-  <div class="crear-tarea-container">
+{# Boceto B43 · Asignar a estudiantes. HU-03-03. Solo salen los estudiantes de quien asigna. #}
+<div class="admin tarea-form">
+  <div class="admin__cab">
+    <a class="boton boton--aux" href="{% url 'tareas:catalogo' %}"><span aria-hidden="true">‹</span> Tareas creadas</a>
+    <h1>{% if tarea %}Asignar «{{ tarea.nombre }}»{% else %}Asignar una tarea{% endif %}</h1>
+  </div>
 
-    <h1>
-      {% if tarea %}
-      Asignar tarea: {{ tarea.nombre }}
-      {% else %}
-      Asignar tarea a la agenda
-      {% endif %}
-    </h1>
-
-    <form method="post" novalidate autocomplete="off">
-      {% csrf_token %}
-
-      <fieldset>
-        <legend>Detalles de la Asignación</legend>
-
-        {% for field in form %}
-        <div class="campo-grupo">
-          {{ field.label_tag }}
-
-          <div class="input-wrapper">
-            {{ field }}
-          </div>
-
-          {% if field.help_text %}
-          <small class="txt">
-            {{ field.help_text }}
-          </small>
-          {% endif %}
-
-          {% for error in field.errors %}
-          <div class="error-mensaje">
-            {{ error }}
-          </div>
+  {% if not form.fields.estudiantes.queryset.exists %}
+  <p class="aviso-vacio">Todavía no tienes ningún estudiante. Pídeselo al administrador del centro.</p>
+  {% else %}
+  <form class="formulario" method="post" novalidate>
+    {% csrf_token %}
+    {% include "usuarios/_errores.html" %}
+    <div class="admin__tarjeta">
+      {% for campo in form %}
+      {% if campo.field.widget.input_type == "checkbox" %}
+      <fieldset class="campo campo--grupo" id="{{ campo.auto_id }}"{% if campo.errors %} aria-describedby="{{ campo.auto_id }}_error"{% endif %}>
+        <legend>{{ campo.label }}</legend>
+        <ul class="casillas">
+          {% for opcion in campo %}
+          <li><label class="casilla">{{ opcion.tag }} <span>{{ opcion.choice_label }}</span></label></li>
           {% endfor %}
-        </div>
-        {% endfor %}
+        </ul>
+        {% for error in campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ error }}</p>{% endfor %}
       </fieldset>
-
-      <!-- Botones de acción inferiores homogéneos -->
-      <div class="contenedor-botones-inferiores" style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
-        <button type="button" onclick="validarYEnviarAsignacion(event)" class="principal">
-          Guardar Asignación
-        </button>
-        <a href="{% url 'tareas:catalogo' %}" class="peligro" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
-          Cancelar
-        </a>
-      </div>
-    </form>
-  </div>
-</main>
-
-<!-- VENTANA MODAL PARA ERRORES DE ASIGNACIÓN (GENÉRICA) -->
-<dialog id="modal-errores-asignacion" class="confirmar" data-tiene-errores="{% if form.errors or form.non_field_errors %}true{% else %}false{% endif %}">
-  <div class="modal-header" style="border-bottom: 2px solid var(--gris); padding-bottom: 1rem; margin-bottom: 1rem;">
-    <h2 style="margin: 0; font-family: 'Nunito', sans-serif; font-weight: 800; color: var(--petroleo);">⚠️ Corrige los errores en la asignación</h2>
-  </div>
-
-  <div class="modal-body" style="text-align: left; margin-bottom: 1.5rem;">
-    <p class="txt">Se han detectado los siguientes inconvenientes al intentar guardar la asignación:</p>
-
-    <ul style="color: #991b1b; font-family: 'Open Sans', sans-serif; padding-left: 1.25rem; margin-top: 0.75rem;">
-      {% if form.non_field_errors %}
-      {% for error in form.non_field_errors %}
-      <li>{{ error }}</li>
-      {% endfor %}
+      {% else %}
+      {% include "tareas/_campo.html" %}
       {% endif %}
-
-      {% for field, errors in form.errors.items %}
-      {% for error in errors %}
-      <li><strong>{{ field }}:</strong> {{ error }}</li>
       {% endfor %}
-      {% endfor %}
-    </ul>
-  </div>
-
-  <div style="display: flex; gap: 1rem; justify-content: flex-end; border-top: 2px solid var(--gris); padding-top: 1rem;">
-    <button type="button" onclick="cerrarModalErrores()" class="principal">Entendido, corregir</button>
-  </div>
-</dialog>
+    </div>
+    <div class="tarea-form__acciones">
+      <button class="boton--principal boton--mediano" type="submit">Guardar</button>
+      <a class="boton boton--aux" href="{% url 'tareas:catalogo' %}">Cancelar</a>
+    </div>
+  </form>
+  {% endif %}
+</div>
 {% endblock %}
 
-{% block scripts %}
-<script src="{% static 'js/tarea.js' %}"></script>
-{% endblock %}
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

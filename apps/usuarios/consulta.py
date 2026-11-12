@@ -11,6 +11,7 @@ from datetime import date
 
 from django.db.models import Q
 
+from apps.agenda import servicios
 from apps.agenda.models import Ejecucion, EstadoEjecucion
 from apps.agenda.servicios import DIAS
 from apps.horario.models import HorarioClase
@@ -22,6 +23,7 @@ class TareaConsultada:
     asignacion: Asignacion
     ejecucion: Ejecucion | None
     modificable: bool
+    vencida: bool = False
 
     @property
     def tarea(self):
@@ -29,6 +31,10 @@ class TareaConsultada:
 
     @property
     def estado(self):
+        # Igual que en la agenda del estudiante: «vencida» no se guarda, se calcula.
+        pendiente = not self.ejecucion or self.ejecucion.estado == EstadoEjecucion.PENDIENTE
+        if pendiente and self.vencida:
+            return EstadoEjecucion.VENCIDA.label
         if self.ejecucion:
             return self.ejecucion.get_estado_display()
         return EstadoEjecucion.PENDIENTE.label
@@ -68,8 +74,16 @@ def tareas_del_dia(estudiante, fecha: date, usuario):
         e.asignacion_id: e
         for e in Ejecucion.objects.filter(asignacion__in=asignaciones, fecha=fecha)
     }
+    ahora = servicios.ahora()
+    hoy, hora = ahora.date(), ahora.time()
+
+    def vencida(asignacion):
+        """Ya ha pasado su hora de fin: un día anterior, o hoy más tarde de esa hora."""
+        return fecha < hoy or (fecha == hoy and asignacion.hora_fin <= hora)
+
     return [
-        TareaConsultada(a, ejecuciones.get(a.pk), puede_modificar(usuario, a)) for a in asignaciones
+        TareaConsultada(a, ejecuciones.get(a.pk), puede_modificar(usuario, a), vencida(a))
+        for a in asignaciones
     ]
 
 

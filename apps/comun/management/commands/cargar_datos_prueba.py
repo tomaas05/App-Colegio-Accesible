@@ -18,9 +18,11 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from apps.agenda.models import Ejecucion, EjecucionPaso, EstadoEjecucion, EstadoPaso
+from apps.comun import pictos_interfaz
+from apps.comun.fuentes import fuente_titulos
 from apps.horario.models import Asignatura, Franja, HorarioClase, TipoAsignatura
 from apps.perfil.models import (
     MetodoAcceso,
@@ -61,8 +63,21 @@ CONTRASENA_MATEO = "mateo2026"
 COLORES = ["#0B3C49", "#1F6F6B", "#7A3E9D", "#B54708", "#1D4ED8", "#9F1239", "#3F6212", "#5B21B6"]
 
 
-def imagen(texto, color, nombre, redonda=False):
-    """Genera un PNG de 256×256 con un texto centrado (marcador de posición)."""
+AVATARES = [
+    "gato", "tortuga", "mariposa", "ballena", "león", "conejo",
+    "pájaro", "caballo", "elefante", "jirafa", "pez", "perro",
+]  # fmt: skip
+
+
+def imagen(texto, color, nombre, redonda=False, picto=None):
+    """El pictograma de ARASAAC de `picto` si ya está descargado; si no, un marcador.
+
+    El marcador es un PNG de 256×256 con un texto centrado. Los pictogramas se bajan una
+    vez con `python manage.py descargar_pictogramas` (decisión 0004).
+    """
+    descargado = pictos_interfaz.archivo(picto) if picto else None
+    if descargado:
+        return ContentFile(descargado.read_bytes(), name=f"{nombre}.png")
     lado = 256
     lienzo = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
     dibujo = ImageDraw.Draw(lienzo)
@@ -71,7 +86,7 @@ def imagen(texto, color, nombre, redonda=False):
     else:
         dibujo.rounded_rectangle((0, 0, lado - 1, lado - 1), radius=40, fill=color)
     tamano = 120 if len(texto) <= 2 else 46
-    fuente = ImageFont.load_default(size=tamano)
+    fuente = fuente_titulos(tamano)  # Nunito: la de Pillow no dibuja las tildes
     caja = dibujo.textbbox((0, 0), texto, font=fuente)
     x = (lado - (caja[2] - caja[0])) / 2 - caja[0]
     y = (lado - (caja[3] - caja[1])) / 2 - caja[1]
@@ -148,10 +163,14 @@ class Command(BaseCommand):
 
         # --- Clases --------------------------------------------------------
         clase_a = Clase(nombre="PTVAL 1", curso_escolar=CURSO, descripcion_imagen="Clase PTVAL 1")
-        clase_a.imagen.save("ptval1.png", imagen("P1", COLORES[0], "ptval1"), save=False)
+        clase_a.imagen.save(
+            "ptval1.png", imagen("P1", COLORES[0], "ptval1", picto="girasol"), save=False
+        )
         clase_a.save()
         clase_b = Clase(nombre="PTVAL 2", curso_escolar=CURSO, descripcion_imagen="Clase PTVAL 2")
-        clase_b.imagen.save("ptval2.png", imagen("P2", COLORES[1], "ptval2"), save=False)
+        clase_b.imagen.save(
+            "ptval2.png", imagen("P2", COLORES[1], "ptval2", picto="cohete"), save=False
+        )
         clase_b.save()
 
         # --- Rejilla de la contraseña de imágenes --------------------------
@@ -159,7 +178,12 @@ class Command(BaseCommand):
             imagen_acceso = ImagenAcceso(orden=orden, descripcion_imagen=palabra)
             imagen_acceso.imagen.save(
                 f"acceso{orden}.png",
-                imagen(palabra[:2].capitalize(), COLORES[orden % len(COLORES)], f"acceso{orden}"),
+                imagen(
+                    palabra[:2].capitalize(),
+                    COLORES[orden % len(COLORES)],
+                    f"acceso{orden}",
+                    picto=palabra,
+                ),
                 save=False,
             )
             imagen_acceso.save()
@@ -242,7 +266,9 @@ class Command(BaseCommand):
         for i, (nombre, tipo, sigla) in enumerate(materias):
             asignatura = Asignatura(nombre=nombre, tipo=tipo, descripcion_imagen=nombre)
             asignatura.imagen.save(
-                f"asig{i}.png", imagen(sigla, COLORES[i % len(COLORES)], f"asig{i}"), save=False
+                f"asig{i}.png",
+                imagen(sigla, COLORES[i % len(COLORES)], f"asig{i}", picto=nombre),
+                save=False,
             )
             asignatura.save()
             asignaturas.append(asignatura)
@@ -367,7 +393,13 @@ class Command(BaseCommand):
         )
         estudiante.avatar.save(
             f"{codigo.lower()}.png",
-            imagen(nombre[0], COLORES[color % len(COLORES)], codigo.lower(), redonda=True),
+            imagen(
+                nombre[0],
+                COLORES[color % len(COLORES)],
+                codigo.lower(),
+                redonda=True,
+                picto=AVATARES[color % len(AVATARES)],
+            ),
             save=False,
         )
         estudiante.save()
@@ -382,14 +414,21 @@ class Command(BaseCommand):
             creador=creador,
         )
         tarea.imagen.save(
-            f"t{color}.png", imagen(sigla, COLORES[color % len(COLORES)], f"t{color}"), save=False
+            f"t{color}.png",
+            imagen(sigla, COLORES[color % len(COLORES)], f"t{color}", picto=nombre),
+            save=False,
         )
         tarea.save()
         for orden, texto in enumerate(pasos, start=1):
             paso = Paso(tarea=tarea, orden=orden, descripcion=texto, descripcion_imagen=texto)
             paso.imagen.save(
                 f"t{color}p{orden}.png",
-                imagen(str(orden), COLORES[(color + 2) % len(COLORES)], f"t{color}p{orden}"),
+                imagen(
+                    str(orden),
+                    COLORES[(color + 2) % len(COLORES)],
+                    f"t{color}p{orden}",
+                    picto=texto,
+                ),
                 save=False,
             )
             paso.save()

@@ -4,17 +4,9 @@
 {% block titulo %}Horario escolar{% if clase %} · {{ clase.nombre }}{% endif %} · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/horario.css' %}">{% endblock %}
 
-{% block cabecera %}
-<div class="cabecera-adulto">
-  <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Volver</a>
-  <form method="post" action="{% url 'usuarios:salir' %}">
-    {% csrf_token %}
-    <button class="boton--aux" type="submit">Salir</button>
-  </form>
-</div>
-{% endblock %}
 
 {% block contenido %}
+<p class="volver"><a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Volver</a></p>
 {# Boceto B37 · Administrador · Horario escolar. HU-03-11 (AGENDA-222). #}
 <div class="panel horario">
   <h1>Horario escolar</h1>

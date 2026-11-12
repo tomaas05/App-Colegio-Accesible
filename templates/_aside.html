@@ -1,0 +1,19 @@
+{# Panel lateral de los adultos (decisión 0003). Las opciones salen de OPCIONES_POR_ROL   #}
+{# (apps/usuarios/navegacion.py), las mismas que las tarjetas de /panel/.                 #}
+{# No es un modal: no atrapa el foco. En pantallas estrechas lo abre el botón «Menú».     #}
+<aside class="lateral" id="lateral">
+  <nav aria-label="Principal">
+    <ul class="lateral__lista">
+      {% for enlace in nav_principal %}
+      <li><a class="lateral__enlace{% if enlace.seccion %} lateral__enlace--seccion{% endif %}" href="{{ enlace.url }}"{% if enlace.actual %} aria-current="page"{% endif %}>{{ enlace.texto }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+  {# Salir con POST: un enlace de otra web no puede cerrar la sesión de nadie (decisión 0002). #}
+  <form class="lateral__salir" method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir</button>
+  </form>
+  {# Atribución que pide la licencia de ARASAAC (decisión 0004): discreta y solo para adultos. #}
+  <p class="lateral__credito">Pictogramas: Sergio Palao. Origen: ARASAAC (arasaac.org). Licencia: CC BY-NC-SA. Propiedad: Gobierno de Aragón.</p>
+</aside>

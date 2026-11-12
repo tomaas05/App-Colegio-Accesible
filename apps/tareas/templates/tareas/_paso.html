@@ -1,0 +1,20 @@
+{# Un paso del formulario de crear tarea (B41). Recibe: paso_form y numero.             #}
+{# Lo usa crear_tarea.html y también la vista anadir_paso (HTMX), sin HTML en Python.   #}
+<li class="paso-item" data-paso>
+  <fieldset>
+    <legend data-paso-titulo>Paso {{ numero }}</legend>
+    {% for oculto in paso_form.hidden_fields %}{% if oculto.name != "arasaac_id_paso" %}{{ oculto }}{% endif %}{% endfor %}
+    {{ paso_form.orden.as_hidden }}
+    {{ paso_form.DELETE.as_hidden }}
+    {% for error in paso_form.non_field_errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+    {% include "tareas/_campo.html" with campo=paso_form.descripcion %}
+    {% include "tareas/_campo.html" with campo=paso_form.imagen %}
+    {% include "tareas/_buscador_pictograma.html" with campo=paso_form.arasaac_id_paso.html_name elegido=paso_form.pictograma_elegido %}
+    {% include "tareas/_campo.html" with campo=paso_form.descripcion_imagen %}
+    <div class="paso-item__acciones">
+      <button class="boton--aux" type="button" data-paso-mover="-1">Subir <span class="visualmente-oculto" data-paso-nombre>el paso {{ numero }}</span></button>
+      <button class="boton--aux" type="button" data-paso-mover="1">Bajar <span class="visualmente-oculto" data-paso-nombre>el paso {{ numero }}</span></button>
+      <button class="boton--aux boton--peligro" type="button" data-paso-quitar>Quitar <span class="visualmente-oculto" data-paso-nombre>el paso {{ numero }}</span></button>
+    </div>
+  </fieldset>
+</li>

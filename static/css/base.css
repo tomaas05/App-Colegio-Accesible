@@ -84,21 +84,161 @@ button:hover,
   background: var(--menta-hover);
 }
 
-/* --- Estructura general --- */
-.cabecera,
-.pie {
-  padding: 0.75rem 1rem;
-}
+/* --- Estructura general (decisión 0003): cabecera, panel lateral, contenido y pie ---
+ * Primero el móvil: todo en una columna. A partir de 64rem el panel lateral de los
+ * adultos va a la izquierda. El corte está en rem: con la letra del navegador a 32 px
+ * equivale a 2048 px, así que el panel no quita sitio al contenido cuando la letra es grande. */
 .cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem max(1rem, env(safe-area-inset-right)) 0.5rem max(1rem, env(safe-area-inset-left));
+  padding-top: max(0.5rem, env(safe-area-inset-top));
   background: var(--menta);
   border-bottom: 2px solid var(--petroleo);
 }
+/* El logotipo es un enlace a la pantalla principal. Fondo blanco fijo: la imagen lo trae. */
+.cabecera__logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
+  padding: 0.125rem 0.5rem;
+  background: #ffffff;
+  border-radius: 0.75rem;
+}
+.cabecera__logo img {
+  display: block;
+  width: auto;
+  height: 2.5rem;
+}
+.cabecera__quien {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 0 auto;
+  line-height: 1.2;
+  text-align: right;
+}
+.cabecera__quien span {
+  font-size: 1rem;
+  color: var(--gris);
+}
+/* El botón «Menú» solo sirve con JavaScript: html.js se pone antes de pintar (base.js),
+   así que aparece desde el primer momento y no mueve la cabecera (CLS). */
+.cabecera__menu {
+  display: none;
+}
+.js .cabecera__menu {
+  display: inline-block;
+}
+.marco {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
 main {
   flex: 1;
-  padding: 1rem;
   width: 100%;
   max-width: 80rem;
   margin-inline: auto;
+  padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+}
+main:focus {
+  outline: none; /* recibe el foco desde «Saltar al contenido»; no es un control */
+}
+.volver {
+  margin: 0 0 1rem;
+}
+
+/* --- Panel lateral de los adultos --- */
+.lateral {
+  padding: 0.75rem max(1rem, env(safe-area-inset-right)) 0.75rem max(1rem, env(safe-area-inset-left));
+  background: var(--menta);
+  border-bottom: 2px solid var(--petroleo);
+}
+/* Solo se pliega si hay JavaScript para abrirlo con el botón «Menú». */
+.js .lateral {
+  display: none;
+}
+.js .lateral--abierto {
+  display: block;
+}
+.lateral__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lateral__enlace {
+  display: flex;
+  align-items: center;
+  min-height: var(--toque);
+  padding: 0.5rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  color: var(--petroleo);
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  text-decoration: none;
+}
+.lateral__enlace:hover {
+  background: var(--menta-hover);
+}
+/* La página actual no se distingue solo por el color: borde y barra a la izquierda. */
+.lateral__enlace[aria-current="page"],
+.lateral__enlace--seccion {
+  background: var(--blanco);
+  border-color: var(--petroleo);
+  border-left-width: 0.5rem;
+}
+.lateral__salir {
+  margin: var(--separacion) 0 0;
+  padding-top: var(--separacion);
+  border-top: 2px solid var(--petroleo);
+}
+.lateral__salir button {
+  width: 100%;
+}
+.lateral__credito {
+  margin: 1rem 0 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--gris);
+}
+/* «Salir» del estudiante, en la fila del título de su agenda. */
+.salir-est {
+  margin: 0;
+}
+@media (min-width: 64rem) {
+  .con-lateral .marco {
+    flex-direction: row;
+  }
+  .lateral,
+  .js .lateral {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: 16rem;
+    border-right: 2px solid var(--petroleo);
+    border-bottom: 0;
+  }
+  .con-lateral main {
+    min-width: 0;
+  }
+  .js .cabecera__menu {
+    display: none;
+  }
+}
+@media print {
+  .saltar,
+  .lateral,
+  .cabecera__menu,
+  .salir-est {
+    display: none !important;
+  }
 }
 
 .visualmente-oculto {
@@ -123,4 +263,15 @@ main {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* --- Páginas de error 403, 404 y 500 --- */
+.error-pagina {
+  width: min(40rem, 100%);
+  margin: 2rem auto;
+}
+.error-pagina .boton {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }

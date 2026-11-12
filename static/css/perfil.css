@@ -64,7 +64,7 @@
   color: var(--petroleo);
 }
 .perfil-estudiante-card__info span {
-  font-size: 0.95rem;
+  font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
   color: var(--gris);
 }
 
@@ -153,7 +153,7 @@
   color: var(--petroleo);
 }
 .perfil-previa__resumen {
-  font-size: 0.95rem;
+  font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
   color: var(--gris);
 }
 .perfil-previa__marco {
@@ -176,7 +176,7 @@
 .perfil-previa__hora {
   font-family: var(--fuente-titulos);
   font-weight: 800;
-  font-size: 0.95em;
+  font-size: 1em;
   color: var(--verde-oscuro);
 }
 .perfil-previa__nombre {

@@ -1,0 +1,7 @@
+{# Un campo con su etiqueta, su ayuda y su error. Recibe: campo. #}
+<div class="campo">
+  <label for="{{ campo.id_for_label }}">{{ campo.label }}{% if campo.field.widget.input_type == "file" %} <span class="campo__opcional">(o un pictograma)</span>{% elif not campo.field.required %} <span class="campo__opcional">(opcional)</span>{% endif %}</label>
+  {{ campo }}
+  {% if campo.help_text %}<p class="campo__ayuda" id="{{ campo.auto_id }}_helptext">{{ campo.help_text }}</p>{% endif %}
+  {% for error in campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ error }}</p>{% endfor %}
+</div>

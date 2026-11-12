@@ -1,13 +1,21 @@
+from unittest import mock
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
 from apps.tareas.models import Ambito, Tarea
 from apps.usuarios.models import Usuario
+from tests.arasaac_falso import ArasaacFalso
 
 
 class CrearTareaTests(TestCase):
     def setUp(self):
+        # ARASAAC de mentira: las pruebas no salen a Internet (decisión 0004).
+        self.arasaac = ArasaacFalso()
+        parche = mock.patch("apps.comun.pictogramas.requests.get", self.arasaac.get)
+        parche.start()
+        self.addCleanup(parche.stop)
         # Creamos un usuario con rol 'tutor' usando el modelo de la app usuarios
         self.tutor_user = Usuario(
             username="tutor_creador",
@@ -69,7 +77,9 @@ class CrearTareaTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(Tarea.objects.filter(nombre="Beber agua").exists())
+        tarea = Tarea.objects.get(nombre="Beber agua")
+        # La imagen es la copia local compartida del pictograma, no una dirección de ARASAAC.
+        self.assertEqual(tarea.imagen.name, "pictogramas/12345.png")
 
     def test_error_tarea_sin_nombre(self):
         """Una tarea sin nombre no se guarda y muestra errores de formulario."""
@@ -200,6 +210,7 @@ class CrearTareaTests(TestCase):
         tarea = Tarea.objects.get(nombre="Lavarse las manos")
         self.assertEqual(tarea.pasos.count(), 1)
         self.assertEqual(tarea.pasos.first().descripcion, "Enjabonar las manos")
+        self.assertEqual(tarea.pasos.first().imagen.name, "pictogramas/67890.png")
 
     def test_clasificacion_por_ambito(self):
         """Comprobamos que se puede clasificar la tarea por su ámbito (escolar, ocio, casa)."""

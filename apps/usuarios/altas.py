@@ -10,8 +10,9 @@ import unicodedata
 
 from django.core.files.base import ContentFile
 from django.db import transaction
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
+from apps.comun.fuentes import fuente_titulos
 from apps.perfil.models import MetodoAcceso, Perfil
 
 from .acceso import establecer_contrasena_imagenes
@@ -57,7 +58,7 @@ def avatar_por_defecto(nombre, codigo):
     dibujo = ImageDraw.Draw(lienzo)
     numero = int(re.sub(r"\D", "", codigo) or 0)
     dibujo.ellipse((0, 0, lado - 1, lado - 1), fill=COLORES_AVATAR[numero % len(COLORES_AVATAR)])
-    fuente = ImageFont.load_default(size=120)
+    fuente = fuente_titulos(120)  # Nunito: la de Pillow no dibuja «Á» ni «Ñ»
     texto = _inicial(nombre)
     caja = dibujo.textbbox((0, 0), texto, font=fuente)
     x = (lado - (caja[2] - caja[0])) / 2 - caja[0]

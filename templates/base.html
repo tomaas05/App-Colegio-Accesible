@@ -1,28 +1,36 @@
 {% load static %}<!DOCTYPE html>
+{# Estructura común (decisión 0003). Como en los bocetos: los adultos tienen barra con el  #}
+{# logotipo y panel lateral; las pantallas de entrada y las del estudiante van sin barra.  #}
 <html lang="es"{% if perfil_activo %} data-tema="{{ perfil_activo.tema }}" data-paleta="{{ perfil_activo.paleta }}" data-fuente="{{ perfil_activo.tipo_letra }}" data-letra="{{ perfil_activo.tamano_letra }}" data-botones="{{ perfil_activo.tamano_botones }}"{% endif %}>
   <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block titulo %}Despega{% endblock %}</title>
+  <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="32x32">
+  <link rel="icon" type="image/png" href="{% static 'img/icono-despega.png' %}" sizes="96x96">
+  <link rel="apple-touch-icon" href="{% static 'img/icono-despega.png' %}">
   <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
   {% block estilos %}{% endblock %}
+  {# base.js va sin defer a propósito: marca <html class="js"> antes de pintar, para que #}
+  {# el panel lateral no cambie de sitio al cargar en el móvil (CLS). Pesa menos de 2 kB.  #}
+  <script src="{% static 'js/base.js' %}"></script>
   {# HTMX servido desde nuestro servidor: ninguna petición a terceros (RNF1.1.2) #}
   <script src="{% static 'vendor/htmx/htmx.min.js' %}" defer></script>
 </head>
 {# hx-headers envía el token CSRF en todas las peticiones HTMX #}
-<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body{% if nav_principal %} class="con-lateral"{% endif %} hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <a class="saltar" href="#contenido">Saltar al contenido</a>
 
-  <header class="cabecera">
-    {% block cabecera %}<p><strong>Despega</strong></p>{% endblock %}
-  </header>
+  {% if nav_principal %}{% include "_cabecera.html" %}{% endif %}
 
-  <main id="contenido" tabindex="-1">
-    {% block contenido %}{% endblock %}
-  </main>
+  <div class="marco">
+    {% if nav_principal %}{% include "_aside.html" %}{% endif %}
+    <main id="contenido" tabindex="-1">
+      {% block contenido %}{% endblock %}
+    </main>
+  </div>
 
-  {% block pie %}{% endblock %}
   {% block scripts %}{% endblock %}
 </body>
 </html>

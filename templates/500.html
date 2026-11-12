@@ -1,0 +1,20 @@
+{% load static %}<!DOCTYPE html>
+{# Error 500: Django la pinta sin sesión ni context processors, así que no extiende base.html. #}
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Algo ha fallado · Despega</title>
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+  <main id="contenido">
+    <div class="error-pagina">
+      <h1>Algo ha fallado</h1>
+      <p>No es culpa tuya. Vuelve a intentarlo dentro de un momento.</p>
+      <p><a class="boton" href="/">Ir al inicio</a></p>
+    </div>
+  </main>
+</body>
+</html>

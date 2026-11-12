@@ -1,166 +1,112 @@
-import requests
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.http import HttpResponse
-from django.shortcuts import redirect, render
+"""Crear tareas, verlas y asignarlas (Úrsula): HU-03-01 y HU-03-03.
 
+Permisos: solo tutor, profesional o familiar (permisos.py). Los estudiantes a los que
+se puede asignar salen de `estudiantes_de(request.user)`, la única regla de visibilidad.
+Pictogramas: el servidor los trae de ARASAAC y guarda una copia (decisión 0004).
+"""
+
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import Count
+from django.http import HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_GET, require_http_methods
+
+from apps.comun import pictogramas
 from apps.horario.servicios import choca_con_horario_escolar
 from apps.usuarios.models import Rol
 
 from .forms import AsignacionForm, PasoFormSet, TareaForm
-from .models import Tarea
+from .models import Asignacion, Tarea
+from .permisos import gestiona_tareas
+
+MAX_PASOS = 30
+SIN_PICTOGRAMA = (
+    "No se ha podido traer el pictograma de ARASAAC. "
+    "Vuelve a intentarlo o sube una imagen de tu equipo."
+)
 
 
-@login_required
+@gestiona_tareas
+@require_GET
 def catalogo_tareas(request):
-    # Recuperamos todas las tareas guardadas
-    tareas = Tarea.objects.all().order_by("-id")
+    tareas = Tarea.objects.annotate(n_pasos=Count("pasos")).order_by("-id")
     return render(request, "tareas/catalogo.html", {"tareas": tareas})
 
 
-@login_required
+def _poner_pictograma(objeto, identificador):
+    """Si no se ha subido un archivo, la imagen es la copia local del pictograma elegido."""
+    if identificador and not objeto.imagen:
+        objeto.imagen = pictogramas.obtener(identificador)
+
+
+def _guardar(form, formset, usuario):
+    """Guarda la tarea y sus pasos, numerados del 1 en adelante en el orden enviado."""
+    tarea = form.save(commit=False)
+    tarea.creador = usuario
+    _poner_pictograma(tarea, form.cleaned_data.get("arasaac_id_tarea"))
+    tarea.save()
+    validos = [
+        paso_form
+        for paso_form in formset.forms
+        if paso_form.cleaned_data and not paso_form.cleaned_data.get("DELETE")
+    ]
+    validos.sort(key=lambda paso_form: paso_form.cleaned_data.get("orden") or 0)
+    for orden, paso_form in enumerate(validos, start=1):
+        paso = paso_form.save(commit=False)
+        paso.tarea = tarea
+        paso.orden = orden
+        _poner_pictograma(paso, paso_form.cleaned_data.get("arasaac_id_paso"))
+        paso.save()
+    return tarea
+
+
+@gestiona_tareas
+@require_http_methods(["GET", "POST"])
 def crear_tarea(request):
+    """B40 y B41 · Crear tarea con su imagen y sus pasos."""
     if request.method == "POST":
-        post_data = request.POST.copy()
-        file_data = request.FILES.copy()
-
-        # 1. Procesar ARASAAC para la tarea principal
-        arasaac_id = post_data.get("arasaac_id_tarea")
-        if arasaac_id and not file_data.get("imagen"):
-            url = f"https://static.arasaac.org/pictograms/{arasaac_id}/{arasaac_id}_300.png"
-            respuesta = requests.get(url)
-            if respuesta.status_code == 200:
-                file_data["imagen"] = SimpleUploadedFile(
-                    name=f"pictograma_tarea_{arasaac_id}.png",
-                    content=respuesta.content,
-                    content_type="image/png",
-                )
-
-        # 2. Instanciar formularios con prefijo 'pasos'
-        form = TareaForm(post_data, file_data)
-        formset = PasoFormSet(post_data, file_data, prefix="pasos")
-
+        form = TareaForm(request.POST, request.FILES)
+        formset = PasoFormSet(request.POST, request.FILES, prefix="pasos")
         if form.is_valid() and formset.is_valid():
-            tarea = form.save(commit=False)
-            tarea.creador = request.user
-            tarea.save()
-
-            # Procesar y guardar cada paso del formset (con pictogramas de ARASAAC si los hay)
-            for i, paso_form in enumerate(formset.forms):
-                if paso_form.cleaned_data and not paso_form.cleaned_data.get("DELETE"):
-                    paso = paso_form.save(commit=False)
-                    paso.tarea = tarea
-
-                    # Comprobamos si este paso concreto tiene un ID de ARASAAC seleccionado
-                    arasaac_paso_id = post_data.get(f"pasos-{i}-arasaac_id_paso")
-                    if arasaac_paso_id and not paso.imagen:
-                        url_paso = f"https://static.arasaac.org/pictograms/{arasaac_paso_id}/{arasaac_paso_id}_300.png"
-                        resp_paso = requests.get(url_paso)
-                        if resp_paso.status_code == 200:
-                            paso.imagen = SimpleUploadedFile(
-                                name=f"pictograma_paso_{arasaac_paso_id}.png",
-                                content=resp_paso.content,
-                                content_type="image/png",
-                            )
-                    paso.save()
-
-            # Guardar eliminaciones usando deleted_forms
-            for form_eliminado in formset.deleted_forms:
-                if form_eliminado.instance.pk:
-                    form_eliminado.instance.delete()
-
-            messages.success(request, f"La tarea '{tarea.nombre}' se ha creado correctamente.")
-            return redirect("tareas:catalogo")
-        else:
-            # Depuración de errores en consola si la validación falla
-            print("--- ERRORES FORMULARIO TAREA ---")
-            print(form.errors)
-            print("--- ERRORES FORMSET PASOS ---")
-            print(formset.errors)
+            try:
+                with transaction.atomic():
+                    tarea = _guardar(form, formset, request.user)
+            except pictogramas.ErrorArasaac:
+                form.add_error(None, SIN_PICTOGRAMA)
+            else:
+                messages.success(request, f"La tarea «{tarea.nombre}» se ha creado.")
+                return redirect("tareas:catalogo")
     else:
         form = TareaForm()
         formset = PasoFormSet(prefix="pasos")
-
-    return render(
-        request,
-        "tareas/crear_tarea.html",
-        {
-            "form": form,
-            "formset": formset,
-        },
-    )
+    return render(request, "tareas/crear_tarea.html", {"form": form, "formset": formset})
 
 
-@login_required
+@gestiona_tareas
+@require_GET
 def anadir_paso(request):
-    numero_pasos = int(request.GET.get("total_forms", 0))
+    """Un paso nuevo y vacío para el formulario de crear tarea. Lo pide HTMX."""
+    try:
+        numero = int(request.GET.get("total_forms", 0))
+    except ValueError:
+        return HttpResponseBadRequest("total_forms no es un número.")
+    if not 0 <= numero < MAX_PASOS:
+        return HttpResponseBadRequest("Demasiados pasos.")
     formset = PasoFormSet(prefix="pasos")
-    form = formset.empty_form
-
-    html_campos = ""
-    for hidden in form.hidden_fields():
-        html_campos += str(hidden)
-
-    for field in form.visible_fields():
-        if field.name in ["DELETE", "orden"]:
-            html_campos += f'<div style="display:none;">{field}</div>'
-        else:
-            errores_html = (
-                '<div style="color: var(--error, #991b1b); font-size: 0.85rem; '
-                f'margin-top: 0.25rem;">{field.errors}</div>'
-                if field.errors
-                else ""
-            )
-            html_campos += f"<p>{field.label_tag()} {field} {errores_html}</p>"
-
-    html_campos = html_campos.replace("__prefix__", str(numero_pasos))
-
-    # HTML completo del paso con su buscador ARASAAC independiente
-    html = f"""
-    <div class="paso-item" id="paso-item-{numero_pasos}" style="background: var(--blanco); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--gris); margin-bottom: 1rem;">
-        <h2 class="titulo-paso" style="color: var(--petroleo); margin-top: 0;">Paso {numero_pasos + 1}</h2>
-        {html_campos}
-
-        <!-- Buscador ARASAAC específico para el paso -->
-        <div class="buscador-arasaac-box" style="margin-top: 1rem; padding: 1rem; background-color: var(--aviso-fondo, #f8fafc); border-radius: 0.75rem; border: 1px solid var(--gris);">
-            <label for="buscador-arasaac-{numero_pasos}" style="font-size: 0.9rem; font-weight: bold;">Buscar pictograma en ARASAAC para este paso:</label>
-            <div class="buscador-arasaac-flex" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                <input type="text" id="buscador-arasaac-{numero_pasos}" placeholder="Ej: recortar, pegar..." style="flex: 1; padding: 0.5rem; border: 1px solid var(--gris); border-radius: 0.5rem;">
-                <button type="button" onclick="buscarArasaacPaso({numero_pasos})" class="principal" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Buscar</button>
-            </div>
-            <div id="resultados-arasaac-{numero_pasos}" class="resultados-arasaac-grid" style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;"></div>
-            <input type="hidden" name="pasos-{numero_pasos}-arasaac_id_paso" id="id_pasos-{numero_pasos}-arasaac_id_paso" value="">
-            <p id="mensaje-pic-paso-{numero_pasos}" style="color: var(--verde-oscuro); font-weight: bold; display: none; margin-top: 0.5rem; font-size: 0.9rem;">✓ Pictograma seleccionado para el paso.</p>
-        </div>
-
-        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-            <button type="button" onclick="moverPaso(this, -1)" class="aux" aria-label="Subir paso">↑</button>
-            <button type="button" onclick="moverPaso(this, 1)" class="aux" aria-label="Bajar paso">↓</button>
-            <button type="button" onclick="eliminarPaso('{numero_pasos}')" class="aux" style="background-color: var(--error); color: var(--blanco); border-color: var(--error);">Eliminar paso</button>
-        </div>
-    </div>
-    <script>
-        document.getElementById('id_pasos-TOTAL_FORMS').value = {numero_pasos + 1};
-    </script>
-    """  # noqa: E501 (HTML del paso; partir las líneas cambiaría el HTML)
-    return HttpResponse(html)
+    paso_form = formset.empty_form
+    paso_form.prefix = f"pasos-{numero}"
+    return render(request, "tareas/_paso.html", {"paso_form": paso_form, "numero": numero + 1})
 
 
-@login_required
+@gestiona_tareas
+@require_http_methods(["GET", "POST"])
 def asignar_tarea(request, tarea_id=None):
-    """
-    Vista para asignar una tarea del catálogo a uno o varios estudiantes,
-    validando solapes de horario y coherencia temporal.
-    """
-    tarea_inicial = None
-    if tarea_id:
-        from django.shortcuts import get_object_or_404
-
-        tarea_inicial = get_object_or_404(Tarea, id=tarea_id)
+    """B43 · Asignar una tarea a uno o varios de mis estudiantes, sin solapes de horario."""
+    tarea_inicial = get_object_or_404(Tarea, id=tarea_id) if tarea_id else None
 
     if request.method == "POST":
-        form = AsignacionForm(request.POST)
+        form = AsignacionForm(request.POST, usuario=request.user)
         # HU-03-11, PA5 (Javi): el familiar solo pone tareas para casa fuera del horario escolar.
         if (
             form.is_valid()
@@ -177,49 +123,23 @@ def asignar_tarea(request, tarea_id=None):
                 "de las horas de clase.",
             )
         if form.is_valid():
-            tarea = form.cleaned_data["tarea"]
-            estudiantes = form.cleaned_data["estudiantes"]
-            hora_inicio = form.cleaned_data["hora_inicio"]
-            hora_fin = form.cleaned_data["hora_fin"]
-            dias_semana = form.cleaned_data.get("dias_semana")
-            vigencia_desde = form.cleaned_data.get("vigencia_desde")
-            vigencia_hasta = form.cleaned_data.get("vigencia_hasta")
-
-            # Creamos una asignación por cada estudiante seleccionado asignándola al usuario actual
-            from .models import Asignacion
-
-            for estudiante in estudiantes:
-                Asignacion.objects.create(
-                    tarea=tarea,
-                    estudiante=estudiante,
-                    asignado_por=request.user,  # Añadido para evitar IntegrityError
-                    hora_inicio=hora_inicio,
-                    hora_fin=hora_fin,
-                    dias_semana=dias_semana,
-                    vigencia_desde=vigencia_desde,
-                    vigencia_hasta=vigencia_hasta,
-                )
-
-            messages.success(
-                request,
-                f"La tarea '{tarea.nombre}' se ha asignado correctamente "
-                "a los estudiantes seleccionados.",
-            )
+            datos = form.cleaned_data
+            with transaction.atomic():
+                for estudiante in datos["estudiantes"]:
+                    Asignacion.objects.create(
+                        tarea=datos["tarea"],
+                        estudiante=estudiante,
+                        asignado_por=request.user,
+                        hora_inicio=datos["hora_inicio"],
+                        hora_fin=datos["hora_fin"],
+                        dias_semana=datos["dias_semana"],
+                        vigencia_desde=datos.get("vigencia_desde"),
+                        vigencia_hasta=datos.get("vigencia_hasta"),
+                    )
+            messages.success(request, f"La tarea «{datos['tarea'].nombre}» se ha asignado.")
             return redirect("tareas:catalogo")
-        else:
-            print("--- ERRORES FORMULARIO ASIGNACIÓN ---")
-            print(form.errors)
     else:
-        initial_data = {}
-        if tarea_inicial:
-            initial_data["tarea"] = tarea_inicial
-        form = AsignacionForm(initial=initial_data)
+        inicial = {"tarea": tarea_inicial} if tarea_inicial else {}
+        form = AsignacionForm(initial=inicial, usuario=request.user)
 
-    return render(
-        request,
-        "tareas/asignar_tarea.html",
-        {
-            "form": form,
-            "tarea": tarea_inicial,
-        },
-    )
+    return render(request, "tareas/asignar_tarea.html", {"form": form, "tarea": tarea_inicial})

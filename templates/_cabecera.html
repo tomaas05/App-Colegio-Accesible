@@ -1,0 +1,14 @@
+{% load static %}
+{# Barra de los adultos (decisión 0003, bocetos B13 en adelante). El logotipo lleva a su   #}
+{# pantalla principal. Las pantallas de entrada y las del estudiante no tienen barra.      #}
+<header class="cabecera">
+  <a class="cabecera__logo" href="{{ inicio_url }}">
+    <img src="{% static 'img/logo-despega.webp' %}" alt="Despega, ir al inicio" width="337" height="140">
+  </a>
+  {# Solo en pantallas estrechas y con JavaScript: lo enseña el CSS con html.js, sin mover nada. #}
+  <button class="boton--aux cabecera__menu" type="button" data-menu aria-expanded="false" aria-controls="lateral">Menú</button>
+  <p class="cabecera__quien">
+    <b>{{ user.get_full_name|default:user.username }}</b>
+    <span>{{ user.get_rol_display }}</span>
+  </p>
+</header>

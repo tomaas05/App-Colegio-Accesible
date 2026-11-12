@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block titulo %}No puedes entrar aquí · Despega{% endblock %}
+
+{% block contenido %}
+{# Página de error 403 accesible: dice qué pasa y cómo seguir, sin culpar. #}
+<div class="error-pagina">
+  <h1>No puedes entrar aquí</h1>
+  <p>Esta pantalla no es para tu cuenta.</p>
+  <p><a class="boton" href="{{ inicio_url|default:'/' }}">Ir al inicio</a></p>
+</div>
+{% endblock %}

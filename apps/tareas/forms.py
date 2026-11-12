@@ -2,10 +2,40 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory
 
+from apps.comun import pictogramas
+from apps.usuarios.vinculos import estudiantes_de
+
 from .models import Asignacion, DiaSemana, Estudiante, Paso, Tarea
 
+FALTA_IMAGEN = "Sube una imagen o elige un pictograma de ARASAAC."
 
-class TareaForm(forms.ModelForm):
+
+def _id_de_pictograma(valor):
+    """ "" si no se ha elegido pictograma, o su número. Cualquier otra cosa es un error."""
+    if not valor:
+        return ""
+    try:
+        return pictogramas.id_valido(valor)
+    except pictogramas.IdentificadorNoValido:
+        raise ValidationError("Ese pictograma no existe. Elige otro.") from None
+
+
+class ConPictograma:
+    """Para volver a enseñar el pictograma elegido si el formulario vuelve con errores."""
+
+    campo_pictograma = ""
+
+    @property
+    def pictograma_elegido(self):
+        """El número elegido, solo si es válido (nunca se pinta lo que no sea un número)."""
+        try:
+            return pictogramas.id_valido(self[self.campo_pictograma].value() or "")
+        except pictogramas.IdentificadorNoValido:
+            return ""
+
+
+class TareaForm(ConPictograma, forms.ModelForm):
+    campo_pictograma = "arasaac_id_tarea"
     arasaac_id_tarea = forms.CharField(required=False, widget=forms.HiddenInput())
 
     class Meta:
@@ -21,10 +51,22 @@ class TareaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["descripcion_imagen"].required = True
-        self.fields["imagen"].required = False  # Permite inyección vía ARASAAC in views.py
+        # La imagen puede ser un archivo o un pictograma de ARASAAC: lo comprueba clean().
+        self.fields["imagen"].required = False
+
+    def clean_arasaac_id_tarea(self):
+        return _id_de_pictograma(self.cleaned_data.get("arasaac_id_tarea"))
+
+    def clean(self):
+        datos = super().clean()
+        sin_error_previo = "imagen" not in self.errors and "arasaac_id_tarea" not in self.errors
+        if sin_error_previo and not datos.get("imagen") and not datos.get("arasaac_id_tarea"):
+            self.add_error("imagen", FALTA_IMAGEN)
+        return datos
 
 
-class PasoForm(forms.ModelForm):
+class PasoForm(ConPictograma, forms.ModelForm):
+    campo_pictograma = "arasaac_id_paso"
     arasaac_id_paso = forms.CharField(required=False, widget=forms.HiddenInput())
 
     class Meta:
@@ -38,8 +80,23 @@ class PasoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["imagen"].required = False  # Permite inyección vía ARASAAC in views.py
+        self.fields["imagen"].required = False  # archivo o pictograma: lo comprueba clean()
         self.fields["descripcion_imagen"].required = True
+
+    def clean_arasaac_id_paso(self):
+        return _id_de_pictograma(self.cleaned_data.get("arasaac_id_paso"))
+
+    def clean(self):
+        datos = super().clean()
+        sin_error_previo = "imagen" not in self.errors and "arasaac_id_paso" not in self.errors
+        if (
+            sin_error_previo
+            and not datos.get("DELETE")
+            and not datos.get("imagen")
+            and not datos.get("arasaac_id_paso")
+        ):
+            self.add_error("imagen", FALTA_IMAGEN)
+        return datos
 
 
 PasoFormSet = inlineformset_factory(
@@ -50,12 +107,12 @@ PasoFormSet = inlineformset_factory(
     can_delete=True,
 )
 
-# --- AÑADIDO EXCLUSIVAMENTE PARA ASIGNAR TAREA (SIN CAMBIAR NADA ANTERIOR) ---
+# --- Asignar una tarea (HU-03-03) ---
 
 
 class AsignacionForm(forms.ModelForm):
     estudiantes = forms.ModelMultipleChoiceField(
-        queryset=Estudiante.objects.all(),
+        queryset=Estudiante.objects.none(),  # se pone en __init__: solo los de quien asigna
         widget=forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
         required=True,
         label="Estudiantes",
@@ -87,6 +144,15 @@ class AsignacionForm(forms.ModelForm):
             "vigencia_desde": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "vigencia_hasta": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
         }
+
+    def __init__(self, *args, usuario=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Única regla de visibilidad (docs/contribuir.md): cada adulto, solo sus estudiantes.
+        self.fields["estudiantes"].queryset = estudiantes_de(usuario)
+        self.fields["estudiantes"].label_from_instance = lambda e: (
+            f"{e.usuario.get_full_name()} ({e.clase.nombre})"
+        )
+        self.fields["dias_semana"].help_text = ""
 
     def clean_dias_semana(self):
         datos = self.cleaned_data.get("dias_semana")
