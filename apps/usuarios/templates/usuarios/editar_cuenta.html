@@ -70,6 +70,22 @@
         <div class="campo campo--opciones">{{ form.estado.as_field_group }}</div>
         <p class="admin__nota">{% if es_propia %}Es tu cuenta: no la puedes desactivar. {% endif %}Una cuenta desactivada no puede entrar, pero conserva sus datos y sus vínculos. Sirve cuando alguien deja el centro durante un tiempo.</p>
       </fieldset>
+
+      {# HU-01-03 · Eliminar: el último bloque, lejos de «Guardar cambios». El botón abre la #}
+      {# ventana B24 (usuarios.js); sin JavaScript, el enlace lleva a la misma pregunta.     #}
+      {% if not es_propia %}
+      <section class="parte parte--caja parte--peligro" aria-labelledby="eliminar-t">
+        <h2 id="eliminar-t">Eliminar la cuenta</h2>
+        {% if baja.se_puede %}
+        <p class="admin__nota">Borra la cuenta{% if cuenta.es_estudiante %}, su agenda y todo lo que ha hecho{% endif %}. No se puede deshacer.</p>
+        <div><a class="boton boton--peligro boton--mediano" href="{% url 'usuarios:eliminar' cuenta.pk %}" data-confirmar="eliminar-ventana">Eliminar cuenta<span class="visualmente-oculto"> de {{ cuenta.get_full_name }}</span></a></div>
+        {% else %}
+        <p class="admin__nota">No se puede eliminar todavía:</p>
+        <ul class="baja__lista admin__nota">{% for motivo in baja.motivos %}<li>{{ motivo }}</li>{% endfor %}</ul>
+        {% if cuenta.estudiantes_tutorizados.exists or cuenta.estudiantes_familiares.exists %}<div><a class="boton boton--aux boton--mediano" href="{% url 'usuarios:vinculos' %}">Ir a Vínculos</a></div>{% endif %}
+        {% endif %}
+      </section>
+      {% endif %}
     </div>
   </div>
 
@@ -81,6 +97,21 @@
     </div>
   </div>
 </form>
+
+{% if baja.se_puede and not es_propia %}
+{# B24 · Ventana de confirmación (una de las tres permitidas). El foco empieza en       #}
+{# «Cancelar»: así, si se pulsa sin querer, no se borra nada. Escape también la cierra.  #}
+<dialog class="baja baja--ventana" id="eliminar-ventana" aria-labelledby="baja-ventana-titulo" aria-describedby="baja-ventana-texto">
+  {% include "usuarios/_baja.html" with id="baja-ventana" %}
+  <div class="baja__botones">
+    <form method="dialog"><button class="boton boton--aux" type="submit" autofocus>Cancelar</button></form>
+    <form method="post" action="{% url 'usuarios:eliminar' cuenta.pk %}">
+      {% csrf_token %}
+      <button class="boton boton--peligro" type="submit">Eliminar<span class="visualmente-oculto"> la cuenta de {{ cuenta.get_full_name }}</span></button>
+    </form>
+  </div>
+</dialog>
+{% endif %}
 
 {% if puede_restablecer %}
 <form id="form-restablecer" method="post" hidden>

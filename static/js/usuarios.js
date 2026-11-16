@@ -79,6 +79,20 @@ document.querySelectorAll("[data-copiar]").forEach((boton) => {
   });
 });
 
+/*
+ * HU-01-03 · «Eliminar cuenta» abre la ventana B24 en vez de ir a la página de la pregunta.
+ * Al cerrarla (Cancelar o Escape) el foco vuelve al botón. Sin <dialog>, va a la página.
+ */
+document.querySelectorAll("[data-confirmar]").forEach((enlace) => {
+  const ventana = document.getElementById(enlace.dataset.confirmar);
+  if (!ventana || typeof ventana.showModal !== "function") return;
+  enlace.addEventListener("click", (evento) => {
+    evento.preventDefault();
+    ventana.showModal();
+  });
+  ventana.addEventListener("close", () => enlace.focus());
+});
+
 /* Si el formulario vuelve con errores, el foco va al resumen para que se lea primero. */
 document.querySelector("[data-enfocar]")?.focus();
 

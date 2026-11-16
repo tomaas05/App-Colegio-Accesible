@@ -30,6 +30,8 @@ urlpatterns = [
     # HU-01-02: editar una cuenta (solo el administrador) y cambiar la contraseña temporal.
     path("usuarios/<int:pk>/editar/", views.editar_cuenta, name="editar"),
     path("cambiar-contrasena/", views.cambiar_contrasena, name="cambiar_contrasena"),
+    # HU-01-03: eliminar una cuenta, con confirmación (solo el administrador).
+    path("usuarios/<int:pk>/eliminar/", views.eliminar_cuenta, name="eliminar"),
     # HU-01-04: tutor y familiar de cada estudiante (solo el administrador).
     path("usuarios/vinculos/", views.vinculos, name="vinculos"),
 ]

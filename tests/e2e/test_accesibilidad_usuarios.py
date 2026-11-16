@@ -389,3 +389,55 @@ def test_editar_cuenta_con_error_y_contrasena_temporal(live_server, page, client
     page.click("main form button[type=submit]")
     assert page.locator("[role=alert]").is_visible()
     revisar(page, nombre)
+
+
+# --- HU-01-03 · Eliminar un usuario ---
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_eliminar_con_la_ventana_de_confirmacion(live_server, page, client, datos, nombre):
+    """B24 · La ventana: el foco empieza en Cancelar, Escape la cierra sin borrar y devuelve
+    el foco al botón, y Eliminar borra la cuenta."""
+    como_admin(page, live_server, client)
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + url_editar("est-a01"))
+    boton = "a[data-confirmar=eliminar-ventana]"
+    ir_a(page, boton)
+    page.click(boton)
+    ventana = page.locator("#eliminar-ventana")
+    ventana.wait_for(state="visible")
+    page.wait_for_function("document.activeElement.textContent.trim() === 'Cancelar'")
+    revisar(page, nombre)
+
+    page.keyboard.press("Escape")
+    ventana.wait_for(state="hidden")
+    page.wait_for_function("document.activeElement.dataset.confirmar === 'eliminar-ventana'")
+    assert Usuario.objects.filter(username="est-a01").exists()
+
+    page.click(boton)
+    ventana.wait_for(state="visible")
+    ventana.get_by_role("button", name="Eliminar la cuenta de Lucía Fernández").click()
+    page.wait_for_url("**/usuarios/")
+    assert "Cuenta eliminada: Lucía Fernández." in page.content()
+    assert not Usuario.objects.filter(username="est-a01").exists()
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_eliminar_sin_poder_y_pagina_sin_javascript(live_server, page, client, datos, nombre):
+    """B24 como página (sin JavaScript) y el aviso de un tutor con estudiantes (PA4)."""
+    como_admin(page, live_server, client)
+    page.set_viewport_size(tamano(nombre))
+    page.goto(
+        live_server.url
+        + reverse("usuarios:eliminar", args=[Usuario.objects.get(username="est-a02").pk])
+    )
+    revisar(page, nombre)
+    page.goto(
+        live_server.url
+        + reverse("usuarios:eliminar", args=[Usuario.objects.get(username="tutor").pk])
+    )
+    assert "No se puede eliminar" in page.content()
+    revisar(page, nombre)
+    page.goto(live_server.url + url_editar("tutor"))
+    ir_a(page, "#eliminar-t")
+    revisar(page, nombre)
