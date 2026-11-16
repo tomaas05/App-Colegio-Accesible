@@ -31,11 +31,10 @@ SIN_PICTOGRAMA = (
 @require_GET
 def catalogo_tareas(request):
     tareas = (
-        Tarea.objects.annotate(n_pasos=Count("pasos"))
-        .prefetch_related("planes_b")
-        .order_by("-id")
+        Tarea.objects.annotate(n_pasos=Count("pasos")).prefetch_related("planes_b").order_by("-id")
     )
     return render(request, "tareas/catalogo.html", {"tareas": tareas})
+
 
 def _poner_pictograma(objeto, identificador):
     """Si no se ha subido un archivo, la imagen es la copia local del pictograma elegido."""
@@ -65,6 +64,7 @@ def _guardar(form, formset, usuario):
         _poner_pictograma(paso, paso_form.cleaned_data.get("arasaac_id_paso"))
         paso.save()
     return tarea
+
 
 @gestiona_tareas
 @require_http_methods(["GET", "POST"])

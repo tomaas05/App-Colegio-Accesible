@@ -35,15 +35,15 @@ class PlanBTareaTests(TestCase):
         )
 
     def test_anadir_varias_actividades_alternativas(self):
-         """Criterio 1: Añado una o varias actividades alternativas a una tarea."""
-         tarea_b1 = Tarea.objects.create(
+        """Criterio 1: Añado una o varias actividades alternativas a una tarea."""
+        tarea_b1 = Tarea.objects.create(
             nombre="Plan B 1", creador=self.tutor_user, descripcion_imagen="D1"
         )
-         tarea_b2 = Tarea.objects.create(
+        tarea_b2 = Tarea.objects.create(
             nombre="Plan B 2", creador=self.tutor_user, descripcion_imagen="D2"
         )
-         self.client.force_login(self.tutor_user)
-         response = self.client.post(
+        self.client.force_login(self.tutor_user)
+        response = self.client.post(
             reverse("tareas:crear_tarea"),
             {
                 "nombre": "Tarea Principal",
@@ -58,11 +58,11 @@ class PlanBTareaTests(TestCase):
                 "pasos-MAX_NUM_FORMS": "1000",
             },
         )
-         self.assertEqual(response.status_code, 302)
-         tarea_creada = Tarea.objects.get(nombre="Tarea Principal")
-         self.assertEqual(tarea_creada.planes_b.count(), 2)
-         self.assertIn(tarea_b1, tarea_creada.planes_b.all())
-         self.assertIn(tarea_b2, tarea_creada.planes_b.all())
+        self.assertEqual(response.status_code, 302)
+        tarea_creada = Tarea.objects.get(nombre="Tarea Principal")
+        self.assertEqual(tarea_creada.planes_b.count(), 2)
+        self.assertIn(tarea_b1, tarea_creada.planes_b.all())
+        self.assertIn(tarea_b2, tarea_creada.planes_b.all())
 
     def test_tarea_muestra_que_tiene_plan_b_en_catalogo(self):
         """Criterio 2: La tarea muestra que tiene plan B."""

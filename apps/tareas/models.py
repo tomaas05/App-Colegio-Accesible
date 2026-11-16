@@ -43,12 +43,13 @@ class Tarea(models.Model):
     )
     creador = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name="tareas_creadas")
     planes_b = models.ManyToManyField(
-        'self',
+        "self",
         symmetrical=False,
         blank=True,
         verbose_name="planes B",
-        help_text="Actividades alternativas si esta no se puede realizar"
+        help_text="Actividades alternativas si esta no se puede realizar",
     )
+
     class Meta:
         verbose_name = "tarea"
         verbose_name_plural = "tareas"
@@ -131,7 +132,7 @@ class Asignacion(models.Model):
             ),
             models.CheckConstraint(
                 condition=Q(vigencia_hasta__isnull=True)
-                          | Q(vigencia_hasta__gte=F("vigencia_desde")),
+                | Q(vigencia_hasta__gte=F("vigencia_desde")),
                 name="asignacion_vigencia_coherente",
             ),
         ]
