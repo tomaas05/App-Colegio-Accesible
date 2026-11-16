@@ -9,6 +9,7 @@ import io
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client
 from django.urls import reverse
 from PIL import Image
 
@@ -88,7 +89,9 @@ def test_pa1_el_nombre_nuevo_aparece_en_las_listas(admin):
     assert "Lucía María Fernández Ruiz" in lista
     assert "Cambios guardados en la cuenta de Lucía María Fernández Ruiz: el nombre." in lista
     # También donde el estudiante elige su avatar para entrar.
-    avatares = admin.get(reverse("usuarios:avatares", args=[estudiante.clase_id])).content.decode()
+    avatares = (
+        Client().get(reverse("usuarios:avatares", args=[estudiante.clase_id])).content.decode()
+    )
     assert "Lucía María" in avatares
 
 
@@ -132,7 +135,9 @@ def test_pa2_el_avatar_nuevo_se_muestra(admin):
     assert respuesta.status_code == 302
     estudiante.refresh_from_db()
     assert estudiante.avatar.name != anterior and "a01-nuevo" in estudiante.avatar.name
-    avatares = admin.get(reverse("usuarios:avatares", args=[estudiante.clase_id])).content.decode()
+    avatares = (
+        Client().get(reverse("usuarios:avatares", args=[estudiante.clase_id])).content.decode()
+    )
     assert estudiante.avatar.url in avatares
 
 
@@ -165,8 +170,10 @@ def test_pa3_el_estudiante_aparece_en_la_clase_nueva(admin):
     estudiante.refresh_from_db()
     assert estudiante.clase == nueva
     nombre = estudiante.usuario.first_name
-    assert nombre in admin.get(reverse("usuarios:avatares", args=[nueva.pk])).content.decode()
-    assert nombre not in admin.get(reverse("usuarios:avatares", args=[vieja.pk])).content.decode()
+    assert nombre in Client().get(reverse("usuarios:avatares", args=[nueva.pk])).content.decode()
+    assert (
+        nombre not in Client().get(reverse("usuarios:avatares", args=[vieja.pk])).content.decode()
+    )
     # En Usuarios, al filtrar por la clase nueva.
     lista = admin.get(reverse("usuarios:lista"), {"clase": nueva.pk}).content.decode()
     assert estudiante.usuario.get_full_name() in lista
@@ -254,8 +261,6 @@ def test_una_cuenta_desactivada_no_puede_entrar_y_conserva_sus_vinculos(admin, c
 
 
 def test_al_desactivarla_se_cierra_la_sesion_que_tuviera_abierta(admin, django_user_model):
-    from django.test import Client
-
     cuenta = tutor()
     otro = Client()
     otro.force_login(cuenta)
@@ -276,7 +281,7 @@ def test_una_cuenta_reactivada_vuelve_a_entrar(admin, client):
 def test_un_estudiante_desactivado_no_sale_para_entrar(admin):
     estudiante = lucia()
     admin.post(url_editar(estudiante.usuario), datos_estudiante(estudiante, estado="desactivada"))
-    html = admin.get(reverse("usuarios:avatares", args=[estudiante.clase_id])).content.decode()
+    html = Client().get(reverse("usuarios:avatares", args=[estudiante.clase_id])).content.decode()
     assert "Lucía" not in html
 
 

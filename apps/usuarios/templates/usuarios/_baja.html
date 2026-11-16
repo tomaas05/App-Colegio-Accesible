@@ -1,0 +1,17 @@
+{# B24 · Lo que dice la pregunta «¿Eliminar la cuenta?» (HU-01-03). La usan la ventana de #}
+{# «Editar cuenta» y la página sin JavaScript. Recibe: cuenta, baja (apps/usuarios/bajas.py) #}
+{# y id (para enlazar el título y el texto con la ventana).                                 #}
+{% if baja.se_puede %}
+<h2 id="{{ id }}-titulo">¿Eliminar la cuenta de {{ cuenta.get_full_name|default:cuenta.username }}?</h2>
+<div id="{{ id }}-texto">
+  <p>Se borra para siempre{% if baja.se_borra %}, y con ella:{% else %}.{% endif %}</p>
+  {% if baja.se_borra %}<ul class="baja__lista">{% for cosa in baja.se_borra %}<li>{{ cosa }}</li>{% endfor %}</ul>{% endif %}
+  <p class="baja__aviso"><strong>No se puede deshacer.</strong> Si solo tiene que dejar de entrar, desactívala.</p>
+</div>
+{% else %}
+<h2 id="{{ id }}-titulo">No se puede eliminar la cuenta de {{ cuenta.get_full_name|default:cuenta.username }}</h2>
+<div id="{{ id }}-texto">
+  <ul class="baja__lista">{% for motivo in baja.motivos %}<li>{{ motivo }}</li>{% endfor %}</ul>
+  {% if cuenta.pk != user.pk %}<p>Si solo tiene que dejar de entrar, desactívala: conserva sus datos y sus vínculos.</p>{% endif %}
+</div>
+{% endif %}

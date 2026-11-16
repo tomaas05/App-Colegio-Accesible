@@ -8,6 +8,7 @@ import re
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client
 from django.urls import reverse
 
 from apps.perfil.models import MetodoAcceso
@@ -84,7 +85,7 @@ def test_pa1_creo_un_estudiante_y_aparece_en_la_lista_de_su_clase(admin):
 
     # Aparece en la lista de su clase: la de Usuarios y la de los avatares para entrar.
     assert "Noa Ruiz Gil" in admin.get(respuesta["Location"]).content.decode()
-    avatares = admin.get(reverse("usuarios:avatares", args=[ptval1().pk])).content.decode()
+    avatares = Client().get(reverse("usuarios:avatares", args=[ptval1().pk])).content.decode()
     assert '<span class="loseta__nombre">Noa</span>' in avatares
 
 

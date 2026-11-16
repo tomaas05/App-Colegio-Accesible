@@ -1167,3 +1167,75 @@ fieldset.elegir__lista {
   min-height: var(--toque);
   white-space: nowrap;
 }
+
+/* --- HU-01-03 · Eliminar cuenta (B24) --- */
+/* El botón de eliminar se distingue por el texto y el borde, no solo por el color. */
+.boton--peligro {
+  color: var(--error);
+  background: var(--blanco);
+  border: 3px solid var(--error);
+}
+.boton--peligro:hover {
+  color: var(--error);
+  background: var(--error-fondo);
+}
+.parte--peligro {
+  border-color: var(--error);
+}
+.parte--peligro > h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--petroleo);
+}
+/* La ventana cerrada no se ve: el display solo se pone a la página y a la ventana abierta
+   (si no, «display: grid» ganaría al «display: none» del navegador). */
+section.baja,
+dialog.baja[open] {
+  display: grid;
+  gap: 0.75rem;
+}
+.baja h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+.baja p {
+  margin: 0;
+}
+.baja__lista {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.baja__lista li + li {
+  margin-top: 0.25rem;
+}
+.baja__aviso strong {
+  color: var(--error);
+}
+/* Cancelar a la izquierda, Eliminar a la derecha. En el móvil, uno encima de otro. */
+.baja__botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.baja__botones form {
+  margin: 0;
+}
+.baja__botones .boton {
+  min-width: 8rem;
+}
+dialog.baja--ventana {
+  width: min(30rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 1.25rem;
+  overflow: auto;
+  color: var(--texto);
+  background: var(--blanco);
+  border: 4px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+}
+dialog.baja--ventana::backdrop {
+  background: rgb(11 60 73 / 35%);
+}

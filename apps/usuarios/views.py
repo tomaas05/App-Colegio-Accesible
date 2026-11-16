@@ -8,6 +8,7 @@ HU-01-09 (Javi): el profesional consulta la agenda de los estudiantes que atiend
 HU-01-01: usuarios (B20), crear cuenta (B21) y cargar una lista de estudiantes (solo admin).
 HU-01-04: vínculos de cada estudiante con su tutor y su familiar (B25, solo admin) y
 «Tus estudiantes» en el panel de cada adulto.
+HU-01-03: eliminar una cuenta, con confirmación (B24, solo admin).
 HU-01-02: editar una cuenta (B23, solo admin): nombre, clase, avatar, usuario, correo,
 activar o desactivar y restablecer la contraseña; y cambiar la contraseña temporal (B15).
 Bocetos: docs/iteracion-1/bocetos/despega_mockup_v3.html.
@@ -32,7 +33,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.perfil.models import MetodoAcceso
 
-from . import atencion, consulta, edicion
+from . import atencion, bajas, consulta, edicion
 from .carga import PLANTILLA, cargar_lista
 from .forms import (
     CambiarContrasenaForm,
@@ -378,6 +379,8 @@ def editar_cuenta(request, pk):
         messages.success(request, _mensaje_cambios(cuenta, form.guardar()))
         return redirect("usuarios:lista")
 
+    # HU-01-03: lo que se borraría con la cuenta o por qué no se puede (B24).
+    baja = bajas.baja_de(cuenta, request.user)
     # La contraseña temporal se enseña una sola vez, justo después de crearla.
     guardada = request.session.pop(CLAVE_TEMPORAL, None)
     temporal = guardada["valor"] if guardada and guardada.get("pk") == cuenta.pk else ""
@@ -390,7 +393,38 @@ def editar_cuenta(request, pk):
             "puede_restablecer": puede_restablecer,
             "temporal": temporal,
             "es_propia": cuenta.pk == request.user.pk,
+            "baja": baja,
         },
+    )
+
+
+# --- HU-01-03 · Eliminar un usuario (solo el administrador) -----------------------
+
+
+@admin_requerido
+@require_http_methods(["GET", "POST"])
+def eliminar_cuenta(request, pk):
+    """B24 · ¿Eliminar la cuenta? (PA1 a PA5).
+
+    Con JavaScript la pregunta es una ventana dentro de «Editar cuenta»; esta página es la
+    misma pregunta sin él. El borrado solo se hace con POST y después de confirmar.
+    """
+    cuenta = get_object_or_404(Usuario.objects.select_related("estudiante"), pk=pk)
+    baja = bajas.baja_de(cuenta, request.user)
+    if request.method == "POST" and baja.se_puede:
+        nombre = cuenta.get_full_name() or cuenta.username
+        es_estudiante = cuenta.es_estudiante
+        bajas.eliminar(cuenta)
+        texto = f"Cuenta eliminada: {nombre}."
+        if es_estudiante:
+            texto += " Se han borrado también su agenda y todo lo que había hecho."
+        messages.success(request, texto)
+        return redirect("usuarios:lista")
+    # Un POST que no se puede hacer (otra pestaña, otro administrador…) vuelve a explicar
+    # por qué, sin borrar nada.
+    estado = 409 if request.method == "POST" else 200
+    return render(
+        request, "usuarios/eliminar_cuenta.html", {"cuenta": cuenta, "baja": baja}, status=estado
     )
 
 

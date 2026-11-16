@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Eliminar la cuenta de {{ cuenta.get_full_name|default:cuenta.username }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{# Boceto B24 · ¿Eliminar la cuenta? HU-01-03. Con JavaScript es una ventana dentro de     #}
+{# «Editar cuenta»; esta página es la misma pregunta sin él. «Cancelar» a la izquierda y   #}
+{# «Eliminar» a la derecha, separados: lo destructivo nunca es lo primero que se pulsa.    #}
+{% block pantalla %}pantalla--estrecha{% endblock %}
+{% block volver %}{% url 'usuarios:editar' cuenta.pk as atras %}{% include "_volver.html" with url=atras texto="Editar cuenta" etiqueta="Volver a Editar cuenta sin eliminar" only %}{% endblock %}
+{% block h1 %}Eliminar cuenta{% endblock %}
+
+{% block contenido %}
+<section class="baja" aria-labelledby="baja-pagina-titulo" aria-describedby="baja-pagina-texto">
+  {% include "usuarios/_baja.html" with id="baja-pagina" %}
+  <div class="baja__botones">
+    <a class="boton boton--aux" href="{% url 'usuarios:editar' cuenta.pk %}">{% if baja.se_puede %}Cancelar{% else %}Volver{% endif %}</a>
+    {% if baja.se_puede %}
+    <form method="post">
+      {% csrf_token %}
+      <button class="boton boton--peligro" type="submit">Eliminar<span class="visualmente-oculto"> la cuenta de {{ cuenta.get_full_name }}</span></button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

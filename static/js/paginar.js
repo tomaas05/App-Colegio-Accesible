@@ -380,8 +380,16 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(reajustar);
     window.addEventListener("load", reajustar);
     // Contenido que trae HTMX (resultados, un paso nuevo): puede traer listas nuevas.
-    // Un <details> que se abre o se cierra cambia lo que cabe.
-    document.addEventListener("toggle", reajustar, true);
+    // Un <details> que se abre o se cierra cambia lo que cabe. Solo los <details>: Chrome
+    // lanza también «toggle» al abrir y cerrar un <dialog>, que no cambia nada de la página
+    // y, si se reajustara, podría esconder el botón que la abrió (HU-01-03).
+    document.addEventListener(
+      "toggle",
+      function (evento) {
+        if (evento.target.tagName === "DETAILS") reajustar();
+      },
+      true
+    );
     document.addEventListener("htmx:afterSettle", function () {
       listas = listas.filter(function (e) {
         return document.contains(e.lista);
