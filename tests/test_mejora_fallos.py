@@ -46,6 +46,21 @@ def test_un_adulto_no_sale_al_abrir_la_portada(client, datos):
     assert client.session.get("_auth_user_id") is not None
 
 
+@pytest.mark.parametrize(
+    "ruta",
+    ["/", "/estudiante/", "/estudiante/clase/{clase}/", "/estudiante/A01/entrar/", "/entrar/"],
+)
+def test_un_adulto_con_sesion_que_abre_la_entrada_va_a_su_panel(client, datos, ruta):
+    """La portada y las pantallas de entrada son para quien no ha entrado: un adulto con
+    sesión no las ve con su barra y su panel lateral encima, va a su panel."""
+    from apps.usuarios.models import Clase
+
+    clase = Clase.objects.get(nombre="PTVAL 1").pk
+    respuesta = entrar(client, "admin").get(ruta.format(clase=clase))
+    assert respuesta.status_code == 302 and respuesta["Location"] == reverse("usuarios:panel")
+    assert client.session.get("_auth_user_id") is not None
+
+
 def test_un_post_a_la_entrada_no_cierra_la_sesion_del_estudiante(client, datos):
     entrar(client, "est-a01").post("/estudiante/")  # 405, pero sin tocar la sesión
     assert client.session.get("_auth_user_id") is not None

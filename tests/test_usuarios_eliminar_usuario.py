@@ -48,8 +48,8 @@ def test_pa1_el_estudiante_eliminado_no_puede_entrar_ni_aparece(admin):
     lista = admin.get(reverse("usuarios:lista")).content.decode()
     assert "Cuenta eliminada: Lucía Fernández." in lista
     assert "Código A01" not in lista
-    assert "Lucía" not in admin.get(reverse("usuarios:avatares", args=[clase])).content.decode()
-    assert admin.get(reverse("usuarios:entrar_estudiante", args=["A01"])).status_code == 404
+    assert "Lucía" not in Client().get(reverse("usuarios:avatares", args=[clase])).content.decode()
+    assert Client().get(reverse("usuarios:entrar_estudiante", args=["A01"])).status_code == 404
 
 
 def test_pa1_si_tenia_la_sesion_abierta_la_pierde(admin):

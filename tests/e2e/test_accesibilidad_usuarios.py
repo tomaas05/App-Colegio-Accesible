@@ -401,6 +401,8 @@ def test_eliminar_con_la_ventana_de_confirmacion(live_server, page, client, dato
     como_admin(page, live_server, client)
     page.set_viewport_size(tamano(nombre))
     page.goto(live_server.url + url_editar("est-a01"))
+    # Con las fuentes ya cargadas, paginar.js no vuelve a repartir los bloques después.
+    page.evaluate("document.fonts.ready.then(() => true)")
     boton = "a[data-confirmar=eliminar-ventana]"
     ir_a(page, boton)
     page.click(boton)
@@ -414,6 +416,7 @@ def test_eliminar_con_la_ventana_de_confirmacion(live_server, page, client, dato
     page.wait_for_function("document.activeElement.dataset.confirmar === 'eliminar-ventana'")
     assert Usuario.objects.filter(username="est-a01").exists()
 
+    ir_a(page, boton)
     page.click(boton)
     ventana.wait_for(state="visible")
     ventana.get_by_role("button", name="Eliminar la cuenta de Lucía Fernández").click()

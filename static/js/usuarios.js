@@ -90,7 +90,14 @@ document.querySelectorAll("[data-confirmar]").forEach((enlace) => {
     evento.preventDefault();
     ventana.showModal();
   });
-  ventana.addEventListener("close", () => enlace.focus());
+  // El botón está en el último bloque del formulario: si al cerrar la paginación lo ha
+  // dejado en otra pantalla, primero se enseña esa pantalla y después se le da el foco.
+  ventana.addEventListener("close", () => {
+    window.requestAnimationFrame(() => {
+      window.Despega?.paginar?.mostrar(enlace);
+      enlace.focus();
+    });
+  });
 });
 
 /* Si el formulario vuelve con errores, el foco va al resumen para que se lea primero. */
