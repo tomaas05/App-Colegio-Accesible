@@ -8,6 +8,8 @@ HU-01-09 (Javi): el profesional consulta la agenda de los estudiantes que atiend
 HU-01-01: usuarios (B20), crear cuenta (B21) y cargar una lista de estudiantes (solo admin).
 HU-01-04: vínculos de cada estudiante con su tutor y su familiar (B25, solo admin) y
 «Tus estudiantes» en el panel de cada adulto.
+HU-01-02: editar una cuenta (B23, solo admin): nombre, clase, avatar, usuario, correo,
+activar o desactivar y restablecer la contraseña; y cambiar la contraseña temporal (B15).
 Bocetos: docs/iteracion-1/bocetos/despega_mockup_v3.html.
 """
 
@@ -15,7 +17,7 @@ from datetime import date, timedelta
 from urllib.parse import urlencode
 
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied
@@ -30,11 +32,13 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.perfil.models import MetodoAcceso
 
-from . import atencion, consulta
+from . import atencion, consulta, edicion
 from .carga import PLANTILLA, cargar_lista
 from .forms import (
+    CambiarContrasenaForm,
     CargarListaForm,
     CrearCuentaForm,
+    EditarCuentaForm,
     EntrarAdultoForm,
     EntrarConContrasenaForm,
     EntrarConImagenesForm,
@@ -298,6 +302,113 @@ def crear_cuenta(request):
         return redirect(reverse("usuarios:lista") + "?" + urlencode(destino))
 
     return render(request, "usuarios/crear_cuenta.html", {"form": form})
+
+
+# --- HU-01-02 · Modificar un usuario (solo el administrador) ----------------------
+
+# Dónde se guarda, hasta que se enseña una vez, la contraseña temporal recién creada.
+# La sesión está en la base de datos del servidor: no viaja al navegador en una cookie.
+CLAVE_TEMPORAL = "contrasena_temporal"
+
+TEXTO_CAMBIOS = {
+    "nombre": "el nombre",
+    "clase": "la clase",
+    "avatar": "el avatar",
+    "usuario": "el usuario",
+    "correo": "el correo",
+    "estado": "el estado",
+}
+
+
+def _lista_en_texto(partes):
+    """«el nombre», «el nombre y la clase», «el nombre, la clase y el avatar»."""
+    if len(partes) <= 1:
+        return "".join(partes)
+    return ", ".join(partes[:-1]) + " y " + partes[-1]
+
+
+def _mensaje_cambios(cuenta, cambios):
+    nombre = cuenta.get_full_name()
+    if not cambios:
+        return f"No has cambiado nada en la cuenta de {nombre}."
+    texto = f"Cambios guardados en la cuenta de {nombre}: "
+    texto += _lista_en_texto([TEXTO_CAMBIOS[c] for c in cambios]) + "."
+    if "clase" in cambios:
+        estudiante = cuenta.estudiante
+        texto += f" Ahora está en {estudiante.clase.nombre}"
+        if estudiante.tutor_id:
+            texto += (
+                f" y sigue con su tutor, {estudiante.tutor.get_full_name()}"
+                " (se cambia en «Vínculos»)"
+            )
+        texto += "."
+    if "estado" in cambios:
+        texto += (
+            " Ya puede entrar."
+            if cuenta.is_active
+            else " Ya no puede entrar; conserva sus datos y sus vínculos."
+        )
+    return texto
+
+
+@admin_requerido
+@require_http_methods(["GET", "POST"])
+def editar_cuenta(request, pk):
+    """B23 · Editar cuenta (PA1 a PA5), activar o desactivar y restablecer la contraseña."""
+    cuenta = get_object_or_404(
+        Usuario.objects.select_related("estudiante__clase", "estudiante__tutor"), pk=pk
+    )
+    aqui = reverse("usuarios:editar", args=[cuenta.pk])
+    puede_restablecer = edicion.puede_restablecer(cuenta, request.user)
+
+    if request.method == "POST" and request.POST.get("accion") == "restablecer":
+        if not puede_restablecer:
+            raise PermissionDenied
+        request.session[CLAVE_TEMPORAL] = {
+            "pk": cuenta.pk,
+            "valor": edicion.restablecer_contrasena(cuenta),
+        }
+        return redirect(aqui)
+
+    if request.method == "POST":
+        form = EditarCuentaForm(request.POST, request.FILES, cuenta=cuenta, quien=request.user)
+    else:
+        form = EditarCuentaForm(cuenta=cuenta, quien=request.user)
+    if form.is_bound and form.is_valid():
+        messages.success(request, _mensaje_cambios(cuenta, form.guardar()))
+        return redirect("usuarios:lista")
+
+    # La contraseña temporal se enseña una sola vez, justo después de crearla.
+    guardada = request.session.pop(CLAVE_TEMPORAL, None)
+    temporal = guardada["valor"] if guardada and guardada.get("pk") == cuenta.pk else ""
+    return render(
+        request,
+        "usuarios/editar_cuenta.html",
+        {
+            "cuenta": cuenta,
+            "form": form,
+            "puede_restablecer": puede_restablecer,
+            "temporal": temporal,
+            "es_propia": cuenta.pk == request.user.pk,
+        },
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def cambiar_contrasena(request):
+    """B15 · Quien entra con una contraseña temporal elige la suya antes de seguir."""
+    usuario = request.user
+    if usuario.es_estudiante or not usuario.debe_cambiar_contrasena:
+        return redirect(destino_tras_entrar(usuario))
+    form = CambiarContrasenaForm(usuario, request.POST or None)
+    if form.is_valid():
+        form.save()
+        # Al cambiar la contraseña Django cierra las sesiones de ese usuario: esta no.
+        update_session_auth_hash(request, usuario)
+        messages.success(request, "Contraseña cambiada. Úsala la próxima vez que entres.")
+        return redirect(destino_tras_entrar(usuario))
+    return render(request, "usuarios/cambiar_contrasena.html", {"form": form})
 
 
 @admin_requerido

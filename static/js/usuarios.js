@@ -64,6 +64,21 @@ document.querySelectorAll("[data-crear-cuenta]").forEach((form) => {
   actualizar();
 });
 
+/*
+ * HU-01-02 · Editar cuenta (B23): «Copiar» la contraseña temporal. Solo aparece si el
+ * navegador sabe copiar; sin él, se selecciona y se copia a mano.
+ */
+document.querySelectorAll("[data-copiar]").forEach((boton) => {
+  const campo = document.getElementById(boton.dataset.copiar);
+  if (!campo || !navigator.clipboard) return;
+  boton.hidden = false;
+  boton.addEventListener("click", () => {
+    navigator.clipboard.writeText(campo.value).then(() => {
+      boton.textContent = boton.dataset.copiado || "Copiada";
+    });
+  });
+});
+
 /* Si el formulario vuelve con errores, el foco va al resumen para que se lea primero. */
 document.querySelector("[data-enfocar]")?.focus();
 

@@ -329,3 +329,63 @@ def test_agenda_de_un_estudiante(live_server, page, client, datos, nombre):
     if page.locator("summary").count():
         page.locator("summary").first.click()
         revisar(page, nombre)
+
+
+# --- HU-01-02 · Modificar un usuario ---
+
+
+def url_editar(username):
+    return reverse("usuarios:editar", args=[Usuario.objects.get(username=username).pk])
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_editar_cuenta_de_estudiante_y_de_adulto(live_server, page, client, datos, nombre):
+    """B23 · Editar cuenta: un estudiante (clase y avatar) y un adulto (usuario y correo)."""
+    como_admin(page, live_server, client)
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + url_editar("est-a01"))
+    revisar(page, nombre)
+    page.goto(live_server.url + url_editar("tutor2"))
+    revisar(page, nombre)
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_editar_cuenta_con_error_y_contrasena_temporal(live_server, page, client, datos, nombre):
+    """B23 con el nombre vacío y con la contraseña temporal a la vista; después, B15."""
+    como_admin(page, live_server, client)
+    page.set_viewport_size(tamano(nombre))
+    page.goto(live_server.url + url_editar("tutor2"))
+    page.fill("#id_nombre", "")
+    # «Guardar cambios» está en el pie y sale en el último paso del formulario.
+    guardar = page.get_by_role("button", name="Guardar cambios")
+    for _ in range(6):
+        if guardar.is_visible():
+            break
+        page.click("[data-paginador=bloques] [data-pag='1']")
+        page.wait_for_timeout(150)
+    guardar.click()
+    assert page.locator("[role=alert]").is_visible()
+    revisar(page, nombre)
+
+    ir_a(page, "button[form=form-restablecer]")
+    page.click("button[form=form-restablecer]")
+    temporal = page.locator("#temporal")
+    # El foco va al aviso de la contraseña temporal, que el lector lee entero.
+    assert temporal.is_visible()
+    assert page.evaluate("document.activeElement.classList.contains('temporal')")
+    # Se lee entera: el campo es tan ancho como la contraseña.
+    assert temporal.evaluate("e => e.scrollWidth <= e.clientWidth")
+    revisar(page, nombre)
+
+    # Pedro entra con la temporal y lo primero que ve es «Cambia tu contraseña» (B15).
+    clave = temporal.input_value()
+    page.context.clear_cookies()
+    page.goto(live_server.url + reverse("usuarios:entrar"))
+    page.fill("#id_username", "tutor2")
+    page.fill("#id_password", clave)
+    page.click("main form button[type=submit]")
+    page.wait_for_url("**/cambiar-contrasena/")
+    revisar(page, nombre)
+    page.click("main form button[type=submit]")
+    assert page.locator("[role=alert]").is_visible()
+    revisar(page, nombre)

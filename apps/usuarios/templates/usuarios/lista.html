@@ -54,7 +54,7 @@
 <div class="tabla-caja encaja">
   <table class="tabla tabla--tarjetas" role="table" aria-labelledby="cuantas">
     <thead role="rowgroup">
-      <tr role="row"><th role="columnheader" scope="col">Persona</th><th role="columnheader" scope="col">Rol</th><th role="columnheader" scope="col">Clase</th><th role="columnheader" scope="col">Vínculos</th><th role="columnheader" scope="col">Estado</th></tr>
+      <tr role="row"><th role="columnheader" scope="col">Persona</th><th role="columnheader" scope="col">Rol</th><th role="columnheader" scope="col">Clase</th><th role="columnheader" scope="col">Vínculos</th><th role="columnheader" scope="col">Estado</th><th role="columnheader" scope="col"><span class="visualmente-oculto">Acciones</span></th></tr>
     </thead>
     <tbody role="rowgroup" id="cuentas" data-paginar data-pag-desplaza="(max-width: 47.99rem)" data-estado="{desde} a {hasta} de {de}">
       {% for cuenta in pagina %}
@@ -76,6 +76,8 @@
           {% else %}—{% endif %}
         </td>
         <td role="cell" data-columna="Estado">{% if cuenta.is_active %}Activa{% else %}<strong>Desactivada</strong>{% endif %}</td>
+        {# HU-01-02: editar la cuenta (B23). #}
+        <td role="cell" class="tabla__acciones"><a class="boton boton--aux boton--mediano" href="{% url 'usuarios:editar' cuenta.pk %}">Editar<span class="visualmente-oculto"> la cuenta de {{ cuenta.get_full_name }}</span></a></td>
       </tr>
       {% endfor %}
     </tbody>

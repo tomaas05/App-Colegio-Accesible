@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Cambia tu contraseña · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{# Boceto B15 · Cambiar la contraseña. HU-01-02: quien entra con la contraseña temporal    #}
+{# que le ha dado el administrador elige la suya antes de seguir. Misma estructura y        #}
+{# mismos campos que «Entrar» (B12). Sin panel lateral: hasta cambiarla no hay a dónde ir.  #}
+{% block pantalla %}pantalla--estrecha{% endblock %}
+{% block h1 %}Cambia tu contraseña{% endblock %}
+{% block sub %}<span class="barra__sub">Estás usando una contraseña temporal. Elige una nueva para seguir.</span>{% endblock %}
+
+{% block contenido %}
+<div class="acceso">
+  <form class="formulario" method="post" novalidate>
+    {% csrf_token %}
+    {% include "usuarios/_errores.html" %}
+
+    {% for campo in form %}
+    <div class="campo">
+      <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+      {% if campo.help_text %}<div class="helptext" id="{{ campo.auto_id }}_helptext">{{ campo.help_text }}</div>{% endif %}
+      <div class="campo__fila">
+        {{ campo }}
+        <button class="boton--aux" type="button" data-ver-clave aria-controls="{{ campo.id_for_label }}" aria-pressed="false" hidden>Mostrar</button>
+      </div>
+      {% if campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ campo.errors.0 }}</p>{% endif %}
+    </div>
+    {% endfor %}
+
+    <button class="boton--principal" type="submit">Guardar y entrar</button>
+  </form>
+  {# Salir es un POST (decisión 0002): un enlace no puede cerrar la sesión de nadie. #}
+  <form class="acceso__salir" method="post" action="{% url 'usuarios:salir' %}">
+    {% csrf_token %}
+    <button class="boton--aux" type="submit">Salir sin cambiarla</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}
