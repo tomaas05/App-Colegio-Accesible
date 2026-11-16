@@ -15,5 +15,7 @@ def navegacion(request):
     usuario = getattr(request, "user", None)
     contexto = {"inicio_url": inicio_de(usuario), "nav_principal": None}
     if getattr(usuario, "is_authenticated", False) and not usuario.es_estudiante:
-        contexto["nav_principal"] = navegacion_de(usuario, request.path)
+        # Con una contraseña temporal no hay a dónde ir: sin panel lateral (HU-01-02, B15).
+        if not usuario.debe_cambiar_contrasena:
+            contexto["nav_principal"] = navegacion_de(usuario, request.path)
     return contexto

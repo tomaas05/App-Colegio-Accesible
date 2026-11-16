@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Editar la cuenta de {{ cuenta.get_full_name }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{# Boceto B23 · Editar cuenta. HU-01-02. Solo el administrador.                             #}
+{# Mismo formulario por bloques que «Crear cuenta» (B21): sin desplazamiento, se pasa de    #}
+{# uno a otro con «Anterior / Siguiente» y «Guardar cambios» sale en el último (0005).     #}
+{# «Restablecer contraseña» es otro formulario (está al final de la página y el botón lo    #}
+{# señala con form="…"): así pulsar Intro en un campo guarda los datos y nunca restablece. #}
+{% block volver %}{% url 'usuarios:lista' as atras %}{% include "_volver.html" with url=atras texto="Usuarios" etiqueta="Volver a Usuarios sin guardar" only %}{% endblock %}
+{% block h1 %}Editar cuenta{% endblock %}
+{% block sub %}<span class="barra__sub">{{ cuenta.get_full_name }} · {{ cuenta.get_rol_display }}{% if cuenta.es_estudiante %} · Código {{ cuenta.estudiante.codigo_estudiante }}{% endif %}</span>{% endblock %}
+
+{% block contenido %}
+<form class="formulario encaja" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div class="encaja">
+    <div class="partes" id="bloques" data-paginar data-pag-variable data-foco="titulo" data-estado="Paso {n} de {total}">
+      {% if form.errors %}<div class="parte" data-pag-inicio>{% include "usuarios/_errores.html" %}</div>{% endif %}
+
+      <fieldset class="parte parte--caja">
+        <legend>Quién es</legend>
+        <p class="admin__nota">Los campos con * son obligatorios. El rol{% if cuenta.es_estudiante %} y el código{% endif %} no se pueden cambiar.</p>
+        <div class="campo">{{ form.nombre.as_field_group }}</div>
+        <div class="campo">{{ form.apellidos.as_field_group }}</div>
+      </fieldset>
+
+      {% if cuenta.es_estudiante %}
+      <fieldset class="parte parte--caja">
+        <legend>Clase y avatar</legend>
+        <div class="campo">{{ form.clase.as_field_group }}</div>
+        <div class="avatar-actual">
+          <img src="{{ cuenta.estudiante.avatar.url }}" alt="" width="64" height="64">
+          <span>Su avatar ahora</span>
+        </div>
+        <div class="campo">{{ form.avatar.as_field_group }}</div>
+      </fieldset>
+      {% else %}
+      <fieldset class="parte parte--caja">
+        <legend>Su cuenta</legend>
+        <div class="campo">{{ form.usuario.as_field_group }}</div>
+        <div class="campo">{{ form.correo.as_field_group }}</div>
+      </fieldset>
+      {% endif %}
+
+      {% if puede_restablecer %}
+      <fieldset class="parte parte--caja"{% if temporal %} data-pag-inicio{% endif %}>
+        <legend>Contraseña</legend>
+        {% if temporal %}
+        {# Solo se ve esta vez: en la base de datos queda el hash. #}
+        <div class="temporal" role="status" tabindex="-1" data-enfocar>
+          <label for="temporal">Contraseña temporal de {{ cuenta.first_name }}</label>
+          <div class="campo__fila">
+            <input type="text" id="temporal" value="{{ temporal }}" size="14" readonly autocomplete="off" spellcheck="false" aria-describedby="temporal-nota">
+            <button class="boton--aux" type="button" data-copiar="temporal" data-copiado="Copiada" hidden>Copiar</button>
+          </div>
+          <p class="admin__nota" id="temporal-nota">Apúntala ahora y dásela en persona: no se volverá a enseñar. La contraseña anterior ya no sirve y tendrá que elegir una nueva la próxima vez que entre.</p>
+        </div>
+        {% else %}
+        <p class="admin__nota">{% if cuenta.debe_cambiar_contrasena %}Tiene una contraseña temporal y todavía no la ha cambiado. {% endif %}Si ha olvidado su contraseña, se le da una temporal y elige una nueva al entrar. La contraseña que tiene ahora deja de servir.</p>
+        <div><button class="boton--aux" type="submit" form="form-restablecer">Restablecer contraseña<span class="visualmente-oculto"> de {{ cuenta.get_full_name }}</span></button></div>
+        {% endif %}
+      </fieldset>
+      {% endif %}
+
+      <fieldset class="parte parte--caja">
+        <legend>¿Puede entrar?</legend>
+        <div class="campo campo--opciones">{{ form.estado.as_field_group }}</div>
+        <p class="admin__nota">{% if es_propia %}Es tu cuenta: no la puedes desactivar. {% endif %}Una cuenta desactivada no puede entrar, pero conserva sus datos y sus vínculos. Sirve cuando alguien deja el centro durante un tiempo.</p>
+      </fieldset>
+    </div>
+  </div>
+
+  {# Para dejarlo sin guardar, «‹ Usuarios» de la barra de título. #}
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Pasos del formulario" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-solo-ultima="bloques">Guardar cambios</button>
+    </div>
+  </div>
+</form>
+
+{% if puede_restablecer %}
+<form id="form-restablecer" method="post" hidden>
+  {% csrf_token %}
+  <input type="hidden" name="accion" value="restablecer">
+</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

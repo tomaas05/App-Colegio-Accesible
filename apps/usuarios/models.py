@@ -33,11 +33,20 @@ class Usuario(AbstractUser):
     Correspondencia con el diccionario: username = usuario_acceso,
     first_name = nombre, last_name = apellidos, email = correo,
     password = hash_contrasena, is_active = activo, date_joined = fecha_creacion.
+    Una cuenta desactivada (is_active = False) no puede entrar, pero conserva sus datos
+    y sus vínculos (HU-01-02).
     """
 
     first_name = models.CharField("nombre", max_length=150)
     last_name = models.CharField("apellidos", max_length=150, blank=True)
     rol = models.CharField(max_length=20, choices=Rol.choices)
+    # HU-01-02: el administrador restablece la contraseña de un adulto con una temporal;
+    # mientras esto sea cierto, lo único que puede hacer al entrar es elegir una nueva (B15).
+    debe_cambiar_contrasena = models.BooleanField(
+        "debe cambiar la contraseña",
+        default=False,
+        help_text="Tiene una contraseña temporal: al entrar tendrá que elegir una nueva.",
+    )
 
     objects = UsuarioManager()
 

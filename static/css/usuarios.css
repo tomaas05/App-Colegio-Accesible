@@ -699,6 +699,81 @@
 .admin__paginas {
   justify-content: center;
 }
+
+/* --- HU-01-02 · B20 «Editar» en cada cuenta, B23 Editar cuenta y B15 Cambiar la contraseña --- */
+/* En la tabla, el botón a la derecha y sin partirse; en la tarjeta del móvil, en su fila. */
+.tabla__acciones {
+  white-space: nowrap;
+}
+/* Tableta: con el panel lateral, la tabla tiene unos 730 px. Celdas y botón más ajustados
+   para que quepan las seis columnas sin desplazarse a los lados. */
+@media (min-width: 48rem) and (max-width: 79.99rem) {
+  .tabla--tarjetas th,
+  .tabla--tarjetas td {
+    padding-inline: 0.5rem;
+  }
+  .tabla__acciones .boton {
+    padding-inline: 0.75rem;
+  }
+}
+@media (max-width: 47.99rem) {
+  .tabla--tarjetas td.tabla__acciones {
+    display: block;
+    margin-top: 0.4rem;
+  }
+  .tabla--tarjetas td.tabla__acciones::before {
+    content: none;
+  }
+}
+.avatar-actual {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-weight: 700;
+}
+.avatar-actual img {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border: 2px solid var(--petroleo);
+  border-radius: 50%;
+}
+/* La contraseña temporal: se ve una vez, grande y con letra de ancho fijo para dictarla. */
+.temporal {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--menta);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.temporal label {
+  font-weight: 700;
+}
+/* La contraseña entera a la vista: si no cabe con «Copiar» al lado, «Copiar» baja. */
+.temporal .campo__fila {
+  flex-wrap: wrap;
+}
+.temporal input {
+  flex: 1 0 auto;
+  min-width: min(100%, 15ch);
+  min-height: var(--toque);
+  padding: 0.4rem 0.75rem;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 1.25rem;
+  letter-spacing: 0.05em;
+  color: var(--texto);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 0.75rem;
+}
+.temporal:focus-visible {
+  outline: var(--foco-grosor) solid var(--focus);
+  outline-offset: var(--foco-separacion);
+}
+.acceso__salir {
+  margin-top: 0.75rem;
+}
 .admin__creados summary {
   min-height: var(--toque);
   font-weight: 700;

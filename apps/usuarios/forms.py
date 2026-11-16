@@ -4,17 +4,20 @@ HU-01-07: entrada de tutor, profesional, familiar y administrador (boceto B12).
 HU-01-06: entrada del estudiante con 3 imágenes o con contraseña.
 HU-01-01: crear una cuenta (B21) y cargar una lista de estudiantes.
 HU-01-04: vínculos de un estudiante con su tutor y su familiar (B25).
+HU-01-02: editar una cuenta (B23) y cambiar la contraseña temporal (B15).
 """
 
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
+from django.db import transaction
 from django.db.models import Q
 
 from apps.perfil.models import MetodoAcceso
 
 from .acceso import IMAGENES_POR_CONTRASENA, comprobar_contrasena_imagenes
 from .altas import PREFIJO_ESTUDIANTE, crear_adulto, crear_estudiante
+from .edicion import motivo_para_no_desactivar
 from .models import Clase, ImagenAcceso, Rol, Usuario
 
 # Lo que ve el estudiante si se equivoca. No dice qué imagen o qué letra ha fallado.
@@ -292,6 +295,173 @@ class CrearCuentaForm(forms.Form):
             contrasena=datos["contrasena"],
             correo=datos.get("correo", ""),
         )
+
+
+class EditarCuentaForm(forms.Form):
+    """B23 · Editar cuenta (HU-01-02). Los campos dependen de si es estudiante o adulto.
+
+    Estudiante: nombre, apellidos, clase y avatar. Adulto: nombre, apellidos, usuario y
+    correo. Los dos: si la cuenta está activa. El rol y el código no se cambian.
+    """
+
+    ACTIVA = "activa"
+    DESACTIVADA = "desactivada"
+
+    nombre = forms.CharField(
+        label="Nombre", max_length=150, error_messages={"required": "Escribe el nombre."}
+    )
+    apellidos = forms.CharField(label="Apellidos", max_length=150, required=False)
+    estado = forms.ChoiceField(
+        label="Estado de la cuenta",
+        choices=[(ACTIVA, "Activa"), (DESACTIVADA, "Desactivada")],
+        widget=forms.RadioSelect,
+        error_messages={"required": "Elige si la cuenta está activa."},
+    )
+
+    def __init__(self, *args, cuenta, quien, **kwargs):
+        kwargs.setdefault("label_suffix", "")
+        super().__init__(*args, **kwargs)
+        self.cuenta = cuenta
+        self.quien = quien
+        self.fields["nombre"].label_suffix = " *"
+        self.initial.setdefault("nombre", cuenta.first_name)
+        self.initial.setdefault("apellidos", cuenta.last_name)
+        self.initial.setdefault("estado", self.ACTIVA if cuenta.is_active else self.DESACTIVADA)
+        if cuenta.es_estudiante:
+            self.fields["clase"] = forms.ModelChoiceField(
+                label="Clase",
+                label_suffix=" *",
+                queryset=Clase.objects.all(),
+                empty_label=None,
+                initial=cuenta.estudiante.clase_id,
+                error_messages={"required": "Elige la clase."},
+            )
+            self.fields["avatar"] = forms.ImageField(
+                label="Cambiar el avatar (opcional)",
+                label_suffix="",
+                required=False,
+                help_text="Un dibujo, nunca una foto. Si no eliges ninguno, se queda el que tiene.",
+            )
+        else:
+            self.fields["usuario"] = forms.CharField(
+                label="Usuario",
+                label_suffix=" *",
+                max_length=150,
+                initial=cuenta.username,
+                validators=[Usuario.username_validator],
+                help_text="Con el que entra. Letras, números y . @ + - _",
+                error_messages={"required": "Escribe el usuario."},
+                widget=forms.TextInput(
+                    attrs={"autocomplete": "off", "autocapitalize": "none", "spellcheck": "false"}
+                ),
+            )
+            self.fields["correo"] = forms.EmailField(
+                label="Correo electrónico (opcional)",
+                label_suffix="",
+                required=False,
+                initial=cuenta.email,
+            )
+        # El estado va el último, como en el boceto.
+        self.order_fields([n for n in self.fields if n != "estado"] + ["estado"])
+
+    def clean_nombre(self):
+        # Solo espacios no es un nombre (PA4).
+        nombre = self.cleaned_data["nombre"].strip()
+        if not nombre:
+            raise forms.ValidationError("Escribe el nombre.")
+        return nombre
+
+    def clean_apellidos(self):
+        return self.cleaned_data.get("apellidos", "").strip()
+
+    def clean_avatar(self):
+        avatar = self.cleaned_data.get("avatar")
+        if avatar and avatar.size > TAMANO_MAXIMO_AVATAR:
+            raise forms.ValidationError("La imagen no puede pasar de 2 MB.")
+        return avatar
+
+    def clean_usuario(self):
+        usuario = self.cleaned_data["usuario"].strip()
+        if usuario.lower().startswith(PREFIJO_ESTUDIANTE):
+            raise forms.ValidationError(
+                f"Los usuarios que empiezan por «{PREFIJO_ESTUDIANTE}» son de los estudiantes. "
+                "Elige otro."
+            )
+        repetido = Usuario.objects.filter(username__iexact=usuario).exclude(pk=self.cuenta.pk)
+        if repetido.exists():
+            raise forms.ValidationError("Ese usuario ya existe. Elige otro.")
+        return usuario
+
+    def clean_estado(self):
+        estado = self.cleaned_data["estado"]
+        if estado == self.DESACTIVADA and self.cuenta.is_active:
+            motivo = motivo_para_no_desactivar(self.cuenta, self.quien)
+            if motivo:
+                raise forms.ValidationError(motivo)
+        return estado
+
+    @transaction.atomic
+    def guardar(self):
+        """Guarda los cambios ya validados. Devuelve qué ha cambiado, para el mensaje."""
+        datos = self.cleaned_data
+        cuenta = self.cuenta
+        cambios = []
+        if (cuenta.first_name, cuenta.last_name) != (datos["nombre"], datos["apellidos"]):
+            cambios.append("nombre")
+        cuenta.first_name = datos["nombre"]
+        cuenta.last_name = datos["apellidos"]
+        activa = datos["estado"] == self.ACTIVA
+        if cuenta.is_active != activa:
+            cambios.append("estado")
+        cuenta.is_active = activa
+        if cuenta.es_estudiante:
+            estudiante = cuenta.estudiante
+            if estudiante.clase_id != datos["clase"].pk:
+                cambios.append("clase")
+                estudiante.clase = datos["clase"]
+            if datos.get("avatar"):
+                cambios.append("avatar")
+                codigo = estudiante.codigo_estudiante.lower()
+                estudiante.avatar.save(
+                    f"{codigo}-{datos['avatar'].name}", datos["avatar"], save=False
+                )
+            estudiante.save()
+        else:
+            if cuenta.username != datos["usuario"]:
+                cambios.append("usuario")
+            if cuenta.email != datos.get("correo", ""):
+                cambios.append("correo")
+            cuenta.username = datos["usuario"]
+            cuenta.email = datos.get("correo", "")
+        cuenta.save()
+        return cambios
+
+
+class CambiarContrasenaForm(SetPasswordForm):
+    """B15 · Cambiar la contraseña temporal por una propia (HU-01-02)."""
+
+    error_messages = {"password_mismatch": "Las dos contraseñas no son iguales."}
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("label_suffix", "")
+        super().__init__(*args, **kwargs)
+        nueva, repetida = self.fields["new_password1"], self.fields["new_password2"]
+        nueva.label = "Contraseña nueva"
+        nueva.help_text = "Mínimo 8 caracteres. Que no sea solo números ni se parezca a tu usuario."
+        nueva.error_messages["required"] = "Escribe la contraseña nueva."
+        repetida.label = "Repite la contraseña"
+        repetida.help_text = ""
+        repetida.error_messages["required"] = "Escribe otra vez la contraseña."
+
+    def clean_new_password1(self):
+        nueva = self.cleaned_data.get("new_password1")
+        if nueva and self.user.check_password(nueva):
+            raise forms.ValidationError("Elige una contraseña distinta de la temporal.")
+        return nueva
+
+    def save(self, commit=True):
+        self.user.debe_cambiar_contrasena = False
+        return super().save(commit)
 
 
 class CargarListaForm(forms.Form):

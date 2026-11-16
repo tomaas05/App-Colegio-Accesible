@@ -56,6 +56,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # El estudiante que vuelve a la portada sale de su sesión (antes, en un context processor).
     "apps.usuarios.middleware.EstudianteSaleAlVolverALaEntrada",
+    # Con una contraseña temporal solo se puede cambiarla o salir (HU-01-02).
+    "apps.usuarios.middleware.CambiarContrasenaTemporal",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
