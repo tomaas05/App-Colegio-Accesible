@@ -20,28 +20,121 @@
 
   // 2. Escuchar
   var boton = document.querySelector("[data-escuchar]");
-  if (boton && "speechSynthesis" in window) {
+  // Algunos navegadores de iPhone y iPad dicen que tienen voz y luego no suenan. Si pasa una
+  // vez, el botón no se vuelve a ofrecer en esta sesión: mejor sin botón que con uno que no hace nada.
+  var sinVoz = false;
+  try {
+    sinVoz = window.sessionStorage.getItem("despega-sin-voz") === "1";
+  } catch (error) {
+    sinVoz = false;
+  }
+  if (boton && "speechSynthesis" in window && !sinVoz) {
+    var sintesis = window.speechSynthesis;
     var etiquetaInicial = boton.innerHTML;
     var sonando = false;
+    // La frase que suena se guarda aquí: Safari la descarta a media lectura si nadie la guarda.
+    var mensaje = null;
+    // iPhone y iPad en modo silencio callan la voz del navegador aunque el volumen esté alto.
+    // Un sonido mudo dentro de un <audio>, puesto al pulsar, hace que el sistema trate la voz
+    // como un vídeo o una canción: suena con el volumen del dispositivo. No se oye nada más.
+    var SILENCIO = "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==";
+    var mudo = null;
+    var abrirSonido = function () {
+      try {
+        if (!mudo) {
+          mudo = new Audio(SILENCIO);
+          mudo.loop = true;
+          mudo.setAttribute("playsinline", "");
+        }
+        var promesa = mudo.play();
+        if (promesa && promesa.catch) {
+          promesa.catch(function () {});
+        }
+      } catch (error) {
+        mudo = null;
+      }
+    };
+    var cerrarSonido = function () {
+      if (mudo) {
+        mudo.pause();
+      }
+    };
     var parar = function () {
-      window.speechSynthesis.cancel();
+      mensaje = null;
+      sintesis.cancel();
+      cerrarSonido();
       sonando = false;
       boton.innerHTML = etiquetaInicial;
     };
+    // En iPhone y iPad la voz en español se elige a mano: con solo el idioma, a veces calla.
+    var vozEnEspanol = function () {
+      var voces = sintesis.getVoices ? sintesis.getVoices() : [];
+      var espanol = voces.filter(function (voz) {
+        return voz.lang && voz.lang.toLowerCase().replace("_", "-").indexOf("es") === 0;
+      });
+      var deEspana = espanol.filter(function (voz) {
+        return voz.lang.toLowerCase().replace("_", "-") === "es-es";
+      });
+      // Apple trae, además de las voces normales (Mónica, Jorge, Marisol, Paulina), otras de
+      // broma con el mismo idioma: se prefieren las normales.
+      var normal = function (lista) {
+        return lista.filter(function (voz) {
+          return /m[oó]nica|jorge|marisol|paulina/i.test(voz.name || "");
+        })[0];
+      };
+      return normal(deEspana) || normal(espanol) || deEspana[0] || espanol[0] || null;
+    };
+    // Safari carga las voces más tarde: pedirlas ya hace que estén al pulsar.
+    vozEnEspanol();
     boton.hidden = false;
     boton.addEventListener("click", function () {
       if (sonando) {
         parar();
         return;
       }
-      var mensaje = new SpeechSynthesisUtterance(boton.dataset.texto);
-      mensaje.lang = "es-ES";
-      mensaje.onend = parar;
-      mensaje.onerror = parar;
-      window.speechSynthesis.cancel();
+      // Solo se corta si de verdad hay algo sonando: en iPhone y iPad, cancelar justo antes
+      // de hablar hace que la frase nueva no llegue a sonar.
+      if (sintesis.speaking || sintesis.pending) {
+        sintesis.cancel();
+      }
+      var frase = new SpeechSynthesisUtterance(boton.dataset.texto);
+      var voz = vozEnEspanol();
+      frase.lang = voz ? voz.lang : "es-ES";
+      if (voz) {
+        frase.voice = voz;
+      }
+      var haEmpezado = false;
+      frase.onstart = function () {
+        haEmpezado = true;
+      };
+      // Cuatro segundos después, ni ha empezado ni está sonando: este navegador no lee.
+      window.setTimeout(function () {
+        if (mensaje !== frase || haEmpezado || sintesis.speaking) {
+          return;
+        }
+        parar();
+        boton.hidden = true;
+        try {
+          window.sessionStorage.setItem("despega-sin-voz", "1");
+        } catch (error) {
+          // Sin almacenamiento: el botón se esconde solo en esta página.
+        }
+      }, 4000);
+      // El final o el error de una frase anterior no cambian el botón de la que suena ahora.
+      frase.onend = frase.onerror = function () {
+        if (mensaje === frase) {
+          parar();
+        }
+      };
+      abrirSonido();
+      mensaje = frase;
       sonando = true;
       boton.textContent = boton.dataset.parar || "Parar";
-      window.speechSynthesis.speak(mensaje);
+      sintesis.speak(frase);
+      // Safari deja a veces la voz en pausa al volver de otra pestaña.
+      if (sintesis.paused) {
+        sintesis.resume();
+      }
     });
     window.addEventListener("pagehide", parar);
   }

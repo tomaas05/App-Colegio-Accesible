@@ -19,6 +19,9 @@
  *   data-items=".opcion"  los elementos no son los hijos directos, sino lo que diga el selector
  *   data-pag-variable     elementos de tamaños distintos (los bloques de un formulario): cada
  *                         página lleva los que caben, no un número fijo
+ *   data-pag-desplaza="(max-width: 47.99rem)"   solo en pantallas de adulto: mientras se cumpla
+ *                         esa condición la lista se ve entera y la pantalla se desplaza (una
+ *                         lista de cuentas en el móvil). Las pantallas del estudiante nunca.
  * En un elemento: aria-current o data-pag-inicio para empezar en su página (la tarea de
  * ahora); data-titulo para añadir su nombre al texto del centro; data-pag-fuera (en él o en
  * un antecesor) para que no cuente (un paso quitado, la sección de otro rol).
@@ -155,7 +158,14 @@
 
     var por;
     e.cortes = null;
-    if (e.fijo) {
+    if (e.lista.dataset.pagDesplaza && window.matchMedia(e.lista.dataset.pagDesplaza).matches) {
+      // Lista de adultos en el móvil: entera, y se desplaza <main> (como cuando no cabe ni uno).
+      items.forEach(function (it) {
+        it.hidden = false;
+      });
+      por = Math.max(1, total);
+      zona.classList.add("sin-encaje");
+    } else if (e.fijo) {
       por = e.fijo;
       e.nav.hidden = total <= por;
     } else if (e.variable) {

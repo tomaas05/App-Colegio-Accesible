@@ -67,7 +67,11 @@
         <div class="opciones-lista" id="opciones-temporizador" data-paginar data-items=".opcion-radio, .opcion-check">
           <div class="opciones-grupo" role="radiogroup" aria-label="Tipo de temporizador visual">
             {% for radio in form.tipo_temporizador %}
-            <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+            {# Cada tipo lleva un dibujo de cómo lo verá el estudiante (como cada tipo de letra #}
+            {# se enseña escrito con esa letra). Es un adorno: el nombre ya dice cuál es.      #}
+            <label class="opcion-radio opcion-radio--muestra">{{ radio.tag }} <span>{{ radio.choice_label }}</span>
+              <span class="muestra-temp muestra-temp--{{ radio.data.value }}" aria-hidden="true">{% if radio.data.value == "lineal" %}<span class="muestra-temp__relleno"></span>{% elif radio.data.value == "radial" %}<svg viewBox="0 0 88 88" focusable="false"><circle class="muestra-temp__fondo" cx="44" cy="44" r="36"></circle><circle class="muestra-temp__arco" cx="44" cy="44" r="36" stroke-dasharray="226.2" stroke-dashoffset="85"></circle></svg>{% endif %}</span>
+            </label>
             {% endfor %}
           </div>
           <label class="opcion-check">

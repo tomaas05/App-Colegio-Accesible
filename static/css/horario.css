@@ -227,13 +227,24 @@
   background: var(--menta);
   border-width: 4px;
 }
+/* «hoy» dentro del botón del día de hoy: se sabe cuál es aunque se esté mirando otro día. */
+.mi-horario__dia-hoy {
+  padding: 0 0.45rem;
+  font-size: 0.8em;
+  color: var(--petroleo);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 999px;
+}
+/* El día elegido, escrito: en tableta y ordenador lo dice ya el botón marcado, así que aquí
+   solo lo lee el lector de pantalla (es el nombre de la lista de clases). */
 .mi-horario__hoy {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.6rem;
-  margin-left: auto;
-  font-size: 1.4rem;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 /* En el móvil, de cada día solo la forma con su letra (el nombre lo lee el lector de
    pantalla y el día elegido se ve escrito al lado). */
@@ -263,9 +274,28 @@
     min-width: 0;
     padding: 0.2rem;
   }
+  /* En el móvil los botones llevan solo la letra: el nombre del día elegido se ve escrito. */
   .mi-horario__hoy {
-    margin-left: 0;
+    position: static;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
     font-size: 1.25rem;
+    white-space: normal;
+  }
+  /* «hoy» no cabe junto a la letra: lo dice el título de debajo («Lunes ▶ Hoy»). */
+  .mi-horario__dia-hoy {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }
 .mi-horario__vacio {

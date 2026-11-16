@@ -132,6 +132,28 @@ def test_pa1_un_dia_que_no_es_lectivo_ensena_otro(client, datos):
     assert client.get(reverse("horario:mi_horario"), {"dia": 7}).status_code == 200
 
 
+def test_mi_horario_marca_el_dia_de_hoy_y_no_repite_el_dia_elegido(client, datos, monkeypatch):
+    """Revisión de la rama correcciones-profesora: junto a los botones de los días salía otra
+    vez la forma y el nombre del día elegido. Ahora «hoy» va en el botón de su día."""
+    miercoles = date(2026, 11, 18)
+    monkeypatch.setattr("apps.horario.views.timezone.localdate", lambda: miercoles)
+    client.force_login(Estudiante.objects.get(codigo_estudiante="A01").usuario)
+
+    html = client.get(reverse("horario:mi_horario"), {"dia": 1}).content.decode()
+    # «hoy» está una sola vez y en el botón del miércoles, aunque se mire el lunes.
+    assert html.count('class="mi-horario__dia-hoy"') == 1
+    boton_hoy = html.split('class="mi-horario__dia-hoy"')[0].rsplit("<li>", 1)[1]
+    assert 'href="?dia=3"' in boton_hoy and "aria-current" not in boton_hoy
+    # El título del día elegido ya no repite la forma con la letra.
+    titulo = html.split('id="dia-titulo">')[1].split("</h2>")[0]
+    assert titulo.strip() == "Lunes" and "dia-forma" not in titulo
+
+    # Mirando el día de hoy, el título lo dice (es lo que se ve en el móvil).
+    html = client.get(reverse("horario:mi_horario")).content.decode()
+    titulo = html.split('id="dia-titulo">')[1].split("</h2>")[0]
+    assert "Miércoles" in titulo and "Hoy" in titulo
+
+
 # --- PA2: las franjas son las mismas para todo el centro y todos los días ---
 
 

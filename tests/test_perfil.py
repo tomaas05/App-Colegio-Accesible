@@ -265,3 +265,14 @@ def test_si_no_llega_la_creacion_de_tareas_se_queda_como_estaba(client, datos):
     client.force_login(Usuario.objects.get(username="tutor"))
     client.post(url_editar("A01"), datos_form())
     assert Perfil.objects.get(estudiante__codigo_estudiante="A01").creacion_tareas == "asistente"
+
+
+def test_cada_tipo_de_temporizador_lleva_un_dibujo_de_como_se_ve(client, datos):
+    """Revisión de la rama correcciones-profesora: el temporizador no tenía vista previa.
+    El dibujo es un adorno (aria-hidden) y no cambia el nombre de la opción."""
+    client.force_login(Usuario.objects.get(username="tutor"))
+    html = client.get(url_editar()).content.decode()
+    for tipo in ("lineal", "radial", "numerico"):
+        assert f'class="muestra-temp muestra-temp--{tipo}" aria-hidden="true"' in html
+    # La muestra numérica se escribe con CSS: en el HTML no hay una hora que leer.
+    assert "18:15" not in html

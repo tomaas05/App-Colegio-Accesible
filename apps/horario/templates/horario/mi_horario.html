@@ -16,11 +16,14 @@
   <nav aria-label="Elegir día">
     <ul class="mi-horario__dias">
       {% for valor, nombre in dias %}
-      <li><a class="mi-horario__dia" href="?dia={{ valor }}"{% if valor == dia.value %} aria-current="page"{% endif %}>{% include "_dia_forma.html" with numero=valor only %}<span class="mi-horario__dia-nombre">{{ nombre }}</span></a></li>
+      <li><a class="mi-horario__dia" href="?dia={{ valor }}"{% if valor == dia.value %} aria-current="page"{% endif %}>{% include "_dia_forma.html" with numero=valor only %}<span class="mi-horario__dia-nombre">{{ nombre }}</span>{% if valor == hoy %}<span class="mi-horario__dia-hoy"><span class="visualmente-oculto">, </span>hoy</span>{% endif %}</a></li>
       {% endfor %}
     </ul>
   </nav>
-  <h2 class="mi-horario__hoy" id="dia-titulo">{% include "_dia_forma.html" with numero=dia.value only %} {{ dia.label }}{% if es_hoy %} <span class="chip"><span aria-hidden="true">▶</span> Hoy</span>{% endif %}</h2>
+  {# El día elegido, escrito. Con sitio para los nombres (tableta y ordenador) ya lo dice el #}
+  {# botón marcado y este título queda solo para el lector de pantalla; en el móvil, donde  #}
+  {# los botones llevan solo la letra, se ve.                                              #}
+  <h2 class="mi-horario__hoy" id="dia-titulo">{{ dia.label }}{% if es_hoy %} <span class="chip"><span aria-hidden="true">▶</span> Hoy</span>{% endif %}</h2>
 </div>
 
 <div class="encaja encaja--centro">

@@ -100,6 +100,7 @@ def mi_horario(request):
             "clase": clase,
             "dia": DiaLectivo(dia),
             "es_hoy": dia == hoy,
+            "hoy": hoy,
             "dias": servicios.dias(),
             "casillas": servicios.del_dia(clase, dia),
         },

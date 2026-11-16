@@ -5,7 +5,8 @@
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
 {# Boceto B20 · Usuarios. HU-01-01. Solo el administrador. Sin desplazamiento: se ven las   #}
-{# cuentas que caben y el resto con «Anterior / Siguiente» (decisión 0005).                #}
+{# cuentas que caben y el resto con «Anterior / Siguiente» (decisión 0005). En el móvil,    #}
+{# donde solo cabían dos, la lista se desplaza: los adultos sí pueden; los estudiantes, no. #}
 {% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
 {% block h1 %}Usuarios{% endblock %}
 {% block acciones %}
@@ -55,7 +56,7 @@
     <thead role="rowgroup">
       <tr role="row"><th role="columnheader" scope="col">Persona</th><th role="columnheader" scope="col">Rol</th><th role="columnheader" scope="col">Clase</th><th role="columnheader" scope="col">Vínculos</th><th role="columnheader" scope="col">Estado</th></tr>
     </thead>
-    <tbody role="rowgroup" id="cuentas" data-paginar data-estado="{desde} a {hasta} de {de}">
+    <tbody role="rowgroup" id="cuentas" data-paginar data-pag-desplaza="(max-width: 47.99rem)" data-estado="{desde} a {hasta} de {de}">
       {% for cuenta in pagina %}
       <tr role="row">
         <th role="rowheader" scope="row">

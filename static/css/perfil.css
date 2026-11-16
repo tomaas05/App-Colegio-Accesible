@@ -159,8 +159,10 @@
 /* Paso 1: las categorías, con lo que cada una tiene elegido. */
 .perfil-categorias {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 7em), 1fr)); /* em: con letra grande, menos columnas */
-  gap: 0.6rem;
+  /* Como mucho cuatro columnas: las ocho categorías quedan en dos filas completas en el
+     ordenador y la tableta, y de dos en dos en el móvil. En em: con letra grande, menos. */
+  grid-template-columns: repeat(auto-fill, minmax(max(min(100%, 7em), (100% - 3 * 0.75rem) / 4), 1fr));
+  gap: 0.75rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -173,10 +175,10 @@
   flex: 1;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  gap: 0.1rem;
-  min-height: max(var(--toque-grande), 4em);
-  padding: 0.4rem 0.6rem;
+  justify-content: flex-start; /* el nombre de todas, a la misma altura */
+  gap: 0.2rem;
+  min-height: max(var(--toque-grande), 4.5em);
+  padding: 0.6rem 0.8rem;
   hyphens: auto; /* «Tempori-zador» y no «Temporiza-dor» (lang="es" en base.html) */
   font-family: var(--fuente-texto);
   font-size: 1em;
@@ -218,6 +220,62 @@
 .perfil-panel .opcion-check {
   display: flex;
   background: var(--blanco);
+}
+/* Temporizador: cada tipo con un dibujo pequeño de cómo se ve (lineal, radial o numérico). */
+.opcion-radio--muestra {
+  flex-wrap: wrap;
+}
+.muestra-temp {
+  flex: none;
+  margin-left: auto;
+}
+.muestra-temp--lineal {
+  width: 3.5rem;
+  height: 1.1rem;
+  overflow: hidden;
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: var(--radio-boton);
+}
+.muestra-temp__relleno {
+  display: block;
+  width: 60%;
+  height: 100%;
+  background: var(--verde);
+}
+.muestra-temp--radial {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+.muestra-temp--radial svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.muestra-temp__fondo {
+  fill: none;
+  stroke: var(--menta);
+  stroke-width: 10;
+}
+.muestra-temp__arco {
+  fill: none;
+  stroke: var(--petroleo);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+/* El «18:15» de muestra va en el CSS para que no cuente como nombre de la opción. */
+.muestra-temp--numerico::before {
+  content: "18:15";
+}
+.muestra-temp--numerico {
+  padding: 0.05rem 0.5rem;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 0.6rem;
 }
 .opcion__fuente {
   font-family: var(--fuente-texto);
