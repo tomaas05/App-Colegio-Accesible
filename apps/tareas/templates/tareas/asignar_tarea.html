@@ -4,44 +4,80 @@
 {% block titulo %}Asignar {% if tarea %}«{{ tarea.nombre }}»{% else %}una tarea{% endif %} · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
 
-{% block contenido %}
 {# Boceto B43 · Asignar a estudiantes. HU-03-03. Solo salen los estudiantes de quien asigna. #}
-<div class="admin tarea-form">
-  <div class="admin__cab">
-    <a class="boton boton--aux" href="{% url 'tareas:catalogo' %}"><span aria-hidden="true">‹</span> Tareas creadas</a>
-    <h1>{% if tarea %}Asignar «{{ tarea.nombre }}»{% else %}Asignar una tarea{% endif %}</h1>
-  </div>
+{# Sin desplazamiento (decisión 0005): qué tarea, a quién, a qué hora y qué días son bloques  #}
+{# y en cada pantalla se ven los que caben. «Guardar» está en la última, donde «Siguiente».  #}
+{% block volver %}{% url 'tareas:catalogo' as atras %}{% include "_volver.html" with url=atras texto="Tareas creadas" etiqueta="Volver a Tareas creadas" only %}{% endblock %}
+{% block h1 %}Asignar{% if tarea %} «{{ tarea.nombre }}»{% else %} una tarea{% endif %}{% endblock %}
 
-  {% if not form.fields.estudiantes.queryset.exists %}
-  <p class="aviso-vacio">Todavía no tienes ningún estudiante. Pídeselo al administrador del centro.</p>
-  {% else %}
-  <form class="formulario" method="post" novalidate>
-    {% csrf_token %}
-    {% include "usuarios/_errores.html" %}
-    <div class="admin__tarjeta">
-      {% for campo in form %}
-      {% if campo.field.widget.input_type == "checkbox" %}
-      <fieldset class="campo campo--grupo" id="{{ campo.auto_id }}"{% if campo.errors %} aria-describedby="{{ campo.auto_id }}_error"{% endif %}>
-        <legend>{{ campo.label }}</legend>
+{% block contenido %}
+{% if not form.fields.estudiantes.queryset.exists %}
+<p class="aviso-vacio">Todavía no tienes ningún estudiante. Pídeselo al administrador del centro.</p>
+{% else %}
+<form class="formulario encaja" method="post" novalidate>
+  {% csrf_token %}
+  <div class="encaja">
+    <div class="partes" id="bloques" data-paginar data-pag-variable data-foco="titulo" data-estado="Parte {n} de {total}">
+      {% if form.errors %}<div class="parte" data-pag-inicio>{% include "usuarios/_errores.html" %}</div>{% endif %}
+
+      <fieldset class="parte parte--caja">
+        <legend>Qué tarea</legend>
+        {% include "tareas/_campo.html" with campo=form.tarea %}
+      </fieldset>
+
+      {% with campo=form.estudiantes %}
+      <fieldset class="parte parte--caja" id="{{ campo.auto_id }}"{% if campo.errors %} aria-describedby="{{ campo.auto_id }}_error"{% endif %}>
+        <legend>A quién</legend>
+        {% for error in campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ error }}</p>{% endfor %}
         <ul class="casillas">
           {% for opcion in campo %}
           <li><label class="casilla">{{ opcion.tag }} <span>{{ opcion.choice_label }}</span></label></li>
           {% endfor %}
         </ul>
-        {% for error in campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ error }}</p>{% endfor %}
       </fieldset>
-      {% else %}
-      {% include "tareas/_campo.html" %}
-      {% endif %}
-      {% endfor %}
+      {% endwith %}
+
+      <fieldset class="parte parte--caja">
+        <legend>A qué hora</legend>
+        <div class="admin__dos">
+          {% include "tareas/_campo.html" with campo=form.hora_inicio %}
+          {% include "tareas/_campo.html" with campo=form.hora_fin %}
+        </div>
+      </fieldset>
+
+      {% with campo=form.dias_semana %}
+      <fieldset class="parte parte--caja" id="{{ campo.auto_id }}"{% if campo.errors %} aria-describedby="{{ campo.auto_id }}_error"{% endif %}>
+        <legend>Qué días</legend>
+        {% for error in campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ error }}</p>{% endfor %}
+        {# Cada día con su letra, su forma y su color, como en el horario del estudiante (B30). #}
+        <ul class="casillas casillas--dias">
+          {% for opcion in campo %}
+          <li><label class="casilla">{{ opcion.tag }} {% include "_dia_forma.html" with numero=opcion.data.value only %} <span class="casilla__dia">{{ opcion.choice_label }}</span></label></li>
+          {% endfor %}
+        </ul>
+      </fieldset>
+      {% endwith %}
+
+      <fieldset class="parte parte--caja">
+        <legend>Desde cuándo y hasta cuándo</legend>
+        <p class="admin__nota">El primer día es obligatorio; sin último día, vale para siempre.</p>
+        <div class="admin__dos">
+          {% include "tareas/_campo.html" with campo=form.vigencia_desde %}
+          {% include "tareas/_campo.html" with campo=form.vigencia_hasta %}
+        </div>
+      </fieldset>
     </div>
-    <div class="tarea-form__acciones">
-      <button class="boton--principal boton--mediano" type="submit">Guardar</button>
-      <a class="boton boton--aux" href="{% url 'tareas:catalogo' %}">Cancelar</a>
+  </div>
+
+  {# Para dejarlo sin asignar, «‹ Tareas creadas» de la barra de título. #}
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Partes del formulario" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-solo-ultima="bloques">Guardar</button>
     </div>
-  </form>
-  {% endif %}
-</div>
+  </div>
+</form>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

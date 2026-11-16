@@ -13,6 +13,14 @@ class PerfilAdmin(admin.ModelAdmin):
         "tamano_botones",
         "tipo_temporizador",
         "metodo_acceso",
+        "creacion_tareas",
         "usa_lector_pantalla",
     )
-    list_filter = ("tema", "paleta", "tipo_temporizador", "metodo_acceso", "usa_lector_pantalla")
+    list_filter = (
+        "tema",
+        "paleta",
+        "tipo_temporizador",
+        "metodo_acceso",
+        "creacion_tareas",
+        "usa_lector_pantalla",
+    )

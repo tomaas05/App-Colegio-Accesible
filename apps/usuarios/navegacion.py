@@ -35,8 +35,8 @@ OPCIONES_POR_ROL = {
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
         ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
         (
-            "Perfil visual",
-            "Tema, colores, letra, botones y lector de pantalla de tus estudiantes.",
+            "Alumnos",
+            "Cómo ve la agenda cada uno: colores, letra, botones y temporizador.",
             "perfil:lista",
         ),
     ],
@@ -56,17 +56,51 @@ OPCIONES_POR_ROL = {
 }
 
 
+# Icono de cada opción en las tarjetas de /panel/, como en el boceto B13. Los dibujos están
+# en templates/_icono.html. Una opción sin icono aquí sale con la flecha.
+ICONOS = {
+    "usuarios:lista": "personas",
+    "admin:usuarios_clase_changelist": "escuela",
+    "horario:cargar": "reloj",
+    "usuarios:vinculos": "enlace",
+    "tareas:crear_tarea": "mas",
+    "tareas:catalogo": "archivo",
+    "perfil:lista": "personas",
+    "usuarios:mis_estudiantes": "personas",
+}
+
+# Opciones que ya enseñan «mis estudiantes»: quien tiene una no los ve además en el panel.
+OPCIONES_CON_ESTUDIANTES = {"perfil:lista", "usuarios:mis_estudiantes"}
+
+
 def opciones_de(rol):
-    """Las opciones de un rol cuya URL existe: [{"texto", "descripcion", "url"}]."""
+    """Las opciones de un rol cuya URL existe: [{"texto", "descripcion", "url", "icono"}]."""
     opciones = []
     for texto, descripcion, nombre_url in OPCIONES_POR_ROL.get(rol, []):
         try:
             opciones.append(
-                {"texto": texto, "descripcion": descripcion, "url": reverse(nombre_url)}
+                {
+                    "texto": texto,
+                    "descripcion": descripcion,
+                    "url": reverse(nombre_url),
+                    "icono": ICONOS.get(nombre_url, "der"),
+                }
             )
         except NoReverseMatch:
             continue
     return opciones
+
+
+def lista_estudiantes_en_el_panel(rol):
+    """Si «Tus estudiantes» sale en /panel/: solo para quien no tiene una opción que los liste.
+
+    Revisión con la profesora: el tutor no ve a sus alumnos directamente en el panel, entra
+    por «Alumnos». El profesional tiene «Mis estudiantes». El familiar no tiene ninguna
+    opción así, de modo que los sigue viendo en su panel (HU-01-04, PA3).
+    """
+    if rol == Rol.ADMINISTRADOR:
+        return False
+    return not any(url in OPCIONES_CON_ESTUDIANTES for _, _, url in OPCIONES_POR_ROL.get(rol, []))
 
 
 def inicio_de(usuario):

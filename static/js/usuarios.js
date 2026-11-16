@@ -48,13 +48,16 @@ document.querySelectorAll("[data-crear-cuenta]").forEach((form) => {
   const metodos = [...form.querySelectorAll('input[name="metodo_acceso"]')];
   const actualizar = () => {
     const tipo = !rol.value ? "" : rol.value === "estudiante" ? "estudiante" : "adulto";
-    form.querySelectorAll("[data-solo]").forEach((seccion) => {
-      seccion.hidden = seccion.dataset.solo !== tipo;
-    });
     const metodo = (metodos.find((m) => m.checked) || {}).value || "imagenes";
-    form.querySelectorAll("[data-solo-metodo]").forEach((parte) => {
-      parte.hidden = parte.dataset.soloMetodo !== metodo;
+    form.querySelectorAll("[data-solo], [data-solo-metodo]").forEach((parte) => {
+      const fuera =
+        (parte.dataset.solo && parte.dataset.solo !== tipo) ||
+        (parte.dataset.soloMetodo && parte.dataset.soloMetodo !== metodo);
+      // data-pag-fuera: el bloque tampoco cuenta al pasar de página (paginar.js).
+      parte.toggleAttribute("data-pag-fuera", Boolean(fuera));
+      parte.hidden = Boolean(fuera);
     });
+    window.Despega?.paginar?.reajustar();
   };
   rol.addEventListener("change", actualizar);
   metodos.forEach((m) => m.addEventListener("change", actualizar));

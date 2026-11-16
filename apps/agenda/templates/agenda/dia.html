@@ -4,34 +4,41 @@
 {% block titulo %}Tareas de hoy · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
 
+{# Boceto B06 · Tareas de hoy. Revisión con la profesora: una sola línea de tiempo, en      #}
+{# horizontal (tableta y ordenador) o en vertical (móvil), nunca partida en filas. Las que  #}
+{# no caben pasan a otra pantalla con «Antes / Después»; se abre por la tarea de ahora.     #}
+{% block pantalla %}pantalla--ancha agenda{% endblock %}
+{% block volver %}{% include "_salir_estudiante.html" %}{% endblock %}
+{% block h1 %}Tareas de hoy{% endblock %}
+
 {% block contenido %}
-{# Boceto B06 · Tareas de hoy #}
-<div class="agenda">
-  {% include "agenda/_cabecera.html" with titulo=titulo %}
-
-  {% if not agenda.tareas %}
+{% if not agenda.tareas %}
+<div class="encaja encaja--centro">
   <p class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>Hoy no tienes tareas.</span></p>
-  {% else %}
-  <ol class="tarjetas" aria-labelledby="titulo">
-    {% if not agenda.anterior %}
-    <li class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>No hay tarea antes.</span></li>
-    {% endif %}
-    {% for t in agenda.visibles %}
+</div>
+{% else %}
+<div class="encaja encaja--centro">
+  <ol class="linea" id="tareas" aria-labelledby="titulo" data-paginar data-max="{{ perfil_activo.max_tarjetas|default:6 }}">
+    {% for t in agenda.tareas %}
       {% url 'agenda:detalle' t.asignacion.pk as enlace %}
+      {% if t == agenda.actual or not agenda.actual and t == agenda.siguiente %}
+      {% include "agenda/_tarjeta.html" with inicio=True %}
+      {% else %}
       {% include "agenda/_tarjeta.html" %}
+      {% endif %}
     {% endfor %}
-    {% if agenda.restantes %}
-    <li class="restantes">Quedan {{ agenda.restantes }} tarea{{ agenda.restantes|pluralize }} más hoy.</li>
-    {% elif not agenda.siguiente %}
-    <li class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>No hay más tareas hoy.</span></li>
-    {% endif %}
   </ol>
-  {% endif %}
+</div>
+{% endif %}
 
-  {# HU-03-11, PA1 (Javi): el estudiante ve el horario de su clase. #}
-  <p class="ver-horario"><a class="boton boton--aux" href="{% url 'horario:mi_horario' %}">Ver mi horario de clase</a></p>
-
-  <div id="siguiente" class="pie-siguiente" role="status">{% include "agenda/_aviso_siguiente.html" %}</div>
+<div class="pie">
+  {% include "_paginador.html" with de="tareas" que="Más tareas de hoy" anterior="Antes" siguiente="Después" only %}
+  <div class="pie__acciones">
+    {# La siguiente tarea, 10 minutos antes de que empiece (RF2.10.1). Solo aquí, no dentro de otra tarea. #}
+    <div id="siguiente" class="pie-siguiente" role="status">{% include "agenda/_aviso_siguiente.html" %}</div>
+    {# HU-03-11, PA1 (Javi): el estudiante ve el horario de su clase. #}
+    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}">Mi horario de clase</a>
+  </div>
 </div>
 {% endblock %}
 

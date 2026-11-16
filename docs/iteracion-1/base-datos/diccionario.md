@@ -24,6 +24,7 @@ No se guardan fotografías, documentos de identidad ni datos médicos (RNF1.1.3)
 | contenido de botones | `imagen`, `texto`, `ambos` | `ambos` |
 | tipo de temporizador | `lineal`, `radial`, `numerico` | `lineal` |
 | método de acceso del estudiante | `imagenes` (3 imágenes de la rejilla), `contrasena` (texto) | `imagenes` |
+| creación de tareas del estudiante | `ninguna`, `asistente` (paso a paso, boceto B31), `completa` (como los adultos, B32) | `ninguna` |
 | días de la semana | 1 = lunes … 7 = domingo | — |
 
 ---
@@ -123,6 +124,7 @@ App `perfil` · Requisito: RI4.1.1 · Se crea con los valores por defecto al cre
 | temporizador_visible | boolean | no | por defecto verdadero | Si el temporizador se ve al empezar | RF4.3.1 |
 | puede_ocultar_temporizador | boolean | no | por defecto falso | Si el estudiante puede ocultarlo | RF4.3.1 |
 | metodo_acceso | varchar(10) | no | lista «método de acceso» | Qué se le pide al estudiante después de pulsar su avatar: 3 imágenes o contraseña de texto | Equipo (7 nov) |
+| creacion_tareas | varchar(10) | no | lista «creación de tareas del estudiante» | Si el estudiante crea sus tareas de ocio y con qué pantallas. Lo decide el tutor; las pantallas del estudiante son de la iteración 3 (HU-03-09) | Profesora (nov.), RF3.3.3 |
 | usa_lector_pantalla | boolean | no | por defecto falso | El estudiante usa VoiceOver o TalkBack. La web no puede detectarlo, así que se guarda aquí; con él activado, la aplicación no reproduce su propia voz para no pisar al lector | Profesora, RNF4.1.5 |
 
 Los campos de iteraciones posteriores (posición y contenido de botones) se crean ya con su valor por defecto, para no tener que migrar la tabla después.

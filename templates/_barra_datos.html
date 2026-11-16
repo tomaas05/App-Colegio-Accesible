@@ -1,0 +1,14 @@
+{# Final de la barra de título: la fecha de hoy y, si es un estudiante, quién es y la hora. #}
+{# Los adultos ven su nombre y la fecha en la barra del logotipo (_cabecera.html).         #}
+{% load fechas %}{% if not nav_principal %}
+<div class="barra__datos">
+  {# La fecha entera y, en el móvil, abreviada (solo se ve y se lee una de las dos). #}
+  <p class="barra__fecha"><time datetime="{% fecha_iso %}"><span class="barra__fecha-larga">{% fecha_larga %}</span><span class="barra__fecha-corta">{% fecha_corta %}</span></time></p>
+  {% if user.is_authenticated and user.es_estudiante %}
+  {# De quién es la agenda (HU-01-06, PA7): el estudiante ve que ha entrado él y no otro. #}
+  <p class="barra__quien"><img src="{{ user.estudiante.avatar.url }}" alt="" width="40" height="40"><span class="visualmente-oculto">Eres </span>{{ user.first_name }}</p>
+  {# Reloj: base.js lo pone en hora cada segundo (RNF2.1.2). #}
+  <time class="reloj" data-reloj>{% now "H:i" %}</time>
+  {% endif %}
+</div>
+{% endif %}

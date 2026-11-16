@@ -1,13 +1,13 @@
 """Pantallas de usuarios y acceso (Manu).
 
 HU-01-07: entrar como tutor, profesional o familiar (B12) y su pantalla principal (B13).
-HU-01-06: entrar como estudiante: clase (B02), avatar (B03) y 3 imágenes o contraseña.
+HU-01-06: entrar como estudiante: portada con las clases (B01 + B02), avatar (B03) y
+3 imágenes o contraseña.
 HU-01-08 (Javi): el profesional elige los estudiantes que atiende (B26).
 HU-01-09 (Javi): el profesional consulta la agenda de los estudiantes que atiende (B27).
 HU-01-01: usuarios (B20), crear cuenta (B21) y cargar una lista de estudiantes (solo admin).
 HU-01-04: vínculos de cada estudiante con su tutor y su familiar (B25, solo admin) y
 «Tus estudiantes» en el panel de cada adulto.
-La portada «¿Quién eres?» (B01) es una plantilla sin lógica: usuarios/portada.html.
 Bocetos: docs/iteracion-1/bocetos/despega_mockup_v3.html.
 """
 
@@ -41,7 +41,11 @@ from .forms import (
     VinculosForm,
 )
 from .models import Clase, Estudiante, ImagenAcceso, Rol, Usuario
-from .navegacion import OPCIONES_POR_ROL, opciones_de  # noqa: F401 (se importaba de aquí)
+from .navegacion import (  # noqa: F401 (OPCIONES_POR_ROL se importaba de aquí)
+    OPCIONES_POR_ROL,
+    lista_estudiantes_en_el_panel,
+    opciones_de,
+)
 from .permisos import admin_requerido
 from .texto import coincide, normalizar
 from .vinculos import estudiantes_de, guardar_vinculos
@@ -79,13 +83,14 @@ class EntrarAdultoView(LoginView):
 def panel(request):
     """HU-01-07. Pantalla principal del adulto, con su nombre (B13).
 
-    HU-01-04: el tutor, el profesional y el familiar ven también a sus estudiantes,
-    y solo a los suyos (PA1, PA3 y PA4).
+    HU-01-04: cada adulto ve a sus estudiantes, y solo a los suyos (PA1, PA3 y PA4). El
+    tutor en «Alumnos» y el profesional en «Mis estudiantes»; el familiar, que no tiene una
+    opción así, aquí mismo. Así el panel cabe sin desplazarse (decisión 0005).
     """
     if request.user.es_estudiante:
         return redirect("agenda:dia")
     estudiantes = None
-    if request.user.rol != Rol.ADMINISTRADOR:
+    if lista_estudiantes_en_el_panel(request.user.rol):
         estudiantes = estudiantes_de(request.user)
     return render(
         request,
@@ -118,11 +123,14 @@ def _tutor_corto(nombre, apellidos):
 
 
 @require_GET
-def clases(request):
-    """B02 · ¿Cuál es tu clase? Solo las clases con algún estudiante que pueda entrar.
+def portada(request):
+    """B01 + B02 · Primera pantalla: «¿Cuál es tu clase?» y, en pequeño, la entrada de adultos.
 
-    Debajo de cada clase, su tutor (HU-01-04), para que el estudiante la reconozca.
-    Si la clase tiene más de un tutor, no se pone ninguno.
+    Revisión con la profesora (noviembre de 2026): el estudiante elige su clase nada más
+    abrir la aplicación, sin pasar antes por «Estudiante o Adulto». Solo salen las clases
+    con algún estudiante que pueda entrar. Debajo de cada clase, su tutor (HU-01-04), para
+    que el estudiante la reconozca; si la clase tiene más de un tutor, no se pone ninguno.
+    Aquí llega también quien no ha entrado (LOGIN_URL), con la pantalla que pedía en ?next=.
     """
     lista = list(
         Clase.objects.annotate(activos=Count("estudiantes", filter=_estudiantes_activos()))
@@ -139,7 +147,15 @@ def clases(request):
     for clase in lista:
         de_la_clase = tutores.get(clase.pk, set())
         clase.tutor_corto = next(iter(de_la_clase)) if len(de_la_clase) == 1 else ""
-    return render(request, "usuarios/clases.html", {"clases": lista, "next": _siguiente(request)})
+    return render(request, "usuarios/portada.html", {"clases": lista, "next": _siguiente(request)})
+
+
+@require_GET
+def clases(request):
+    """Dirección antigua de «¿Cuál es tu clase?» (B02): ahora es la portada."""
+    destino = reverse("inicio")
+    siguiente = _siguiente(request)
+    return redirect(f"{destino}?{urlencode({'next': siguiente})}" if siguiente else destino)
 
 
 @require_GET

@@ -123,10 +123,37 @@ button:hover,
   font-size: 1rem;
   color: var(--gris);
 }
+/* La fecha puede partirse (con letra de 32 px en el móvil no cabe en una línea). */
+.cabecera__quien time {
+  overflow-wrap: normal;
+}
+/* En el móvil la barra del adulto ocupa una sola fila. */
+@media (max-width: 30rem) {
+  .cabecera {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding-block: 0.35rem;
+  }
+  .cabecera__logo {
+    padding-inline: 0.25rem;
+  }
+  .cabecera__logo img {
+    height: 2rem;
+  }
+  .cabecera__menu {
+    flex: none;
+    padding-inline: 0.75rem;
+  }
+  .cabecera__quien {
+    min-width: 0;
+    font-size: 1rem;
+  }
+}
 /* El botón «Menú» solo sirve con JavaScript: html.js se pone antes de pintar (base.js),
    así que aparece desde el primer momento y no mueve la cabecera (CLS). */
 .cabecera__menu {
   display: none;
+  white-space: nowrap;
 }
 .js .cabecera__menu {
   display: inline-block;
@@ -138,17 +165,663 @@ button:hover,
   width: 100%;
 }
 main {
+  display: flex;
   flex: 1;
+  flex-direction: column;
   width: 100%;
   max-width: 80rem;
   margin-inline: auto;
-  padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+  padding: 0.75rem max(1rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
 }
 main:focus {
   outline: none; /* recibe el foco desde «Saltar al contenido»; no es un control */
 }
-.volver {
-  margin: 0 0 1rem;
+
+/* --- Pantallas sin desplazamiento (revisión con la profesora, noviembre de 2026) ---
+ * Cada pantalla ocupa justo la pantalla del dispositivo: barra de título arriba, el cuerpo
+ * en lo que queda y, si hace falta, un pie con «Anterior / Siguiente». Lo que no cabe pasa
+ * a otra página (static/js/paginar.js), no más abajo.
+ * Solo con JavaScript (html.js, lo pone base.js antes de pintar): sin él no hay con qué
+ * pasar de página, así que todo se enseña seguido y la página se desplaza como siempre.
+ * Último recurso: si ni un solo elemento cabe (letra de 32 px en un móvil pequeño), se
+ * desplaza <main>; el texto nunca se corta (RNF4.1.6). */
+[hidden] {
+  display: none !important;
+}
+.js body {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.js .marco {
+  min-height: 0;
+}
+.js main {
+  min-height: 0;
+  overflow: auto;
+}
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(72rem, 100%);
+  margin-inline: auto;
+}
+.pantalla--estrecha {
+  width: min(48rem, 100%);
+}
+.pantalla--ancha {
+  width: 100%;
+}
+/* Crece hasta llenar <main>; si su contenido fijo es más alto, crece más y <main> se desplaza. */
+.js .pantalla {
+  flex: 1 0 auto;
+  min-height: 0;
+}
+/* El cuerpo que tiene que caber: se queda con el alto que sobra y paginar.js enseña en él
+   solo los elementos que entran. «sin-encaje» lo pone paginar.js cuando no cabe ni uno. */
+.encaja {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.js .encaja {
+  flex: 1 1 0;
+  min-height: 0;
+}
+.js .encaja.sin-encaje {
+  flex: 1 0 auto;
+}
+.encaja--centro {
+  justify-content: safe center;
+}
+
+/* --- Barra de título de todas las pantallas (templates/base.html) ---
+ * Dice dónde estoy: botón para volver, título, fecha de hoy y, si soy estudiante, mi avatar,
+ * mi nombre y la hora. Siempre en el mismo sitio y con el mismo orden. */
+.barra {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  min-height: var(--toque);
+  padding: 0.4rem 0.75rem;
+  background: var(--menta);
+  border: 2px solid var(--petroleo);
+  border-radius: 1.25rem;
+}
+/* Los adultos ya tienen la barra del logotipo encima: aquí basta una línea. */
+.con-lateral .barra {
+  padding: 0 0 0.5rem;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid var(--menta);
+  border-radius: 0;
+}
+.barra form,
+.barra p {
+  margin: 0;
+}
+.barra__logo {
+  flex: none;
+  width: auto;
+  height: 2.75rem;
+  background: #ffffff; /* la imagen trae fondo blanco */
+  border-radius: 0.5rem;
+}
+.barra__titulo {
+  display: flex;
+  flex: 1 1 8em;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75rem;
+  min-width: 0;
+}
+.barra__titulo h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+.barra__titulo h1:focus {
+  outline: none;
+}
+.barra__sub {
+  font-family: var(--fuente-titulos);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--gris);
+}
+/* De quién es la pantalla (un estudiante): su avatar y su nombre junto al título. */
+.barra__persona {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.barra__persona img {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+.barra__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.barra__datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.9rem;
+  margin-left: auto;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.barra__fecha {
+  font-size: 1rem;
+}
+.barra__quien {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.barra__quien img {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #ffffff;
+  border: 2px solid var(--petroleo);
+  border-radius: 50%;
+  object-fit: cover;
+}
+.reloj {
+  font-variant-numeric: tabular-nums;
+}
+.barra__fecha-corta {
+  display: none;
+}
+/* En el móvil la barra ocupa lo justo: fecha corta y datos en una línea. */
+@media (max-width: 30rem) {
+  main {
+    padding-top: 0.5rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  .pantalla,
+  .encaja {
+    gap: 0.5rem;
+  }
+  .barra {
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+  }
+  .barra__titulo h1 {
+    font-size: 1.35rem;
+  }
+  /* En el móvil del adulto el subtítulo no cabe en una línea: solo se deja el de «de
+     quién es la pantalla». */
+  .con-lateral .barra__sub:not(.barra__persona) {
+    display: none;
+  }
+
+  .barra__datos {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    font-size: 1rem;
+  }
+  .barra__fecha-larga {
+    display: none;
+  }
+  .barra__fecha-corta {
+    display: inline;
+  }
+  .barra__quien img {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+/* --- Botones comunes (antes repetidos en agenda.css y usuarios.css) --- */
+a.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-decoration: none;
+}
+.boton--aux {
+  padding: 0.25rem 1rem;
+  background: var(--blanco);
+}
+.boton--principal {
+  min-height: var(--toque-grande);
+  padding: 0.5rem 2rem;
+  font-size: 1.5rem;
+  color: var(--blanco);
+  background: var(--petroleo);
+}
+.boton--principal:hover {
+  background: var(--verde-oscuro);
+}
+.boton--mediano {
+  min-height: var(--toque);
+  padding: 0.4rem 1.25rem;
+  font-size: 1.1rem;
+}
+button:disabled,
+.boton[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* --- Paginador: «Anterior / Siguiente» en lugar de desplazarse (templates/_paginador.html) ---
+ * Siempre al pie y con «Anterior» a la izquierda y «Siguiente» a la derecha. */
+.paginador {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
+.paginador__estado {
+  flex: 1;
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  text-align: center;
+  color: var(--petroleo);
+}
+.paginador button {
+  flex: none;
+  min-height: var(--toque);
+  white-space: nowrap;
+}
+.paginador__estado {
+  white-space: nowrap;
+}
+/* Lo pone paginar.js cuando no caben en una fila: el texto arriba y los botones debajo. */
+.paginador--apilado {
+  flex-wrap: wrap;
+}
+.paginador--apilado .paginador__estado {
+  flex: 1 1 100%;
+  order: -1;
+}
+.paginador--apilado button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 0.25rem;
+}
+/* El texto del centro se lee pero no se ve: los botones ya dicen a dónde llevan. */
+.paginador--sin-estado .paginador__estado {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.paginador--sin-estado button {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: normal;
+}
+/* Sin sitio para las flechas: «Anterior» sigue a la izquierda y «Siguiente» a la derecha. */
+.paginador--apilado button > span[aria-hidden] {
+  display: none;
+}
+@media (max-width: 30rem) {
+  .paginador button {
+    padding-inline: 0.6rem;
+  }
+  .paginador__palabra {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+/* Pie de una pantalla: paginador y, a su derecha, la acción principal (siempre ahí). */
+.pie {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.pie > .paginador {
+  flex: 1 1 16rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.pie__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+/* «Hay cambios sin guardar»: una línea encima del pie, a la derecha, sobre «Guardar». */
+.pie__estado {
+  flex: none;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--petroleo);
+  text-align: right;
+}
+/* Formulario por pasos: una sola fila. En el último paso, «Guardar» ocupa el sitio de
+   «Siguiente» (abajo a la derecha), así el pie no cambia de alto ni la acción de sitio. */
+.pie--pasos {
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+.pie--pasos > .paginador {
+  flex: 1 1 0;
+}
+.pie--pasos > .pie__acciones {
+  flex: none;
+  flex-wrap: nowrap;
+}
+.pie--pasos > .pie__acciones:not(:has(> :not([hidden]))) {
+  display: none;
+}
+/* En el móvil, en la última pantalla no caben «Anterior», «3 de 3» y «Guardar» en una fila:
+   el texto se sigue leyendo pero no se ve (que es la última ya lo dice «Guardar»). */
+@media (max-width: 30rem) {
+  .pie--pasos:has(> .pie__acciones > :not([hidden])) .paginador__estado {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .pie--pasos > .pie__acciones .boton--mediano {
+    padding-inline: 0.9rem;
+  }
+}
+
+/* --- Partes de una pantalla ---
+ * Una pantalla con dos o tres bloques (una lista y un formulario, dos listas…). Si caben, se
+ * ven uno al lado del otro; si no (móvil), paginar.js enseña uno cada vez. Cada parte puede
+ * tener dentro su propia lista paginada: por eso las de lista reservan un alto mínimo. */
+.partes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 0.75rem 1.25rem;
+  align-content: start;
+}
+/* Filas del alto de su contenido; el sitio que sobra se reparte entre ellas. */
+.js .partes {
+  flex: 1 1 auto;
+  align-content: stretch;
+  min-height: 0;
+}
+.parte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+}
+.parte--caja {
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--menta);
+  border-radius: 1.25rem;
+}
+.js .parte--lista {
+  min-height: 15rem;
+}
+.parte > h2,
+.parte > legend {
+  margin: 0;
+  padding: 0;
+  font-family: var(--fuente-titulos);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--petroleo);
+}
+fieldset.parte {
+  min-inline-size: 0;
+}
+fieldset.parte:not(.parte--caja) {
+  padding: 0;
+  border: 0;
+}
+/* En el móvil las partes van sin caja: se ve una cada vez y así cabe más. */
+@media (max-width: 30rem) {
+  .parte--caja,
+  fieldset.parte--caja {
+    padding: 0;
+    border: 0;
+  }
+  fieldset.parte--caja > legend {
+    float: left; /* sin borde, el título va dentro, como un título normal */
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  .parte__pie > .paginador button {
+    padding-inline: 0.4rem;
+  }
+}
+
+/* Una lista paginada dentro de una parte que también se pagina: lo que no cabe no debe
+   contar al medir la de fuera. El relleno deja sitio al contorno del foco. */
+.parte > .encaja,
+.encaja--interior {
+  margin: -0.5rem;
+  padding: 0.5rem;
+  overflow: hidden;
+}
+/* Pie de una parte: su paginador y, a la derecha, su botón. */
+.parte__pie {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.parte__pie > .paginador {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.parte__pie button,
+.parte__pie .boton {
+  flex: none;
+  padding-inline: 0.75rem;
+}
+.parte__pie > .paginador button {
+  flex: 1 1 0;
+}
+.parte__pie > :not(.paginador) {
+  margin-left: auto;
+}
+.parte p {
+  margin: 0;
+}
+
+/* --- Plegable: lo que no hace falta ver siempre (buscar y filtrar) --- */
+.plegable {
+  flex: none;
+}
+.plegable > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--toque);
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+  cursor: pointer;
+}
+.plegable > summary::before {
+  content: "▸";
+}
+.plegable[open] > summary::before {
+  content: "▾";
+}
+.plegable > summary::-webkit-details-marker {
+  display: none;
+}
+.plegable > summary {
+  list-style: none;
+}
+/* En el móvil, un plegable abierto ocupa él solo la pantalla (o su parte): lo que viene
+   detrás se esconde hasta que se cierra o se envía. Así no hace falta desplazarse. */
+@media (max-width: 47.99rem) {
+  .js .plegable--solo[open] ~ * {
+    display: none;
+  }
+}
+/* Solo sin JavaScript (los enlaces de página de siempre, por ejemplo). */
+.js .sin-js {
+  display: none;
+}
+
+/* --- Línea de tiempo: tareas y horario en una sola fila o una sola columna ---
+ * Nunca partida en varias filas. En vertical en el móvil; en horizontal desde 48rem
+ * (tableta y ordenador). Lo que no cabe pasa a otra página con «Antes / Después». */
+.linea {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.linea > li {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  padding-left: 1.75rem;
+}
+/* La línea (una sola, de principio a fin) y el punto de cada tarea. */
+.linea::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0.5rem;
+  width: 0.25rem;
+  background: var(--petroleo);
+  border-radius: 0.125rem;
+}
+.linea > li::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 0.625rem);
+  left: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--blanco);
+  border: 0.25rem solid var(--petroleo);
+  border-radius: 50%;
+}
+/* La de ahora: punto relleno y más grande (además de la etiqueta «Ahora» de la tarjeta). */
+.linea > li.linea__ahora::after {
+  top: calc(50% - 0.875rem);
+  left: -0.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: var(--petroleo);
+}
+.linea > li > * {
+  flex: 1;
+  min-width: 0;
+}
+@media (min-width: 48rem) {
+  .linea {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .linea > li {
+    flex: 1 1 0;
+    min-width: 10.5rem;
+    max-width: 20rem;
+    padding: 1.9rem 0 0;
+  }
+  .linea::before {
+    top: 0.5rem;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    width: auto;
+    height: 0.25rem;
+  }
+  .linea > li::after {
+    top: 0;
+    left: calc(50% - 0.625rem);
+  }
+  .linea > li.linea__ahora::after {
+    top: -0.25rem;
+    left: calc(50% - 0.875rem);
+  }
+  .encaja > .linea {
+    justify-content: center;
+  }
+}
+
+/* --- Día de la semana: letra dentro de una forma con color (boceto B30) --- */
+.dia-forma {
+  --c: var(--dia-f);
+  --t: #1e2b2f;
+  --cp: polygon(50% 0, 100% 42%, 100% 100%, 0 100%, 0 42%);
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  font-family: var(--fuente-titulos);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--t);
+  background: #0b3c49;
+  clip-path: var(--cp);
+}
+.dia-forma::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: var(--c);
+  clip-path: var(--cp);
+}
+.dia-forma > span {
+  position: relative;
+}
+.dia-forma--1 {
+  --c: var(--dia-l);
+  --cp: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+.dia-forma--2 {
+  --c: var(--dia-m);
+  --cp: polygon(0 4%, 100% 4%, 80% 96%, 20% 96%);
+}
+.dia-forma--3 {
+  --c: var(--dia-x);
+  --t: #ffffff;
+  --cp: polygon(0 20%, 100% 20%, 100% 80%, 0 80%);
+}
+.dia-forma--4 {
+  --c: var(--dia-j);
+  --cp: circle(50% at 50% 50%);
+}
+.dia-forma--5 {
+  --c: var(--dia-v);
+  --t: #ffffff;
+  --cp: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+}
+.dia-forma--6 > span,
+.dia-forma--7 > span {
+  margin-top: 0.3rem;
 }
 
 /* --- Panel lateral de los adultos --- */
@@ -163,6 +836,10 @@ main:focus {
 }
 .js .lateral--abierto {
   display: block;
+}
+.js .lateral {
+  max-height: 100%;
+  overflow: auto;
 }
 .lateral__lista {
   display: flex;
@@ -236,6 +913,7 @@ main:focus {
   .saltar,
   .lateral,
   .cabecera__menu,
+  .paginador,
   .salir-est {
     display: none !important;
   }

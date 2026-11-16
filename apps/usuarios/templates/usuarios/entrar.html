@@ -4,11 +4,14 @@
 {% block titulo %}Entrar · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
-{% block contenido %}
 {# Boceto B12 · Entrar (adultos). HU-01-07. #}
-<div class="acceso">
-  <h1>Entrar</h1>
+{% block pantalla %}pantalla--estrecha{% endblock %}
+{% block volver %}{% url 'inicio' as atras %}{% include "_volver.html" with url=atras etiqueta="Volver a las clases" only %}{% endblock %}
+{% block h1 %}Entrar{% endblock %}
+{% block sub %}<span class="barra__sub">Tutores, profesionales, familias y administración</span>{% endblock %}
 
+{% block contenido %}
+<div class="acceso">
   {# novalidate: los campos vacíos los comprueba el servidor y el mensaje sale junto al campo, #}
   {# con el mismo aspecto en todos los navegadores y leído por el lector de pantalla. #}
   <form class="formulario" method="post" novalidate>
@@ -43,7 +46,6 @@
 
     <input type="hidden" name="next" value="{{ next }}">
     <button class="boton--principal" type="submit">Entrar</button>
-    <a class="boton boton--aux" href="{% url 'inicio' %}"><span aria-hidden="true">‹</span> Volver</a>
   </form>
 </div>
 {% endblock %}

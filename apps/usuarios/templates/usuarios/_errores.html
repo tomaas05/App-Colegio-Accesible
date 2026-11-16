@@ -1,16 +1,17 @@
-{# Resumen de errores al principio del formulario, con enlace a cada campo (WCAG 3.3.1). #}
+{# Resumen de errores al principio del formulario (WCAG 3.3.1). Cada campo enseña además su  #}
+{# propio error al lado, así que aquí basta su nombre con un enlace: el resumen es corto y    #}
+{# cabe en la pantalla (decisión 0005). Si el campo está en otra pantalla del formulario,    #}
+{# paginar.js la enseña al seguir el enlace.                                                 #}
 {# Las casillas y los botones de opción no tienen id_for_label: se enlaza a su lista (auto_id). #}
 {% if form.errors %}
 <div class="aviso-error" role="alert" tabindex="-1" data-enfocar>
   <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
   <div>
-    <p><strong>Revisa {% if form.errors|length == 1 %}este dato{% else %}estos datos{% endif %}:</strong></p>
-    <ul class="aviso-error__lista">
-      {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
-      {% for campo in form %}{% for error in campo.errors %}
-      <li><a href="#{{ campo.id_for_label|default:campo.auto_id }}">{{ campo.label }}</a>: {{ error }}</li>
-      {% endfor %}{% endfor %}
-    </ul>
+    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    {% with campos=form.errors|length %}{% if campos > 1 or not form.non_field_errors %}
+    <p><strong>Revisa {% if form.non_field_errors and campos == 2 or not form.non_field_errors and campos == 1 %}este dato{% else %}estos datos{% endif %}:</strong>
+      {% for campo in form %}{% if campo.errors %}<a href="#{{ campo.id_for_label|default:campo.auto_id }}">{{ campo.label }}</a><span class="visualmente-oculto"> ({{ campo.errors.0 }})</span>{% endif %}{% endfor %}</p>
+    {% endif %}{% endwith %}
   </div>
 </div>
 {% endif %}

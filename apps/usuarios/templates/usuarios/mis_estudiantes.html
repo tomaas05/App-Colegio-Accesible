@@ -4,96 +4,109 @@
 {% block titulo %}Mis estudiantes · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
+{# Boceto B26 · Elegir mis estudiantes. HU-01-08 (AGENDA-154), pruebas de aceptación 1, 2 y 4. #}
+{# Sin desplazamiento (decisión 0005): dos partes, «Los que atiendo» y «Del centro». Si caben, #}
+{# una al lado de la otra; si no (móvil), una cada vez. Cada lista pasa de página por su cuenta. #}
+{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
+{% block h1 %}Mis estudiantes{% endblock %}
+{% block sub %}<span class="barra__sub">Solo consultas la agenda de los que elijas</span>{% endblock %}
 
 {% block contenido %}
-<p class="volver"><a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Volver</a></p>
-{# Boceto B26 · Elegir mis estudiantes. HU-01-08 (AGENDA-154), pruebas de aceptación 1, 2 y 4. #}
-<div class="panel elegir">
-  <div>
-    <h1>Mis estudiantes</h1>
-    <p class="panel__rol">Solo podrás consultar la agenda de los estudiantes que elijas.</p>
-  </div>
+{% if messages %}
+<div class="avisos" role="status">
+  {% for mensaje in messages %}<p class="aviso-ok"><span aria-hidden="true">✓</span> {{ mensaje }}</p>{% endfor %}
+</div>
+{% endif %}
 
-  {% if messages %}
-  <div class="aviso-ok" role="status">
-    {% for mensaje in messages %}<p><span aria-hidden="true">✓</span> {{ mensaje }}</p>{% endfor %}
-  </div>
-  {% endif %}
+<div class="encaja">
+  <div class="partes" id="partes" data-paginar data-estado="Parte {n} de {total}">
+    <section class="parte parte--caja parte--lista" aria-labelledby="elegir-mios" data-titulo="Los que atiendo">
+      <h2 id="elegir-mios">Los que atiendo</h2>
+      <div class="encaja">
+        {% if mios %}
+        <ul class="elegir__mios" id="mios" data-paginar>
+          {% for estudiante in mios %}
+          <li>
+            <img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40">
+            <span class="elegir__nombre">{{ estudiante.usuario.get_full_name }} <small>{{ estudiante.clase.nombre }}</small></span>
+            <span class="elegir__botones">
+              {# HU-01-09: abrir su agenda en modo consulta. #}
+              <a class="boton boton--aux" href="{% url 'usuarios:agenda_estudiante' estudiante.codigo_estudiante %}">Ver agenda<span class="visualmente-oculto"> de {{ estudiante.usuario.get_full_name }}</span></a>
+              {# PA4: quitarlo de mi lista. #}
+              <form class="elegir__quitar" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="consulta" value="{{ consulta }}">
+                <button class="boton--aux" type="submit" name="quitar" value="{{ estudiante.codigo_estudiante }}" aria-label="Quitar a {{ estudiante.usuario.get_full_name }}">Quitar</button>
+              </form>
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>Todavía no has elegido a ningún estudiante. Márcalos en «Estudiantes del centro».</p>
+        {% endif %}
+      </div>
+      <div class="parte__pie">{% include "_paginador.html" with de="mios" que="Más estudiantes que atiendo" only %}</div>
+    </section>
 
-  <div class="elegir__cols">
-    <section class="elegir__tarjeta" aria-labelledby="elegir-todos">
+    <section class="parte parte--caja parte--lista" aria-labelledby="elegir-todos" data-titulo="Del centro">
       <h2 id="elegir-todos">Estudiantes del centro</h2>
+      {# Buscar: plegado. En el móvil, al abrirlo solo se ve el buscador; al buscar vuelve la lista. #}
+      <details class="plegable plegable--solo">
+        <summary>Buscar · {{ estudiantes|length }} en la lista{% if q or clase_id %} con este filtro{% endif %}</summary>
+        <form class="elegir__filtros" method="get" role="search" aria-label="Buscar estudiantes">
+          <div class="campo">
+            <label for="buscar">Nombre o apellidos</label>
+            <input id="buscar" type="search" name="q" value="{{ q }}">
+          </div>
+          <div class="campo">
+            <label for="clase">Clase</label>
+            <select id="clase" name="clase">
+              <option value="">Todas</option>
+              {% for clase in clases %}
+              <option value="{{ clase.pk }}"{% if clase.pk == clase_id %} selected{% endif %}>{{ clase.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="boton--aux" type="submit">Buscar</button>
+        </form>
+      </details>
 
-      <form class="elegir__filtros" method="get" role="search" aria-label="Buscar estudiantes">
-        <div class="campo">
-          <label for="buscar">Nombre o apellidos</label>
-          <input id="buscar" type="search" name="q" value="{{ q }}">
-        </div>
-        <div class="campo">
-          <label for="clase">Clase</label>
-          <select id="clase" name="clase">
-            <option value="">Todas</option>
-            {% for clase in clases %}
-            <option value="{{ clase.pk }}"{% if clase.pk == clase_id %} selected{% endif %}>{{ clase.nombre }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <button class="boton--aux" type="submit">Buscar</button>
-      </form>
-
-      <form method="post">
+      <form class="encaja" method="post">
         {% csrf_token %}
         <input type="hidden" name="consulta" value="{{ consulta }}">
         {% if estudiantes %}
-        <fieldset class="elegir__lista">
-          <legend>Marca los estudiantes que atiendes ({{ estudiantes|length }} en la lista)</legend>
-          <ul>
-            {% for estudiante in estudiantes %}
-            <li>
-              <input type="hidden" name="mostrados" value="{{ estudiante.codigo_estudiante }}">
-              {# PA1: nombre y avatar del estudiante, nunca fotos. El avatar es decorativo. #}
-              <label class="elegir__estudiante">
-                <input type="checkbox" name="elegidos" value="{{ estudiante.codigo_estudiante }}"{% if estudiante.codigo_estudiante in actuales %} checked{% endif %}>
-                <img src="{{ estudiante.avatar.url }}" alt="" width="56" height="56">
-                <span>
-                  <b>{{ estudiante.usuario.get_full_name }}</b>
-                  <small>{{ estudiante.clase.nombre }}</small>
-                </span>
-              </label>
-            </li>
-            {% endfor %}
-          </ul>
+        <fieldset class="elegir__lista encaja">
+          <legend>Marca los que atiendes</legend>
+          <div class="encaja encaja--interior">
+            <ul id="centro" data-paginar>
+              {% for estudiante in estudiantes %}
+              <li>
+                <input type="hidden" name="mostrados" value="{{ estudiante.codigo_estudiante }}">
+                {# PA1: nombre y avatar del estudiante, nunca fotos. El avatar es decorativo. #}
+                <label class="elegir__estudiante">
+                  <input type="checkbox" name="elegidos" value="{{ estudiante.codigo_estudiante }}"{% if estudiante.codigo_estudiante in actuales %} checked{% endif %}>
+                  <img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40">
+                  <span>
+                    <b>{{ estudiante.usuario.get_full_name }}</b>
+                    <small>{{ estudiante.clase.nombre }}</small>
+                  </span>
+                </label>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
         </fieldset>
-        <button class="boton boton--principal" type="submit">Guardar</button>
+        <div class="parte__pie">
+          {% include "_paginador.html" with de="centro" que="Más estudiantes del centro" only %}
+          <button class="boton boton--principal boton--mediano" type="submit">Guardar</button>
+        </div>
         {% else %}
         <p>No hay ningún estudiante con esa búsqueda.</p>
         {% endif %}
       </form>
     </section>
-
-    <section class="elegir__tarjeta" aria-labelledby="elegir-mios">
-      <h2 id="elegir-mios">Los que atiendo</h2>
-      {% if mios %}
-      <ul class="elegir__mios">
-        {% for estudiante in mios %}
-        <li>
-          <img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40">
-          <span class="elegir__nombre">{{ estudiante.usuario.get_full_name }} <small>{{ estudiante.clase.nombre }}</small></span>
-          {# HU-01-09: abrir su agenda en modo consulta. #}
-          <a class="boton boton--aux" href="{% url 'usuarios:agenda_estudiante' estudiante.codigo_estudiante %}" aria-label="Ver la agenda de {{ estudiante.usuario.get_full_name }}">Ver agenda</a>
-          {# PA4: quitarlo de mi lista. #}
-          <form class="elegir__quitar" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="consulta" value="{{ consulta }}">
-            <button class="boton--aux" type="submit" name="quitar" value="{{ estudiante.codigo_estudiante }}" aria-label="Quitar a {{ estudiante.usuario.get_full_name }}">Quitar</button>
-          </form>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p>Todavía no has elegido a ningún estudiante.</p>
-      {% endif %}
-    </section>
   </div>
 </div>
+{% include "_paginador.html" with de="partes" que="Partes de la pantalla" anterior="Los que atiendo" siguiente="Del centro" sin_estado=True only %}
 {% endblock %}

@@ -1,0 +1,18 @@
+{# Una categoría del perfil visual con sus opciones como tarjetas (boceto B52).            #}
+{# Recibe: clave (nombre de la categoría), titulo, campo (un campo de opciones del         #}
+{# formulario) y, si hace falta, ayuda (una frase que explica las opciones).               #}
+{# Con JavaScript solo se ve una categoría cada vez (static/js/perfil.js) y              #}
+{# las opciones que no caben pasan de página (su paginador está en el pie de editar.html,  #}
+{# fuera de la tarjeta); sin JavaScript se ven todas seguidas.                             #}
+<fieldset class="perfil-panel grupo-opciones encaja" data-panel="{{ clave }}">
+  <legend>{{ titulo }}</legend>
+  {% if ayuda %}<p class="grupo-opciones__ayuda">{{ ayuda }}</p>{% endif %}
+  <div class="encaja">
+    <div class="opciones-lista" id="opciones-{{ clave }}" data-paginar>
+      {% for radio in campo %}
+      {# Cada tipo de letra se enseña escrito con esa letra. #}
+      <label class="opcion-radio">{{ radio.tag }} <span{% if clave == "tipo_letra" %} class="opcion__fuente" data-fuente="{{ radio.data.value }}"{% endif %}>{{ radio.choice_label }}</span></label>
+      {% endfor %}
+    </div>
+  </div>
+</fieldset>

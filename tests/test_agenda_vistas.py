@@ -1,5 +1,6 @@
 """HU-02-01 a HU-02-04: pantallas de la agenda (apps/agenda/views.py)."""
 
+import re
 from datetime import datetime, time, timedelta
 
 import pytest
@@ -64,7 +65,7 @@ def test_agenda_del_dia(client, lucia, hora):
     respuesta = client.get(reverse("agenda:dia"))
     assert respuesta.status_code == 200
     html = respuesta.content.decode()
-    assert '<h1 id="titulo">Hoy, ' in html
+    assert '<h1 id="titulo">Tareas de hoy</h1>' in html
     assert html.index("Preparar la mochila") < html.index("Lavarse las manos")
     assert "Ahora" in html and 'aria-current="true"' in html
     assert 'alt="Lavarse las manos"' in html
@@ -77,11 +78,15 @@ def test_agenda_vacia_con_mensajes(client, lucia, hora):
     assert "Hoy no tienes tareas" in html
 
 
-def test_mensajes_sin_anterior_ni_siguiente(client, lucia, hora):
-    hora(7, 0)
-    assert "No hay tarea antes" in client.get(reverse("agenda:dia")).content.decode()
-    hora(23, 0)
-    assert "No hay más tareas hoy" in client.get(reverse("agenda:dia")).content.decode()
+def test_la_agenda_es_una_sola_linea_de_tiempo_que_empieza_por_la_de_ahora(client, lucia, hora):
+    """Revisión con la profesora: una sola línea (no partida en filas) y, si no cabe, por
+    pantallas con «Antes / Después», empezando por la tarea de ahora."""
+    hora(10, 35)
+    html = client.get(reverse("agenda:dia")).content.decode()
+    assert html.count('<ol class="linea"') == 1 and "data-paginar" in html
+    assert "Antes</button>" in html and "Después <span" in html
+    inicio = html.index("data-pag-inicio")
+    assert html.index("Preparar la mochila") < inicio < html.index("Lavarse las manos")
 
 
 def test_la_agenda_no_ofrece_modificar_ni_borrar(client, lucia, hora):
@@ -200,11 +205,15 @@ def test_atajo_de_desarrollo_solo_con_debug_y_la_variable(
     assert client.get(url).status_code == 200
 
 
-def test_el_titulo_sale_en_espanol_aunque_el_navegador_pida_ingles(client, lucia, hora):
-    hora(10, 0)
+def test_la_fecha_de_la_barra_sale_en_espanol_aunque_el_navegador_pida_ingles(client, lucia):
+    """La barra de título dice la fecha de hoy con nombres fijos en español ({% now %} usaba
+    el idioma del navegador: «Sunday, 15 de November»)."""
+    from apps.comun.templatetags.fechas import fecha_corta, fecha_larga
+
     html = client.get(reverse("agenda:dia"), headers={"accept-language": "en-US"}).content.decode()
-    titulo = html.split('<h1 id="titulo">')[1].split("</h1>")[0]
-    assert titulo == servicios.titulo_de_hoy(a_las(10, 0))
+    assert f'<span class="barra__fecha-larga">{fecha_larga()}</span>' in html
+    assert f'<span class="barra__fecha-corta">{fecha_corta()}</span>' in html
+    assert re.search(r"(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo), \d+ de [a-z]+", html)
 
 
 def test_aviso_de_la_siguiente_al_pie(client, lucia, hora):
@@ -213,7 +222,8 @@ def test_aviso_de_la_siguiente_al_pie(client, lucia, hora):
     hora(11, 52)
     html = client.get(reverse("agenda:dia")).content.decode()
     assert "Después, a las 12:00" in html and 'role="status"' in html
-    assert "Después, a las 12:00" in client.get(url_de(lucia, "Lavarse las manos")).content.decode()
+    # Revisión con la profesora: dentro de una tarea no sale nada de otras tareas.
+    assert "Después, a las" not in client.get(url_de(lucia, "Lavarse las manos")).content.decode()
 
 
 def test_el_aviso_solo_se_vuelve_a_pintar_si_cambia(client, lucia, hora):
@@ -228,12 +238,21 @@ def test_el_aviso_solo_se_vuelve_a_pintar_si_cambia(client, lucia, hora):
     assert client.get(url + f"?mostrado={regar}").status_code == 204
 
 
-def test_antes_y_despues_en_la_tarea(client, lucia, hora):
+def test_dentro_de_una_tarea_no_sale_ninguna_otra(client, lucia, hora):
+    """Revisión con la profesora: nada de «siguiente tarea: …» dentro de otra tarea."""
     hora(9, 5)
     html = client.get(url_de(lucia, "Preparar la mochila")).content.decode()
-    assert "No hay tarea antes" in html and "Lavarse las manos · 10:30" in html
-    html = client.get(url_de(lucia, "Poner la mesa")).content.decode()
-    assert "No hay más tareas hoy" in html and "Leer un cuento · Pendiente" in html
+    contenido = html.split('<main id="contenido"')[1]
+    for otra in ("Lavarse las manos", "Regar las plantas", "Leer un cuento", "Poner la mesa"):
+        assert otra not in contenido
+    assert '<h1 id="titulo">Preparar la mochila</h1>' in html
+
+
+def test_en_la_tarea_un_solo_paso_por_pantalla(client, lucia, hora):
+    """Revisión con la profesora: un paso por pantalla, el que toca."""
+    hora(9, 5)
+    html = client.get(url_de(lucia, "Preparar la mochila")).content.decode()
+    assert 'id="lista-pasos" role="list" data-paginar data-por-pagina="1"' in html
 
 
 def test_antes_de_la_hora_la_zona_del_boton_se_actualiza_sola(client, lucia, hora):

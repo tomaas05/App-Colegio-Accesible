@@ -1,24 +1,22 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block titulo %}Perfil visual · Mis estudiantes · Despega{% endblock %}
+{% block titulo %}Alumnos · Despega{% endblock %}
 {% block estilos %}
 <link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
 <link rel="stylesheet" href="{% static 'css/perfil.css' %}">
 {% endblock %}
 
+{# «Alumnos» (antes «Perfil visual»). Revisión con la profesora: el tutor ve aquí a sus    #}
+{# alumnos y, al pulsar uno, llega a su perfil visual. HU-04-01 y HU-01-04 (PA1).          #}
+{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
+{% block h1 %}Alumnos{% endblock %}
+{% block sub %}<span class="barra__sub">Pulsa uno para cambiar cómo ve su agenda</span>{% endblock %}
 
 {% block contenido %}
-<div class="perfil-pagina">
-  <div class="cab-acceso">
-    <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Panel</a>
-    <h1 id="titulo">Perfil visual · Mis estudiantes</h1>
-  </div>
-
-  <p class="perfil-intro">Elige un estudiante para configurar su tema, paleta de colores, tipo y tamaño de letra, tamaño de botones y lector de pantalla.</p>
-
+<div class="encaja">
   {% if estudiantes %}
-  <ul class="perfil-estudiantes" aria-labelledby="titulo">
+  <ul class="perfil-estudiantes" id="alumnos" aria-labelledby="titulo" data-paginar>
     {% for est in estudiantes %}
     <li>
       <a class="perfil-estudiante-card" href="{% url 'perfil:editar' est.codigo_estudiante %}">
@@ -32,7 +30,8 @@
     {% endfor %}
   </ul>
   {% else %}
-  <p>No tienes estudiantes asignados actualmente.</p>
+  <p class="aviso-vacio">Todavía no tienes ningún alumno vinculado. Pídeselo al administrador del centro.</p>
   {% endif %}
 </div>
+{% include "_paginador.html" with de="alumnos" que="Más alumnos" only %}
 {% endblock %}

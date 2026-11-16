@@ -106,12 +106,24 @@
   /* Formas */
   --radio-tarjeta: 1.5rem;
   --radio-boton: 999px;
+
+  /* Días de la semana: letra + forma + color, como en el boceto B30 (nunca solo el color).
+     Contraste de la letra sobre su color: L 9,1:1 · M 12,6:1 · X 5,6:1 · J 7,4:1 · V 5,9:1 */
+  --dia-l: #f4a3c6;
+  --dia-m: #f7dc4a;
+  --dia-x: #c62828;
+  --dia-j: #4cbf5c;
+  --dia-v: #2457d6;
+  --dia-f: #c9d1d4;
 }
 
-/* --- Personalización por perfil del estudiante (HU-04-01) --- */
+/* --- Personalización por perfil del estudiante (HU-04-01) ---
+ * Los atributos data-* van en <html> cuando ha entrado un estudiante y en la tarjeta de
+ * configuración del perfil visual, que se pinta con lo que se va eligiendo (sin vista previa
+ * aparte). Por eso los selectores no exigen <html>. */
 
 /* Paleta suave (tema claro) — contraste ≥ 5,1:1 */
-html[data-paleta="suave"] {
+[data-paleta="suave"] {
   --petroleo: #164652;
   --verde-oscuro: #216b67;
   --verde: #469e96;
@@ -123,7 +135,7 @@ html[data-paleta="suave"] {
 }
 
 /* Paleta de alto contraste (tema claro) — contraste AAA ≥ 8:1 */
-html[data-paleta="alto_contraste"] {
+[data-paleta="alto_contraste"] {
   --petroleo: #002233;
   --verde-oscuro: #003d52;
   --verde: #005570;
@@ -138,7 +150,7 @@ html[data-paleta="alto_contraste"] {
 }
 
 /* Tema oscuro (paleta estándar) — contraste ≥ 6,8:1 */
-html[data-tema="oscuro"] {
+[data-tema="oscuro"] {
   --petroleo: #b8ece3;
   --verde-oscuro: #88d9cb;
   --verde: #4db8ae;
@@ -154,7 +166,7 @@ html[data-tema="oscuro"] {
 }
 
 /* Tema oscuro + paleta suave — contraste ≥ 6,5:1 */
-html[data-tema="oscuro"][data-paleta="suave"] {
+[data-tema="oscuro"][data-paleta="suave"] {
   --petroleo: #c4efe7;
   --verde-oscuro: #96dfd2;
   --menta: #1f333a;
@@ -165,7 +177,7 @@ html[data-tema="oscuro"][data-paleta="suave"] {
 }
 
 /* Tema oscuro + alto contraste — contraste AAA ≥ 10:1 */
-html[data-tema="oscuro"][data-paleta="alto_contraste"] {
+[data-tema="oscuro"][data-paleta="alto_contraste"] {
   --petroleo: #ffffff;
   --verde-oscuro: #99f2e6;
   --verde: #66e0d0;
@@ -179,51 +191,51 @@ html[data-tema="oscuro"][data-paleta="alto_contraste"] {
   --focus: #99ccff;
 }
 /* Tipo de letra (RF4.1.2) */
-html[data-fuente="nunito"] {
+[data-fuente="nunito"] {
   --fuente-texto: "Nunito", Arial, sans-serif;
   --fuente-titulos: "Nunito", Arial, sans-serif;
 }
-html[data-fuente="open_sans"] {
+[data-fuente="open_sans"] {
   --fuente-texto: "Open Sans", Arial, sans-serif;
   --fuente-titulos: "Open Sans", Arial, sans-serif;
 }
-html[data-fuente="atkinson"] {
+[data-fuente="atkinson"] {
   --fuente-texto: "Atkinson Hyperlegible", Verdana, sans-serif;
   --fuente-titulos: "Atkinson Hyperlegible", Verdana, sans-serif;
 }
-html[data-fuente="lexend"] {
+[data-fuente="lexend"] {
   --fuente-texto: "Lexend", "Trebuchet MS", sans-serif;
   --fuente-titulos: "Lexend", "Trebuchet MS", sans-serif;
 }
 
 /* Tamaño de letra en px CSS (RF4.1.2: 16, 20, 24 o 32 px) */
-html[data-letra="16"] {
+[data-letra="16"] {
   --tamano-base: 1rem;
 }
-html[data-letra="20"] {
+[data-letra="20"] {
   --tamano-base: 1.25rem;
 }
-html[data-letra="24"] {
+[data-letra="24"] {
   --tamano-base: 1.5rem;
 }
-html[data-letra="32"] {
+[data-letra="32"] {
   --tamano-base: 2rem;
 }
 
 /* Tamaño de los botones (RF4.1.3: 48, 64 u 80 px) */
-html[data-botones="48"] {
+[data-botones="48"] {
   --toque: 3rem;
   --toque-grande: 3rem;
 }
-html[data-botones="64"] {
+[data-botones="64"] {
   --toque: 4rem;
   --toque-grande: 4rem;
 }
-html[data-botones="80"] {
+[data-botones="80"] {
   --toque: 5rem;
   --toque-grande: 5rem;
 }
-html[data-botones] :is(button, .boton) {
+[data-botones] :is(button, .boton) {
   line-height: 1.1;
   padding-block: 0.2rem;
 }

@@ -1,0 +1,17 @@
+{# «Anterior / Siguiente» en lugar de desplazarse (static/js/paginar.js). Recibe:         #}
+{#   de: id de la lista con data-paginar · que: nombre para el lector («Páginas de…»)     #}
+{#   anterior y siguiente: texto de los botones (por defecto «Anterior» y «Siguiente»)    #}
+{#   Para listas que el servidor trae por páginas (opcional): url_anterior, url_siguiente #}
+{#   (página anterior y siguiente del servidor), total (cuántos hay) y desde (cuántos van #}
+{#   antes de esta página).                                                               #}
+{#   final=True: formulario por pasos. En el último paso «Siguiente» deja su sitio al     #}
+{#   botón de guardar (que lleva data-solo-ultima) y el foco va al título de cada paso.   #}
+{#   sin_estado=True: el texto del centro no se ve (sí se lee); para cuando los botones   #}
+{#   ya dicen a dónde llevan («Los que atiendo» / «Del centro»).                          #}
+{# Empieza oculto: paginar.js lo enseña solo si hay más de una página. Sin JavaScript no  #}
+{# aparece y la lista se ve entera.                                                       #}
+<nav class="paginador{% if sin_estado %} paginador--sin-estado{% endif %}" data-paginador="{{ de }}" aria-label="{{ que|default:'Páginas' }}"{% if total %} data-total="{{ total }}" data-desde="{{ desde|default:0 }}" data-url-anterior="{{ url_anterior|default:'' }}" data-url-siguiente="{{ url_siguiente|default:'' }}"{% endif %} hidden>
+  <button class="boton--aux" type="button" data-pag="-1"><span aria-hidden="true">‹</span> {{ anterior|default:"Anterior" }}</button>
+  <p class="paginador__estado" data-pag-estado></p>
+  <button class="boton--aux" type="button" data-pag="1"{% if final %} data-no-ultima="{{ de }}"{% endif %}>{{ siguiente|default:"Siguiente" }} <span aria-hidden="true">›</span></button>
+</nav>

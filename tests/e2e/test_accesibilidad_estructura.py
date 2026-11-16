@@ -150,7 +150,7 @@ def test_recorrido_con_teclado_en_ordenador(live_server, page, client, datos):
         "Inicio",
         "Crear una tarea",
         "Tareas creadas",
-        "Perfil visual",
+        "Alumnos",
         "Salir",
     ]
     # El primer Tab después de «Salir» ya está en el contenido.
@@ -196,7 +196,9 @@ def test_el_estudiante_tiene_salir_y_no_tiene_panel(
         page, live_server, client, "est-a01", nombre, ruta=reverse("agenda:dia"), letra_32=letra_32
     )
     assert page.locator("#lateral").count() == 0
-    assert page.locator("header").count() == 0  # sin barra, como en los bocetos
+    # Sin la barra del adulto, pero con su barra de título (revisión con la profesora).
+    assert page.locator("header.cabecera").count() == 0
+    assert page.locator("header.barra").count() == 1
     salir = page.get_by_role("button", name="Salir")
     assert salir.is_visible()
     caja = salir.bounding_box()

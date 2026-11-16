@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from apps.agenda import servicios
 from apps.perfil.models import (
+    CreacionTareas,
     Paleta,
     Perfil,
     TamanoBotones,
@@ -133,14 +134,14 @@ def _extraer_bloque(css, selector):
     "selectores",
     [
         [":root"],
-        [":root", 'html[data-paleta="suave"]'],
-        [":root", 'html[data-paleta="alto_contraste"]'],
-        [":root", 'html[data-tema="oscuro"]'],
-        [":root", 'html[data-tema="oscuro"]', 'html[data-tema="oscuro"][data-paleta="suave"]'],
+        [":root", '[data-paleta="suave"]'],
+        [":root", '[data-paleta="alto_contraste"]'],
+        [":root", '[data-tema="oscuro"]'],
+        [":root", '[data-tema="oscuro"]', '[data-tema="oscuro"][data-paleta="suave"]'],
         [
             ":root",
-            'html[data-tema="oscuro"]',
-            'html[data-tema="oscuro"][data-paleta="alto_contraste"]',
+            '[data-tema="oscuro"]',
+            '[data-tema="oscuro"][data-paleta="alto_contraste"]',
         ],
     ],
 )
@@ -241,3 +242,37 @@ def test_un_tutor_no_puede_editar_el_perfil_de_un_estudiante_de_otro_tutor(clien
     client.force_login(Usuario.objects.get(username="tutor"))
     assert client.get(url_editar("B01")).status_code == 404
     assert client.post(url_editar("B01"), datos_form()).status_code == 404
+
+
+# --- Revisión con la profesora: el tutor decide si el estudiante crea tareas y cómo ---
+
+
+def test_el_tutor_elige_como_crea_tareas_cada_estudiante(client, datos):
+    client.force_login(Usuario.objects.get(username="tutor"))
+    html = client.get(url_editar("A01")).content.decode()
+    assert 'data-abrir="creacion_tareas"' in html and "No crea tareas" in html
+
+    client.post(url_editar("A01"), datos_form(creacion_tareas=CreacionTareas.COMPLETA))
+    assert Perfil.objects.get(estudiante__codigo_estudiante="A01").creacion_tareas == "completa"
+    # Solo a ese estudiante.
+    assert Perfil.objects.get(estudiante__codigo_estudiante="A02").creacion_tareas == "ninguna"
+
+
+def test_si_no_llega_la_creacion_de_tareas_se_queda_como_estaba(client, datos):
+    Perfil.objects.filter(estudiante__codigo_estudiante="A01").update(
+        creacion_tareas=CreacionTareas.ASISTENTE
+    )
+    client.force_login(Usuario.objects.get(username="tutor"))
+    client.post(url_editar("A01"), datos_form())
+    assert Perfil.objects.get(estudiante__codigo_estudiante="A01").creacion_tareas == "asistente"
+
+
+def test_cada_tipo_de_temporizador_lleva_un_dibujo_de_como_se_ve(client, datos):
+    """Revisión de la rama correcciones-profesora: el temporizador no tenía vista previa.
+    El dibujo es un adorno (aria-hidden) y no cambia el nombre de la opción."""
+    client.force_login(Usuario.objects.get(username="tutor"))
+    html = client.get(url_editar()).content.decode()
+    for tipo in ("lineal", "radial", "numerico"):
+        assert f'class="muestra-temp muestra-temp--{tipo}" aria-hidden="true"' in html
+    # La muestra numérica se escribe con CSS: en el HTML no hay una hora que leer.
+    assert "18:15" not in html

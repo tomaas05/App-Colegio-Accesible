@@ -1,6 +1,8 @@
 """Pantallas de configuración del perfil visual del estudiante (Jorge): HU-04-01.
 
 Boceto: docs/iteracion-1/bocetos/despega_mockup_v3.html, pantalla B52 (Tutor · Perfil visual).
+Revisión con la profesora (decisión 0005): el tutor entra por «Alumnos», elige uno y configura
+su perfil por categorías, en tarjetas y sin desplazarse; nada se guarda hasta pulsar «Guardar».
 """
 
 from functools import wraps
@@ -9,6 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.usuarios.models import Estudiante, Rol
@@ -41,7 +44,7 @@ def _mis_estudiantes(tutor):
 @tutor_requerido
 @require_GET
 def elegir_estudiante(request):
-    """Lista de estudiantes del tutor para elegir cuál personalizar."""
+    """«Alumnos»: los estudiantes del tutor; al pulsar uno se abre su perfil visual."""
     estudiantes = _mis_estudiantes(request.user)
     return render(
         request,
@@ -68,6 +71,13 @@ def editar_perfil(request, codigo):
                 request,
                 f"Perfil visual de {estudiante.usuario.first_name} guardado correctamente.",
             )
+            # «Guardar y salir» del aviso de cambios sin guardar: sigue a donde iba el tutor,
+            # solo si es una dirección de esta misma web.
+            siguiente = request.POST.get("siguiente", "")
+            if siguiente and url_has_allowed_host_and_scheme(
+                siguiente, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+            ):
+                return redirect(siguiente)
             return redirect("perfil:editar", codigo=estudiante.codigo_estudiante)
     else:
         form = PerfilVisualForm(instance=perfil)

@@ -4,11 +4,15 @@
 {% block titulo %}¿Has terminado? · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
 
-{% block contenido %}
 {# B08 en una página: solo se usa si el navegador no abre el <dialog> de tarea.html. #}
-<div class="agenda confirmar confirmar--pagina">
+{% block pantalla %}pantalla--estrecha agenda{% endblock %}
+{% block volver %}{% url 'agenda:detalle' t.asignacion.pk as atras %}{% include "_volver.html" with url=atras texto="Tarea" etiqueta="Volver a la tarea" only %}{% endblock %}
+{% block h1 %}¿Has terminado?{% endblock %}
+
+{% block contenido %}
+<div class="confirmar confirmar--pagina encaja encaja--centro encaja--fija">
   <img src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
-  <h1>¿Has terminado?</h1>
+  <p class="confirmar__nombre">{{ t.tarea.nombre }}</p>
   <div class="fila-botones">
     <form method="post" action="{% url 'agenda:terminar' t.asignacion.pk %}">
       {% csrf_token %}

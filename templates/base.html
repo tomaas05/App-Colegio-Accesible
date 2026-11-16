@@ -1,6 +1,7 @@
 {% load static %}<!DOCTYPE html>
-{# Estructura común (decisión 0003). Como en los bocetos: los adultos tienen barra con el  #}
-{# logotipo y panel lateral; las pantallas de entrada y las del estudiante van sin barra.  #}
+{# Estructura común (decisión 0003 y decisión 0005). Los adultos tienen barra con el       #}
+{# logotipo y panel lateral. Todas las pantallas tienen la misma barra de título (dónde    #}
+{# estoy, fecha de hoy y, si soy estudiante, mi nombre) y caben sin desplazarse.           #}
 <html lang="es"{% if perfil_activo %} data-tema="{{ perfil_activo.tema }}" data-paleta="{{ perfil_activo.paleta }}" data-fuente="{{ perfil_activo.tipo_letra }}" data-letra="{{ perfil_activo.tamano_letra }}" data-botones="{{ perfil_activo.tamano_botones }}"{% endif %}>
   <head>
   <meta charset="utf-8">
@@ -17,6 +18,8 @@
   <script src="{% static 'js/base.js' %}"></script>
   {# HTMX servido desde nuestro servidor: ninguna petición a terceros (RNF1.1.2) #}
   <script src="{% static 'vendor/htmx/htmx.min.js' %}" defer></script>
+  {# Paginar en lugar de desplazarse: lo usan casi todas las pantallas (decisión 0005). #}
+  <script src="{% static 'js/paginar.js' %}" defer></script>
 </head>
 {# hx-headers envía el token CSRF en todas las peticiones HTMX #}
 <body{% if nav_principal %} class="con-lateral"{% endif %} hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
@@ -27,7 +30,20 @@
   <div class="marco">
     {% if nav_principal %}{% include "_aside.html" %}{% endif %}
     <main id="contenido" tabindex="-1">
-      {% block contenido %}{% endblock %}
+      <div class="pantalla {% block pantalla %}{% endblock %}">
+        {# Barra de título: la misma en todas las pantallas. Cada plantilla rellena solo #}
+        {# «volver» (con _volver.html), «h1», «sub» y «acciones».                        #}
+        <header class="barra">
+          {% block volver %}{% endblock %}
+          <div class="barra__titulo">
+            <h1 id="titulo">{% block h1 %}Despega{% endblock %}</h1>
+            {% block sub %}{% endblock %}
+          </div>
+          {% block acciones %}{% endblock %}
+          {% include "_barra_datos.html" %}
+        </header>
+        {% block contenido %}{% endblock %}
+      </div>
     </main>
   </div>
 

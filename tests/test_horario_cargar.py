@@ -94,7 +94,7 @@ def test_pa1_sus_estudiantes_ven_el_horario_de_su_clase(client, ptval1):
     html = respuesta.content.decode()
     for c in HorarioClase.objects.filter(clase=ptval1, dia_semana=1):
         assert c.asignatura.nombre in html
-    assert "09:00 – 10:00" in html
+    assert "De 09:00 a 10:00" in html
 
 
 def test_pa1_lo_que_pone_el_administrador_lo_ve_el_estudiante(client, admin, ptval1):
@@ -130,6 +130,28 @@ def test_pa1_el_estudiante_tiene_un_enlace_a_su_horario_en_la_agenda(client, dat
 def test_pa1_un_dia_que_no_es_lectivo_ensena_otro(client, datos):
     client.force_login(Estudiante.objects.get(codigo_estudiante="A01").usuario)
     assert client.get(reverse("horario:mi_horario"), {"dia": 7}).status_code == 200
+
+
+def test_mi_horario_marca_el_dia_de_hoy_y_no_repite_el_dia_elegido(client, datos, monkeypatch):
+    """Revisión de la rama correcciones-profesora: junto a los botones de los días salía otra
+    vez la forma y el nombre del día elegido. Ahora «hoy» va en el botón de su día."""
+    miercoles = date(2026, 11, 18)
+    monkeypatch.setattr("apps.horario.views.timezone.localdate", lambda: miercoles)
+    client.force_login(Estudiante.objects.get(codigo_estudiante="A01").usuario)
+
+    html = client.get(reverse("horario:mi_horario"), {"dia": 1}).content.decode()
+    # «hoy» está una sola vez y en el botón del miércoles, aunque se mire el lunes.
+    assert html.count('class="mi-horario__dia-hoy"') == 1
+    boton_hoy = html.split('class="mi-horario__dia-hoy"')[0].rsplit("<li>", 1)[1]
+    assert 'href="?dia=3"' in boton_hoy and "aria-current" not in boton_hoy
+    # El título del día elegido ya no repite la forma con la letra.
+    titulo = html.split('id="dia-titulo">')[1].split("</h2>")[0]
+    assert titulo.strip() == "Lunes" and "dia-forma" not in titulo
+
+    # Mirando el día de hoy, el título lo dice (es lo que se ve en el móvil).
+    html = client.get(reverse("horario:mi_horario")).content.decode()
+    titulo = html.split('id="dia-titulo">')[1].split("</h2>")[0]
+    assert "Miércoles" in titulo and "Hoy" in titulo
 
 
 # --- PA2: las franjas son las mismas para todo el centro y todos los días ---
@@ -214,7 +236,7 @@ def test_pa4_el_estudiante_tambien_ve_imagen_y_nombre(client, ptval1):
     html = client.get(reverse("horario:mi_horario"), {"dia": 2}).content.decode()
     for c in HorarioClase.objects.filter(clase=ptval1, dia_semana=2).select_related("asignatura"):
         assert c.asignatura.imagen.url in html
-        assert f"<b>{c.asignatura.nombre}</b>" in html
+        assert f'<b class="tarjeta__nombre">{c.asignatura.nombre}</b>' in html
 
 
 # --- PA5: fuera de las franjas del horario, el familiar puede crear tareas para casa ---

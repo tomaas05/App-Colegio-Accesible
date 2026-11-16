@@ -10,3 +10,4 @@ Se escribe una cuando la decisión afecta a más de un objetivo o es difícil de
 | 0002 | [Entrada, sesión y bloqueo](0002-entrada-y-sesion.md) | Aceptada |
 | 0003 | [Estructura común y navegación](0003-estructura-y-navegacion.md) | Propuesta |
 | 0004 | [Pictogramas de ARASAAC](0004-pictogramas-arasaac.md) | Propuesta (sin probar contra ARASAAC real) |
+| 0005 | [Pantallas sin desplazamiento y revisión de la profesora](0005-sin-desplazamiento-y-revision-profesora.md) | Propuesta |

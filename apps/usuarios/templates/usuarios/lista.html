@@ -4,20 +4,24 @@
 {% block titulo %}Usuarios · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
+{# Boceto B20 · Usuarios. HU-01-01. Solo el administrador. Sin desplazamiento: se ven las   #}
+{# cuentas que caben y el resto con «Anterior / Siguiente» (decisión 0005). En el móvil,    #}
+{# donde solo cabían dos, la lista se desplaza: los adultos sí pueden; los estudiantes, no. #}
+{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
+{% block h1 %}Usuarios{% endblock %}
+{% block acciones %}
+<div class="barra__acciones">
+  <a class="boton boton--aux" href="{% url 'usuarios:cargar' %}">Cargar lista<span class="visualmente-oculto"> de estudiantes</span></a>
+  <a class="boton boton--principal boton--mediano" href="{% url 'usuarios:crear' %}"><span aria-hidden="true">+</span> Crear cuenta</a>
+</div>
+{% endblock %}
+
 {% block contenido %}
-{# Boceto B20 · Usuarios. HU-01-01. Solo el administrador. #}
-<div class="admin">
-  <div class="admin__cab">
-    <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Panel</a>
-    <h1>Usuarios</h1>
-    <div class="admin__acciones">
-      <a class="boton boton--aux" href="{% url 'usuarios:cargar' %}">Cargar lista de estudiantes</a>
-      <a class="boton boton--principal boton--mediano" href="{% url 'usuarios:crear' %}"><span aria-hidden="true">+</span> Crear cuenta</a>
-    </div>
-  </div>
+{% include "usuarios/_mensajes.html" %}
 
-  {% include "usuarios/_mensajes.html" %}
-
+{# Buscar y filtrar: plegado; con filtros puestos, base.js lo abre en pantallas anchas. #}
+<details class="plegable plegable--solo"{% if filtros_url %} data-abrir-ancho{% endif %}>
+  <summary>Buscar y filtrar · <span id="cuantas">{{ pagina.paginator.count }} cuenta{{ pagina.paginator.count|pluralize }}{% if filtros_url %} con estos filtros{% endif %}</span></summary>
   <form class="admin__filtros" method="get" role="search" aria-label="Buscar y filtrar cuentas">
     <div class="campo">
       <label for="filtro-q">Buscar</label>
@@ -42,49 +46,58 @@
       {% if filtros_url %}<a class="boton boton--aux" href="{% url 'usuarios:lista' %}">Quitar filtros</a>{% endif %}
     </div>
   </form>
+</details>
 
-  <p class="admin__cuantas" id="cuantas">{{ pagina.paginator.count }} cuenta{{ pagina.paginator.count|pluralize }}</p>
-  {% if pagina.object_list %}
-  {# La tabla puede ser más ancha que el móvil: se desplaza dentro de su caja, no la página. #}
-  <div class="tabla-caja" tabindex="0" role="region" aria-labelledby="cuantas">
-    <table class="tabla">
-      <thead>
-        <tr><th scope="col">Persona</th><th scope="col">Rol</th><th scope="col">Clase</th><th scope="col">Vínculos</th><th scope="col">Estado</th></tr>
-      </thead>
-      <tbody>
-        {% for cuenta in pagina %}
-        <tr>
-          <th scope="row">
-            {{ cuenta.get_full_name }}
-            <span class="tabla__sub">{% if cuenta.es_estudiante %}Código {{ cuenta.estudiante.codigo_estudiante }}{% else %}{{ cuenta.username }}{% endif %}</span>
-          </th>
-          <td>{{ cuenta.get_rol_display }}</td>
-          <td>{% if cuenta.es_estudiante %}{{ cuenta.estudiante.clase.nombre }}{% else %}—{% endif %}</td>
-          <td>
-            {% if cuenta.es_estudiante %}
-            {{ cuenta.estudiante.tutor.get_full_name|default:"Sin tutor" }} · {{ cuenta.estudiante.familiar.get_full_name|default:"Sin familiar" }}
-            <a class="tabla__enlace" href="{% url 'usuarios:vinculos' %}?estudiante={{ cuenta.estudiante.codigo_estudiante|urlencode }}">Cambiar<span class="visualmente-oculto"> los vínculos de {{ cuenta.get_full_name }}</span></a>
-            {% elif cuenta.rol == "tutor" %}{{ cuenta.n_tutorizados }} estudiante{{ cuenta.n_tutorizados|pluralize }} a su cargo
-            {% elif cuenta.rol == "familiar" %}Familiar de {{ cuenta.n_familiares }} estudiante{{ cuenta.n_familiares|pluralize }}
-            {% elif cuenta.rol == "profesional" %}Atiende a {{ cuenta.n_atendidos }} estudiante{{ cuenta.n_atendidos|pluralize }}
-            {% elif cuenta.rol == "administrador" %}Toda la administración
-            {% else %}—{% endif %}
-          </td>
-          <td>{% if cuenta.is_active %}Activa{% else %}<strong>Desactivada</strong>{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% if pagina.has_other_pages %}
-  <nav class="admin__paginas" aria-label="Páginas">
-    {% if pagina.has_previous %}<a class="boton boton--aux" href="?{% if filtros_url %}{{ filtros_url }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}"><span aria-hidden="true">‹</span> Anterior</a>{% endif %}
-    <span>Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
-    {% if pagina.has_next %}<a class="boton boton--aux" href="?{% if filtros_url %}{{ filtros_url }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">Siguiente <span aria-hidden="true">›</span></a>{% endif %}
-  </nav>
-  {% endif %}
-  {% else %}
-  <p>No hay cuentas con esos filtros.</p>
-  {% endif %}
+{% if pagina.object_list %}
+{# En el móvil cada fila se pinta como una tarjeta (usuarios.css); los role mantienen la tabla #}
+{# para el lector de pantalla aunque cambie el display.                                        #}
+<div class="tabla-caja encaja">
+  <table class="tabla tabla--tarjetas" role="table" aria-labelledby="cuantas">
+    <thead role="rowgroup">
+      <tr role="row"><th role="columnheader" scope="col">Persona</th><th role="columnheader" scope="col">Rol</th><th role="columnheader" scope="col">Clase</th><th role="columnheader" scope="col">Vínculos</th><th role="columnheader" scope="col">Estado</th></tr>
+    </thead>
+    <tbody role="rowgroup" id="cuentas" data-paginar data-pag-desplaza="(max-width: 47.99rem)" data-estado="{desde} a {hasta} de {de}">
+      {% for cuenta in pagina %}
+      <tr role="row">
+        <th role="rowheader" scope="row">
+          {{ cuenta.get_full_name }}
+          <span class="tabla__sub">{% if cuenta.es_estudiante %}Código {{ cuenta.estudiante.codigo_estudiante }}{% else %}{{ cuenta.username }}{% endif %}</span>
+        </th>
+        <td role="cell" data-columna="Rol">{{ cuenta.get_rol_display }}</td>
+        <td role="cell" data-columna="Clase"{% if not cuenta.es_estudiante %} class="tabla__vacia"{% endif %}>{% if cuenta.es_estudiante %}{{ cuenta.estudiante.clase.nombre }}{% else %}—{% endif %}</td>
+        <td role="cell" data-columna="Vínculos">
+          {% if cuenta.es_estudiante %}
+          {{ cuenta.estudiante.tutor.get_full_name|default:"Sin tutor" }} · {{ cuenta.estudiante.familiar.get_full_name|default:"Sin familiar" }}
+          <a class="tabla__enlace" href="{% url 'usuarios:vinculos' %}?estudiante={{ cuenta.estudiante.codigo_estudiante|urlencode }}">Cambiar<span class="visualmente-oculto"> los vínculos de {{ cuenta.get_full_name }}</span></a>
+          {% elif cuenta.rol == "tutor" %}{{ cuenta.n_tutorizados }} estudiante{{ cuenta.n_tutorizados|pluralize }} a su cargo
+          {% elif cuenta.rol == "familiar" %}Familiar de {{ cuenta.n_familiares }} estudiante{{ cuenta.n_familiares|pluralize }}
+          {% elif cuenta.rol == "profesional" %}Atiende a {{ cuenta.n_atendidos }} estudiante{{ cuenta.n_atendidos|pluralize }}
+          {% elif cuenta.rol == "administrador" %}Toda la administración
+          {% else %}—{% endif %}
+        </td>
+        <td role="cell" data-columna="Estado">{% if cuenta.is_active %}Activa{% else %}<strong>Desactivada</strong>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
+{# Con JavaScript, un solo paginador: pasa por las cuentas que caben y, al llegar al final, #}
+{# pide al servidor las siguientes. Sin él, los enlaces de página de siempre.               #}
+<nav class="paginador" data-paginador="cuentas" aria-label="Más cuentas" data-total="{{ pagina.paginator.count }}" data-desde="{{ pagina.start_index|add:'-1' }}" data-url-anterior="{% if pagina.has_previous %}?{% if filtros_url %}{{ filtros_url }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}#fin{% endif %}" data-url-siguiente="{% if pagina.has_next %}?{% if filtros_url %}{{ filtros_url }}&amp;{% endif %}pagina={{ pagina.next_page_number }}{% endif %}" hidden>
+  <button class="boton--aux" type="button" data-pag="-1"><span aria-hidden="true">‹</span> Anterior</button>
+  <p class="paginador__estado" data-pag-estado></p>
+  <button class="boton--aux" type="button" data-pag="1">Siguiente <span aria-hidden="true">›</span></button>
+</nav>
+{% if pagina.has_other_pages %}
+<nav class="admin__paginas sin-js" aria-label="Páginas">
+  {% if pagina.has_previous %}<a class="boton boton--aux" href="?{% if filtros_url %}{{ filtros_url }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}"><span aria-hidden="true">‹</span> Anterior</a>{% endif %}
+  <span>Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+  {% if pagina.has_next %}<a class="boton boton--aux" href="?{% if filtros_url %}{{ filtros_url }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">Siguiente <span aria-hidden="true">›</span></a>{% endif %}
+</nav>
+{% endif %}
+{% else %}
+<p class="aviso-vacio">No hay cuentas con esos filtros.</p>
+{% endif %}
 {% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

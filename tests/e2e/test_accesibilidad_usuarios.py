@@ -11,6 +11,7 @@ from axe_playwright_python.sync_playwright import Axe
 from django.urls import reverse
 
 from apps.usuarios.models import Usuario
+from tests.e2e.ayudas import ir_a
 
 pytestmark = pytest.mark.e2e
 
@@ -84,12 +85,11 @@ def tamano(nombre):
 
 @pytest.mark.parametrize("nombre", RESOLUCIONES)
 def test_portada_clases_y_avatares(live_server, page, datos, nombre):
-    """B01 · ¿Quién eres?, B02 · ¿Cuál es tu clase? y B03 · avatares de PTVAL 1."""
+    """B01 + B02 · ¿Cuál es tu clase? (con «Soy un adulto» en pequeño) y B03 · avatares."""
     page.set_viewport_size(tamano(nombre))
     page.goto(live_server.url + reverse("inicio"))
     revisar(page, nombre)
-    page.click("text=Estudiante")
-    revisar(page, nombre)
+    assert page.get_by_role("link", name="Soy un adulto").is_visible()
     page.click("text=PTVAL 1")
     assert page.locator(".loseta__nombre", has_text="Lucía").is_visible()
     revisar(page, nombre)
@@ -160,14 +160,17 @@ def test_crear_cuenta_con_errores_y_por_rol(live_server, page, client, datos, no
     assert page.locator("[role=alert]").is_visible()
     revisar(page, nombre)
 
+    # El formulario va por pantallas (decisión 0005): con errores empieza por el resumen.
+    ir_a(page, "#id_rol")
     page.select_option("#id_rol", "estudiante")
-    assert page.locator('[data-solo="estudiante"]').is_visible()
-    assert not page.locator('[data-solo="adulto"]').is_visible()
+    ir_a(page, '[data-solo="estudiante"]')
+    assert page.locator('[data-solo="adulto"]:visible').count() == 0
     revisar(page, nombre)
 
+    ir_a(page, "#id_rol")
     page.select_option("#id_rol", "tutor")
-    assert page.locator('[data-solo="adulto"]').is_visible()
-    assert not page.locator('[data-solo="estudiante"]').is_visible()
+    ir_a(page, '[data-solo="adulto"]')
+    assert page.locator('[data-solo="estudiante"]:visible').count() == 0
     revisar(page, nombre)
 
 
@@ -177,10 +180,13 @@ def test_crear_un_estudiante_desde_el_navegador(live_server, page, client, datos
     page.goto(live_server.url + reverse("usuarios:crear"))
     page.select_option("#id_rol", "estudiante")
     page.fill("#id_nombre", "Noa")
+    ir_a(page, "#id_clase")
     page.select_option("#id_clase", label="PTVAL 1 (2026-2027)")
+    ir_a(page, "label.loseta--marcar")
     for palabra in ("luna", "pez", "casa"):
         page.locator("label.loseta--marcar", has_text=palabra).click()
-    page.click("main form button[type=submit]")
+    ir_a(page, "main form button[type=submit]:not([hidden])")
+    page.click("main form button[type=submit]:not([hidden])")
     page.wait_for_url("**/usuarios/?clase=*")
     assert "Cuenta creada: Noa" in page.content()
 
@@ -197,6 +203,7 @@ def test_cargar_lista_con_resultado(live_server, page, client, datos, nombre, tm
     page.set_viewport_size(tamano(nombre))
     page.goto(live_server.url + reverse("usuarios:cargar"))
     revisar(page, nombre)
+    ir_a(page, "#id_clase")
     page.select_option("#id_clase", label="PTVAL 1 (2026-2027)")
     page.set_input_files("#id_archivo", str(archivo))
     page.click("main form button[type=submit]")
@@ -214,6 +221,9 @@ def test_horario_escolar_del_administrador(live_server, page, client, datos, nom
     page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
     page.goto(live_server.url + reverse("horario:cargar"))
     revisar(page, nombre)
+    # En el móvil «Poner una asignatura» está plegado: se abre (y ocupa el sitio de la tabla).
+    if not page.locator("#asignatura").is_visible():
+        page.click(".horario__poner summary")
     page.select_option("#asignatura", index=1)
     page.click(".horario__form button[type=submit]")
     assert page.locator("[role=alert]").is_visible()
@@ -249,6 +259,8 @@ def test_vinculos_con_el_aviso_de_un_segundo_familiar(live_server, page, client,
     assert "de Ana Martín Ruiz a Pedro Gómez Sanz" in aviso.inner_text()
     revisar(page, nombre)
 
+    # En el móvil, con el aviso del tutor, «Familiar» pasa a la pantalla siguiente.
+    ir_a(page, "#id_nuevo_familiar")
     page.select_option("#id_nuevo_familiar", label="Javier Ortega Ramos")
     page.click("button[value=anadir]")
     assert page.locator("[role=alert]").is_visible()
@@ -267,19 +279,23 @@ def test_vinculos_buscar_filtra_la_lista_sin_recargar(live_server, page, client,
     assert page.locator("#vinculos-est option").first.inner_text() == "Ningún estudiante coincide"
     page.fill("#vinculos-q", "lucia")  # sin tilde también la encuentra
     page.click("text=Ver sus vínculos")
-    assert page.locator("h2", has_text="Lucía Fernández").is_visible()
+    assert page.locator(".barra__persona", has_text="Lucía Fernández").is_visible()
 
 
 def test_vinculos_cambiar_familiar_y_guardar(live_server, page, client, datos):
     """El recorrido completo: quitar a Carmen, añadir a Javier y guardar."""
     como_admin(page, live_server, client)
     page.goto(live_server.url + reverse("usuarios:vinculos") + "?estudiante=A01")
+    ir_a(page, "button[value=quitar]")
     page.click("button[value=quitar]")
     assert page.locator("text=Hay cambios sin guardar").is_visible()
+    ir_a(page, "#id_nuevo_familiar")
     page.select_option("#id_nuevo_familiar", label="Javier Ortega Ramos")
     page.click("button[value=anadir]")
+    ir_a(page, "button[value=guardar]")
     page.click("button[value=guardar]")
     assert "Vínculos de Lucía Fernández guardados." in page.content()
+    ir_a(page, ".vinculos__persona")
     assert page.locator(".vinculos__persona", has_text="Javier Ortega Ramos").is_visible()
 
 
@@ -293,6 +309,7 @@ def test_mis_estudiantes(live_server, page, client, datos, nombre):
     page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
     page.goto(live_server.url + reverse("usuarios:mis_estudiantes"))
     revisar(page, nombre)
+    ir_a(page, "input[name=elegidos][value=A02]")
     page.check("input[name=elegidos][value=A02]")
     page.click("text=Guardar")
     assert page.locator("[role=status]").is_visible()

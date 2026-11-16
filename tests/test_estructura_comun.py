@@ -35,14 +35,14 @@ def lateral(html):
 # --- Logotipo ---------------------------------------------------------------------
 
 
-def test_la_portada_ensena_el_logotipo_junto_al_titulo_y_no_tiene_barra(client, db):
-    """Boceto B01: sin barra superior; el logotipo va al lado de «¿Quién eres?»."""
+def test_la_portada_ensena_el_logotipo_junto_al_titulo_en_su_barra(client, db):
+    """B01 + B02: sin barra del adulto ni panel; el logotipo va en la barra de título, junto
+    a «¿Cuál es tu clase?», con la fecha de hoy (revisión con la profesora)."""
     html = client.get(reverse("inicio")).content.decode()
-    assert "<header" not in html and "<footer" not in html
-    assert re.search(
-        r'<img class="cab-acceso__logo" src="[^"]*logo-despega[^"]*" alt="Despega" width="\d+" height="\d+">\s*<h1>',  # noqa: E501
-        html,
-    )
+    assert lateral(html) == "" and "data-menu" not in html and "<footer" not in html
+    barra = re.search(r'<header class="barra">.*?</header>', html, re.S).group(0)
+    assert re.search(r'<img class="barra__logo" src="[^"]*logo-despega[^"]*" alt="Despega"', barra)
+    assert '<h1 id="titulo">¿Cuál es tu clase?</h1>' in barra and "barra__fecha" in barra
 
 
 @pytest.mark.parametrize("usuario", ADULTOS)
@@ -120,15 +120,18 @@ def test_el_boton_menu_dice_que_controla_y_si_esta_abierto(client, datos):
 
 
 @pytest.mark.parametrize("nombre_url", ["agenda:dia", "horario:mi_horario"])
-def test_el_estudiante_no_tiene_barra_ni_lateral(client, datos, nombre_url):
-    """Como en los bocetos: sus pantallas van sin barra superior y sin panel."""
+def test_el_estudiante_no_tiene_lateral_y_si_barra_de_titulo(client, datos, nombre_url):
+    """Sin la barra del adulto ni panel lateral, pero con su barra de título: dónde está, la
+    fecha de hoy, su nombre y la hora (revisión con la profesora)."""
     html = pagina(client, "est-a01", reverse(nombre_url))
-    assert lateral(html) == "" and "<header" not in html and "data-menu" not in html
+    assert lateral(html) == "" and "data-menu" not in html and 'class="cabecera"' not in html
+    barra = re.search(r'<header class="barra">.*?</header>', html, re.S).group(0)
+    assert "<h1" in barra and "barra__fecha" in barra and "Lucía" in barra and "data-reloj" in barra
 
 
 def test_el_estudiante_tiene_salir_en_su_agenda(client, datos):
     html = pagina(client, "est-a01", reverse("agenda:dia"))
-    fila = re.search(r'<div class="cab-est">.*?</div>', html, re.S).group(0)
+    fila = re.search(r'<header class="barra">.*?</header>', html, re.S).group(0)
     assert f'method="post" action="{reverse("usuarios:salir")}"' in fila
     assert ">Salir</button>" in fila and fila.index("Salir") < fila.index("<h1")
 
@@ -143,9 +146,11 @@ def test_sin_sesion_no_hay_lateral_ni_salir(client, db):
 
 def test_el_adulto_tiene_sus_regiones_una_sola_vez(client, datos):
     html = pagina(client, "tutor", "/panel/")
-    for etiqueta in ("<header", "<aside", "<main", "<h1"):
+    for etiqueta in ('<header class="cabecera"', '<header class="barra"', "<aside", "<main", "<h1"):
         assert html.count(etiqueta) == 1, etiqueta
-    assert html.index('class="saltar"') < html.index("<header") < html.index("<main")
+    # La barra del logotipo, el panel y el contenido, con su barra de título dentro de <main>.
+    assert html.index('class="saltar"') < html.index('class="cabecera"') < html.index("<main")
+    assert html.index("<main") < html.index('<header class="barra"')
     assert "<footer" not in html  # sin pie: la atribución va en el panel lateral
 
 
@@ -154,16 +159,15 @@ def test_la_atribucion_de_arasaac_esta_en_el_lateral_y_no_la_ve_el_estudiante(cl
     assert "ARASAAC" not in pagina(client, "est-a01", "/agenda/")
 
 
-def test_la_portada_usa_el_pictograma_descargado_y_si_no_el_emoji(
-    client, db, monkeypatch, tmp_path
-):
-    from apps.comun import pictos_interfaz
+def test_la_portada_ensena_la_imagen_de_cada_clase_y_si_no_tiene_un_dibujo(client, datos):
+    from apps.usuarios.models import Clase
 
-    monkeypatch.setattr(pictos_interfaz, "CARPETA", tmp_path)
-    assert "🎒" in client.get(reverse("inicio")).content.decode()
-    (tmp_path / "mochila.png").write_bytes(b"png")
+    clase = Clase.objects.get(nombre="PTVAL 1")
     html = client.get(reverse("inicio")).content.decode()
-    assert 'src="/static/img/pictogramas/mochila.png" alt=""' in html and "🎒" not in html
+    assert f'src="{clase.imagen.url}" alt=""' in html
+    Clase.objects.filter(pk=clase.pk).update(imagen="")
+    html = client.get(reverse("inicio")).content.decode()
+    assert '<span class="loseta__dibujo" aria-hidden="true">🏫</span>' in html
 
 
 def test_la_navegacion_no_consulta_la_base_de_datos(datos, rf, django_assert_num_queries):
