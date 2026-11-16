@@ -8,15 +8,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import TemplateView
+
+from apps.usuarios import views as usuarios_views
 
 admin.site.site_header = "Despega · administración"
 admin.site.site_title = "Despega"
 admin.site.index_title = "Datos de la aplicación"
 
 urlpatterns = [
-    # B01 · Portada «¿Quién eres?»: Estudiante o Adulto (HU-01-06). Sin lógica: solo dos enlaces.
-    path("", TemplateView.as_view(template_name="usuarios/portada.html"), name="inicio"),
+    # B01 + B02 · Portada: «¿Cuál es tu clase?» y, en pequeño, la entrada de adultos (HU-01-06).
+    path("", usuarios_views.portada, name="inicio"),
     path("admin/", admin.site.urls),
     path("agenda/", include("apps.agenda.urls")),
     path("tareas/", include("apps.tareas.urls")),

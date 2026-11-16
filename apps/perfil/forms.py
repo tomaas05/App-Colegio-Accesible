@@ -2,7 +2,7 @@
 
 from django import forms
 
-from .models import Perfil, TipoTemporizador
+from .models import CreacionTareas, Perfil, TipoTemporizador
 
 
 class PerfilVisualForm(forms.ModelForm):
@@ -17,6 +17,7 @@ class PerfilVisualForm(forms.ModelForm):
             "tipo_temporizador",
             "temporizador_visible",
             "puede_ocultar_temporizador",
+            "creacion_tareas",
             "usa_lector_pantalla",
         ]
         widgets = {
@@ -26,11 +27,14 @@ class PerfilVisualForm(forms.ModelForm):
             "tamano_letra": forms.RadioSelect,
             "tamano_botones": forms.RadioSelect,
             "tipo_temporizador": forms.RadioSelect,
+            "creacion_tareas": forms.RadioSelect,
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["tipo_temporizador"].required = False
+        # Si no llega (formulario antiguo, otra pantalla), se queda como estaba.
+        self.fields["creacion_tareas"].required = False
 
     def clean_tipo_temporizador(self):
         valor = self.cleaned_data.get("tipo_temporizador")
@@ -39,6 +43,14 @@ class PerfilVisualForm(forms.ModelForm):
         if self.instance and self.instance.pk and self.instance.tipo_temporizador:
             return self.instance.tipo_temporizador
         return TipoTemporizador.LINEAL
+
+    def clean_creacion_tareas(self):
+        valor = self.cleaned_data.get("creacion_tareas")
+        if valor:
+            return valor
+        if self.instance and self.instance.pk:
+            return self.instance.creacion_tareas
+        return CreacionTareas.NINGUNA
 
     def clean_temporizador_visible(self):
         if (

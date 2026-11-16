@@ -7,85 +7,69 @@
 <link rel="stylesheet" href="{% static 'css/perfil.css' %}">
 {% endblock %}
 
+{# Boceto B52 · Tutor · Perfil visual (HU-04-01, AGENDA-227) y temporizador (HU-07-01).       #}
+{# Revisión con la profesora: por categorías, en tarjetas y sin desplazarse. Primero se elige #}
+{# la categoría y después la opción (dos pasos). No hay vista previa aparte: la propia        #}
+{# tarjeta se pinta con lo elegido. Nada se guarda hasta pulsar «Guardar».                    #}
+{% block volver %}{% url 'perfil:lista' as atras %}{% include "_volver.html" with url=atras texto="Alumnos" etiqueta="Volver a Alumnos" only %}{% endblock %}
+{% block h1 %}Perfil visual{% endblock %}
+{% block sub %}<span class="barra__sub barra__persona"><img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40"> {{ estudiante.usuario.get_full_name }} · {{ estudiante.clase.nombre }}</span>{% endblock %}
 
 {% block contenido %}
-{# Boceto B52 · Tutor · Perfil visual (HU-04-01, AGENDA-227). #}
-<div class="perfil-pagina">
-  <div class="cab-acceso">
-    <a class="boton boton--aux" href="{% url 'perfil:lista' %}"><span aria-hidden="true">‹</span> Mis estudiantes</a>
-    <h1 id="titulo">Perfil visual</h1>
-    <span class="cab-acceso__sub">Estudiante: {{ estudiante.usuario.get_full_name }} ({{ estudiante.clase.nombre }})</span>
-  </div>
+{% if messages %}
+<div class="aviso-ok" role="status">
+  {% for mensaje in messages %}
+  <p><span aria-hidden="true">✓</span> {{ mensaje }}</p>
+  {% endfor %}
+</div>
+{% endif %}
 
-  {% if messages %}
-  <div class="aviso-ok" role="status">
-    {% for mensaje in messages %}
-    <p><span aria-hidden="true">✓</span> {{ mensaje }}</p>
-    {% endfor %}
-  </div>
-  {% endif %}
+<form method="post" class="perfil encaja" id="perfil-form" novalidate data-perfil>
+  {% csrf_token %}
+  {# A dónde ir después de «Guardar y salir» (lo rellena perfil.js). #}
+  <input type="hidden" name="siguiente" value="">
 
-  <div class="perfil-rejilla">
-    <form method="post" class="formulario perfil-form" id="perfil-form" novalidate>
-      {% csrf_token %}
+  {# La tarjeta de configuración: sus colores, su letra y sus botones son los del perfil #}
+  {# que se está eligiendo (data-*, los mismos atributos que lleva <html> del estudiante). #}
+  <div class="perfil-tarjeta encaja" data-perfil-tarjeta
+       data-tema="{{ perfil.tema }}" data-paleta="{{ perfil.paleta }}" data-fuente="{{ perfil.tipo_letra }}"
+       data-letra="{{ perfil.tamano_letra }}" data-botones="{{ perfil.tamano_botones }}">
 
-      <fieldset class="grupo-opciones">
-        <legend>Tema</legend>
-        <div class="opciones-lista">
-          {% for radio in form.tema %}
-          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
-          {% endfor %}
-        </div>
-      </fieldset>
+    {# Paso 1 (solo con JavaScript): las categorías, cada una con lo que tiene elegido. #}
+    <section class="perfil-inicio encaja" data-perfil-inicio aria-labelledby="perfil-inicio-t" hidden>
+      <h2 id="perfil-inicio-t">¿Qué quieres cambiar?</h2>
+      <div class="encaja">
+        <ul class="perfil-categorias" id="categorias" data-paginar>
+          <li><button type="button" class="perfil-categoria" data-abrir="tema"><b>Tema</b><span data-valor-de="tema">{{ perfil.get_tema_display }}</span></button></li>
+          <li><button type="button" class="perfil-categoria" data-abrir="paleta"><b>Colores</b><span data-valor-de="paleta">{{ perfil.get_paleta_display }}</span></button></li>
+          <li><button type="button" class="perfil-categoria" data-abrir="tipo_letra"><b>Tipo de letra</b><span data-valor-de="tipo_letra">{{ perfil.get_tipo_letra_display }}</span></button></li>
+          <li><button type="button" class="perfil-categoria" data-abrir="tamano_letra"><b>Tamaño de letra</b><span data-valor-de="tamano_letra">{{ perfil.get_tamano_letra_display }}</span></button></li>
+          <li><button type="button" class="perfil-categoria" data-abrir="tamano_botones"><b>Botones</b><span data-valor-de="tamano_botones">{{ perfil.get_tamano_botones_display }}</span></button></li>
+          <li><button type="button" class="perfil-categoria" data-abrir="temporizador"><b>Temporizador</b><span data-valor-de="tipo_temporizador">{{ perfil.get_tipo_temporizador_display }}</span></button></li>
+          <li><button type="button" class="perfil-categoria" data-abrir="creacion_tareas"><b>Crear tareas</b><span data-valor-de="creacion_tareas">{{ perfil.get_creacion_tareas_display }}</span></button></li>
+          <li><button type="button" class="perfil-categoria" data-abrir="lector"><b>Lector de pantalla</b><span data-valor-de="usa_lector_pantalla" data-si="Lo usa" data-no="No lo usa">{% if perfil.usa_lector_pantalla %}Lo usa{% else %}No lo usa{% endif %}</span></button></li>
+        </ul>
+      </div>
+    </section>
 
-      <fieldset class="grupo-opciones">
-        <legend>Paleta de colores</legend>
-        <div class="opciones-lista">
-          {% for radio in form.paleta %}
-          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
-          {% endfor %}
-        </div>
-      </fieldset>
+    {# Paso 2: las opciones de una categoría. Cada una, la misma plantilla. #}
+    {% include "perfil/_grupo.html" with clave="tema" titulo="Tema" campo=form.tema %}
+    {% include "perfil/_grupo.html" with clave="paleta" titulo="Paleta de colores" campo=form.paleta %}
+    {% include "perfil/_grupo.html" with clave="tipo_letra" titulo="Tipo de letra" campo=form.tipo_letra muestra="fuente" %}
+    {% include "perfil/_grupo.html" with clave="tamano_letra" titulo="Tamaño de letra" campo=form.tamano_letra %}
+    {% include "perfil/_grupo.html" with clave="tamano_botones" titulo="Tamaño de los botones" campo=form.tamano_botones %}
+    {# Revisión con la profesora: el tutor decide si el estudiante crea tareas y con qué pantallas. #}
+    {% include "perfil/_grupo.html" with clave="creacion_tareas" titulo="Crear tareas de ocio" campo=form.creacion_tareas ayuda="«Igual que los adultos» es para quien maneja bien el formulario completo; «Paso a paso» le pide una cosa en cada pantalla." %}
 
-      <fieldset class="grupo-opciones">
-        <legend>Tipo de letra</legend>
-        <div class="opciones-lista">
-          {% for radio in form.tipo_letra %}
-          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
-          {% endfor %}
-        </div>
-      </fieldset>
-
-      <fieldset class="grupo-opciones">
-        <legend>Tamaño de letra</legend>
-        <div class="opciones-lista">
-          {% for radio in form.tamano_letra %}
-          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
-          {% endfor %}
-        </div>
-      </fieldset>
-
-      <fieldset class="grupo-opciones">
-        <legend>Tamaño de los botones</legend>
-        <div class="opciones-lista">
-          {% for radio in form.tamano_botones %}
-          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
-          {% endfor %}
-        </div>
-      </fieldset>
-
-            <fieldset class="grupo-opciones">
-        <legend>Tipo de temporizador visual</legend>
-        <div class="opciones-lista">
-          {% for radio in form.tipo_temporizador %}
-          <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
-          {% endfor %}
-        </div>
-      </fieldset>
-
-      <fieldset class="grupo-opciones">
-        <legend>Visibilidad del temporizador</legend>
-        <div class="opciones-lista">
+    <fieldset class="perfil-panel grupo-opciones encaja" data-panel="temporizador">
+      <legend>Temporizador</legend>
+      <div class="encaja">
+        <div class="opciones-lista" id="opciones-temporizador" data-paginar data-items=".opcion-radio, .opcion-check">
+          <div class="opciones-grupo" role="radiogroup" aria-label="Tipo de temporizador visual">
+            {% for radio in form.tipo_temporizador %}
+            <label class="opcion-radio">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+            {% endfor %}
+          </div>
           <label class="opcion-check">
             {{ form.temporizador_visible }}
             <span>Mostrar el temporizador visible al abrir una tarea</span>
@@ -95,45 +79,52 @@
             <span>Permitir que el estudiante oculte y muestre el temporizador</span>
           </label>
         </div>
-      </fieldset>
+      </div>
+    </fieldset>
 
-      <fieldset class="grupo-opciones">
-        <legend>Lector de pantalla</legend>
+    <fieldset class="perfil-panel grupo-opciones encaja" data-panel="lector">
+      <legend>Lector de pantalla</legend>
+      <div class="opciones-lista">
         <label class="opcion-check">
           {{ form.usa_lector_pantalla }}
           <span>El estudiante usa lector de pantalla (la aplicación no reproduce su propia voz)</span>
         </label>
-      </fieldset>
-
-      <button class="boton boton--principal" type="submit">Guardar perfil visual</button>
-    </form>
-
-    <section
-      class="perfil-previa"
-      id="perfil-previa"
-      aria-labelledby="perfil-previa-tit"
-      data-tema="{{ perfil.tema }}"
-      data-paleta="{{ perfil.paleta }}"
-      data-fuente="{{ perfil.tipo_letra }}"
-      data-letra="{{ perfil.tamano_letra }}"
-      data-botones="{{ perfil.tamano_botones }}"
-    >
-      <h2 id="perfil-previa-tit">Vista previa en vivo</h2>
-      <p class="perfil-previa__resumen" id="perfil-previa-resumen">
-        Tema {{ perfil.get_tema_display|lower }} · Paleta {{ perfil.get_paleta_display|lower }} · {{ perfil.get_tipo_letra_display }} {{ perfil.tamano_letra }} px · Botones {{ perfil.tamano_botones }} px
-      </p>
-      <div class="perfil-previa__marco">
-        <div class="perfil-previa__tarjeta">
-          <div>
-            <p class="perfil-previa__hora">10:30 – 11:00 · Ahora</p>
-            <p class="perfil-previa__nombre">Lavarse las manos</p>
-          </div>
-        </div>
-        <button type="button" class="boton perfil-previa__boton">Terminar tarea</button>
       </div>
-    </section>
+    </fieldset>
   </div>
-</div>
+
+  {# Pie fijo: volver a las categorías a la izquierda y «Guardar» siempre a la derecha. #}
+  <div class="pie perfil-pie">
+    {# Cambios sin guardar: lo escribe perfil.js. La línea está siempre (vacía si no hay #}
+    {# cambios) para que al aparecer el texto no se mueva nada.                          #}
+    <p class="pie__estado" data-perfil-pendiente role="status"></p>
+    {# Los paginadores van aquí, fuera de la tarjeta: son controles del tutor y no cambian de #}
+    {# tamaño con el perfil. Solo se ve el de la lista que está a la vista, si no cabe entera. #}
+    {% include "_paginador.html" with de="categorias" que="Más categorías" only %}
+    {% include "_paginador.html" with de="opciones-tema" que="Más opciones" only %}
+    {% include "_paginador.html" with de="opciones-paleta" que="Más opciones" only %}
+    {% include "_paginador.html" with de="opciones-tipo_letra" que="Más opciones" only %}
+    {% include "_paginador.html" with de="opciones-tamano_letra" que="Más opciones" only %}
+    {% include "_paginador.html" with de="opciones-tamano_botones" que="Más opciones" only %}
+    {% include "_paginador.html" with de="opciones-creacion_tareas" que="Más opciones" only %}
+    {% include "_paginador.html" with de="opciones-temporizador" que="Más opciones" only %}
+    <button class="boton--aux" type="button" data-perfil-atras hidden><span aria-hidden="true">‹</span> Categorías</button>
+    <div class="pie__acciones">
+      <button class="boton boton--principal boton--mediano" type="submit">Guardar<span class="visualmente-oculto"> perfil visual</span></button>
+    </div>
+  </div>
+</form>
+
+{# Aviso al salir con cambios sin guardar. Solo se abre si hay cambios (perfil.js). #}
+<dialog class="confirmar perfil-salir" id="perfil-salir" aria-labelledby="perfil-salir-t">
+  <h2 id="perfil-salir-t">No has guardado los cambios</h2>
+  <p>Si sales ahora, el perfil de {{ estudiante.usuario.first_name }} se queda como estaba.</p>
+  <div class="perfil-salir__botones">
+    <button class="boton boton--principal boton--mediano" type="button" data-salir="guardar">Guardar y salir</button>
+    <button class="boton boton--aux" type="button" data-salir="descartar">Salir sin guardar</button>
+    <button class="boton boton--aux" type="button" data-salir="seguir">Seguir aquí</button>
+  </div>
+</dialog>
 {% endblock %}
 
 {% block scripts %}

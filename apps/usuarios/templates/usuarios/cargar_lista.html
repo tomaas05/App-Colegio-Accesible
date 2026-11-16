@@ -4,65 +4,79 @@
 {% block titulo %}Cargar lista de estudiantes · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
+{# HU-01-01, prueba de aceptación 4: cargar una lista de estudiantes en una clase.          #}
+{# Sin desplazamiento (decisión 0005): primero el formulario (por bloques) y, después de    #}
+{# cargar, el resultado en su propia pantalla, con las filas que han fallado por páginas.   #}
+{% block volver %}{% url 'usuarios:lista' as atras %}{% include "_volver.html" with url=atras texto="Usuarios" etiqueta="Volver a Usuarios" only %}{% endblock %}
+{% block h1 %}Cargar lista<span class="visualmente-oculto"> de estudiantes</span>{% endblock %}
+{% block sub %}<span class="barra__sub">{% if resultado and not resultado.error_archivo %}Resultado{% else %}<span aria-hidden="true">de estudiantes</span>{% endif %}</span>{% endblock %}
+
 {% block contenido %}
-{# HU-01-01, prueba de aceptación 4: cargar una lista de estudiantes en una clase. #}
-<div class="admin admin--estrecho">
-  <div class="admin__cab">
-    <a class="boton boton--aux" href="{% url 'usuarios:lista' %}"><span aria-hidden="true">‹</span> Usuarios</a>
-    <div class="admin__titulo">
-      <h1>Cargar lista de estudiantes</h1>
-      <p class="admin__nota">Los campos con * son obligatorios.</p>
+{% if resultado and not resultado.error_archivo %}
+<div class="avisos avisos--fila">
+  <p class="aviso-ok" role="status"><span aria-hidden="true">✓</span> Se {{ resultado.creados|length|pluralize:"ha,han" }} creado {{ resultado.creados|length }} cuenta{{ resultado.creados|length|pluralize }} en {{ form.cleaned_data.clase.nombre }}.</p>
+  {% if resultado.errores %}
+  <div class="aviso-error" role="alert">
+    <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
+    <p>{{ resultado.errores|length }} fila{{ resultado.errores|length|pluralize }} no se {{ resultado.errores|length|pluralize:"ha,han" }} creado. Corrígela{{ resultado.errores|length|pluralize }} y carga solo esa{{ resultado.errores|length|pluralize }}.</p>
+  </div>
+  {% endif %}
+</div>
+<div class="tabla-caja encaja">
+  {% if resultado.errores %}
+  <table class="tabla tabla--tarjetas" role="table" aria-label="Filas que no se han creado">
+    <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Fila</th><th role="columnheader" scope="col">Nombre</th><th role="columnheader" scope="col">Motivo</th></tr></thead>
+    <tbody role="rowgroup" id="filas-error" data-paginar data-estado="{desde} a {hasta} de {de}">
+      {% for fila, nombre, motivo in resultado.errores %}
+      <tr role="row"><th role="rowheader" scope="row" data-columna="Fila">{{ fila }}</th><td role="cell" data-columna="Nombre">{{ nombre|default:"(sin nombre)" }}</td><td role="cell" class="tabla__fila" data-columna="Motivo">{{ motivo }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+<div class="pie">
+  {% if resultado.errores %}{% include "_paginador.html" with de="filas-error" que="Más filas con error" only %}{% endif %}
+  <div class="pie__acciones">
+    <a class="boton boton--aux" href="{% url 'usuarios:cargar' %}">Cargar otra lista</a>
+    {# Las cuentas creadas, con su código, se ven en Usuarios filtrando por la clase. #}
+    {% if resultado.creados %}<a class="boton boton--principal boton--mediano" href="{% url 'usuarios:lista' %}?clase={{ form.cleaned_data.clase.pk }}">Ver la clase<span class="visualmente-oculto"> en Usuarios</span></a>{% endif %}
+  </div>
+</div>
+{% else %}
+<form class="formulario encaja" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div class="encaja">
+    <div class="partes" id="bloques" data-paginar data-pag-variable data-foco="titulo" data-estado="Paso {n} de {total}">
+      {% if resultado.error_archivo %}
+      <div class="parte" data-pag-inicio><div class="aviso-error" role="alert"><span class="aviso-error__ico" aria-hidden="true">⚠️</span><p>{{ resultado.error_archivo }}</p></div></div>
+      {% endif %}
+      {% if form.errors %}<div class="parte" data-pag-inicio>{% include "usuarios/_errores.html" %}</div>{% endif %}
+
+      <section class="parte parte--caja" aria-labelledby="ayuda-t">
+        <h2 id="ayuda-t">1. Prepara el archivo</h2>
+        <div class="admin__nota">
+          <p>Una fila por estudiante. En <b>imagenes</b>, 3 palabras de la rejilla separadas por espacios (por ejemplo «perro sol flor»); o, si entra con contraseña, rellena <b>contrasena</b> y deja <b>imagenes</b> vacía.</p>
+          <p>Imágenes que hay ahora: {% for imagen in imagenes %}{{ imagen.descripcion_imagen }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+          <p><a class="tabla__enlace" href="{% url 'usuarios:plantilla' %}" download>Descargar la plantilla CSV</a> (se abre con Excel o LibreOffice).</p>
+        </div>
+      </section>
+
+      <fieldset class="parte parte--caja">
+        <legend>2. Elige la clase y el archivo</legend>
+        <p class="admin__nota">Los campos con * son obligatorios.</p>
+        <div class="campo">{{ form.clase.as_field_group }}</div>
+        <div class="campo">{{ form.archivo.as_field_group }}</div>
+      </fieldset>
     </div>
   </div>
 
-  {% if resultado %}
-  <section class="admin__tarjeta" aria-labelledby="resultado-t">
-    <h2 id="resultado-t">Resultado</h2>
-    {% if resultado.error_archivo %}
-    <div class="aviso-error" role="alert"><span class="aviso-error__ico" aria-hidden="true">⚠️</span><p>{{ resultado.error_archivo }}</p></div>
-    {% else %}
-    <p class="aviso-ok" role="status"><span aria-hidden="true">✓</span> Se {{ resultado.creados|length|pluralize:"ha,han" }} creado {{ resultado.creados|length }} cuenta{{ resultado.creados|length|pluralize }} en {{ form.cleaned_data.clase.nombre }}.</p>
-    {% if resultado.errores %}
-    <div class="aviso-error" role="alert">
-      <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
-      <p>{{ resultado.errores|length }} fila{{ resultado.errores|length|pluralize }} no se {{ resultado.errores|length|pluralize:"ha,han" }} creado. Corrígela{{ resultado.errores|length|pluralize }} y carga solo esa{{ resultado.errores|length|pluralize }}.</p>
+  {# Para dejarlo sin cargar nada, «‹ Usuarios» de la barra de título. #}
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Pasos del formulario" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-solo-ultima="bloques">Cargar</button>
     </div>
-    <div class="tabla-caja" tabindex="0" role="region" aria-label="Filas que no se han creado">
-      <table class="tabla">
-        <thead><tr><th scope="col">Fila</th><th scope="col">Nombre</th><th scope="col">Motivo</th></tr></thead>
-        <tbody>
-          {% for fila, nombre, motivo in resultado.errores %}
-          <tr><th scope="row">{{ fila }}</th><td>{{ nombre|default:"(sin nombre)" }}</td><td>{{ motivo }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %}
-    {% if resultado.creados %}
-    <details class="admin__creados">
-      <summary>Ver las cuentas creadas</summary>
-      <ul>{% for estudiante in resultado.creados %}<li>{{ estudiante.usuario.get_full_name }} · código {{ estudiante.codigo_estudiante }}</li>{% endfor %}</ul>
-    </details>
-    <a class="boton boton--aux" href="{% url 'usuarios:lista' %}?clase={{ form.cleaned_data.clase.pk }}">Ver la clase en Usuarios</a>
-    {% endif %}
-    {% endif %}
-  </section>
-  {% endif %}
-
-  <form class="formulario admin__tarjeta" method="post" enctype="multipart/form-data" novalidate>
-    {% csrf_token %}
-    {% include "usuarios/_errores.html" %}
-    <div class="campo">{{ form.clase.as_field_group }}</div>
-    <div class="campo">{{ form.archivo.as_field_group }}</div>
-    <div class="admin__nota">
-      <p>Una fila por estudiante. En <b>imagenes</b>, 3 palabras de la rejilla separadas por espacios (por ejemplo «perro sol flor»); o, si entra con contraseña, rellena <b>contrasena</b> y deja <b>imagenes</b> vacía.</p>
-      <p>Imágenes que hay ahora: {% for imagen in imagenes %}{{ imagen.descripcion_imagen }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
-      <p><a href="{% url 'usuarios:plantilla' %}" download>Descargar la plantilla CSV</a> (se abre con Excel o LibreOffice).</p>
-    </div>
-    <div class="admin__botonera">
-      <a class="boton boton--aux" href="{% url 'usuarios:lista' %}">Cancelar</a>
-      <button class="boton--principal boton--mediano" type="submit">Cargar</button>
-    </div>
-  </form>
-</div>
+  </div>
+</form>
+{% endif %}
 {% endblock %}

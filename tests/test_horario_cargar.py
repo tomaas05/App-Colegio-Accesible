@@ -94,7 +94,7 @@ def test_pa1_sus_estudiantes_ven_el_horario_de_su_clase(client, ptval1):
     html = respuesta.content.decode()
     for c in HorarioClase.objects.filter(clase=ptval1, dia_semana=1):
         assert c.asignatura.nombre in html
-    assert "09:00 – 10:00" in html
+    assert "De 09:00 a 10:00" in html
 
 
 def test_pa1_lo_que_pone_el_administrador_lo_ve_el_estudiante(client, admin, ptval1):
@@ -214,7 +214,7 @@ def test_pa4_el_estudiante_tambien_ve_imagen_y_nombre(client, ptval1):
     html = client.get(reverse("horario:mi_horario"), {"dia": 2}).content.decode()
     for c in HorarioClase.objects.filter(clase=ptval1, dia_semana=2).select_related("asignatura"):
         assert c.asignatura.imagen.url in html
-        assert f"<b>{c.asignatura.nombre}</b>" in html
+        assert f'<b class="tarjeta__nombre">{c.asignatura.nombre}</b>' in html
 
 
 # --- PA5: fuera de las franjas del horario, el familiar puede crear tareas para casa ---

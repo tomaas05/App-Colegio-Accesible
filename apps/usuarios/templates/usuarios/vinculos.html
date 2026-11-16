@@ -4,25 +4,25 @@
 {% block titulo %}Vínculos{% if estudiante %} de {{ estudiante.usuario.get_full_name }}{% endif %} · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
+{# Boceto B25 · Vínculos. HU-01-04, pruebas de aceptación 1 y 2. Solo el administrador.     #}
+{# Sin desplazamiento (decisión 0005): primero se elige el estudiante y, ya con él, su      #}
+{# tutor y su familiar son dos bloques; si no caben juntos, «Anterior / Siguiente».         #}
+{% block volver %}{% if estudiante %}{% url 'usuarios:vinculos' as atras %}{% include "_volver.html" with url=atras texto="Vínculos" etiqueta="Vínculos: elegir otro estudiante" only %}{% else %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endif %}{% endblock %}
+{% block h1 %}Vínculos{% endblock %}
+{% block sub %}{% if estudiante %}<span class="barra__sub barra__persona"><img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40"> {{ estudiante.usuario.get_full_name }} · {{ estudiante.codigo_estudiante }} · {{ estudiante.clase.nombre }}</span>{% else %}<span class="barra__sub">Tutor y familiar de cada estudiante</span>{% endif %}{% endblock %}
+
 {% block contenido %}
-{# Boceto B25 · Vínculos. HU-01-04, pruebas de aceptación 1 y 2. Solo el administrador. #}
-<div class="admin admin--estrecho">
-  <div class="admin__cab">
-    <a class="boton boton--aux" href="{% url 'usuarios:panel' %}"><span aria-hidden="true">‹</span> Panel</a>
-    <div class="admin__titulo">
-      <h1>Vínculos</h1>
-      <p class="admin__nota">Tutor y familiar de cada estudiante.</p>
-    </div>
-  </div>
+{% include "usuarios/_mensajes.html" %}
 
-  {% include "usuarios/_mensajes.html" %}
-
-  {% if not hay_estudiantes %}
-  <p class="admin__tarjeta">Todavía no hay estudiantes. Créalos desde <a href="{% url 'usuarios:lista' %}">Usuarios</a>.</p>
-  {% else %}
-  {# Elegir el estudiante: sin JavaScript se busca al pulsar el botón; con él, la lista se filtra al escribir. #}
-  <form class="admin__tarjeta" method="get" role="search" aria-label="Elegir estudiante" data-elegir-estudiante>
-    <div class="admin__dos">
+{% if not hay_estudiantes %}
+<p class="aviso-vacio">Todavía no hay estudiantes. Créalos desde <a href="{% url 'usuarios:lista' %}">Usuarios</a>.</p>
+{% elif not estudiante %}
+{# Elegir el estudiante: sin JavaScript se busca al pulsar el botón; con él, la lista se filtra al escribir. #}
+<form class="formulario encaja" method="get" role="search" aria-label="Elegir estudiante" data-elegir-estudiante>
+  <div class="encaja">
+    <fieldset class="parte parte--caja">
+      <legend>Estudiante</legend>
+      <p class="admin__nota">Elige un estudiante para ver y cambiar su tutor y su familiar.</p>
       <div class="campo">
         <label for="vinculos-q">Buscar estudiante</label>
         <input type="search" id="vinculos-q" name="q" value="{{ texto }}" placeholder="Nombre, apellidos o código" autocomplete="off">
@@ -30,84 +30,78 @@
       <div class="campo">
         <label for="vinculos-est">Estudiante</label>
         <select id="vinculos-est" name="estudiante">
-          {% if not estudiante %}<option value="">Elige un estudiante</option>{% endif %}
+          <option value="">Elige un estudiante</option>
           {% for clase, lista in grupos %}
           <optgroup label="{{ clase.nombre }}">
-            {% for uno in lista %}<option value="{{ uno.codigo_estudiante }}"{% if uno.pk == estudiante.pk %} selected{% endif %}>{{ uno.usuario.get_full_name }}</option>{% endfor %}
+            {% for uno in lista %}<option value="{{ uno.codigo_estudiante }}">{{ uno.usuario.get_full_name }}</option>{% endfor %}
           </optgroup>
           {% empty %}
           <option value="">Ningún estudiante coincide</option>
           {% endfor %}
         </select>
       </div>
+    </fieldset>
+  </div>
+  <div class="pie">
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit">Ver sus vínculos</button>
     </div>
-    <div class="admin__botonera">
-      <button class="boton--aux" type="submit">Ver sus vínculos</button>
-    </div>
-  </form>
+  </div>
+</form>
+{% else %}
+{# Solo ?estudiante= en la dirección: así se guarda siempre el estudiante que se ve. #}
+<form class="formulario encaja" method="post" action="?estudiante={{ estudiante.codigo_estudiante|urlencode }}" novalidate data-vinculos data-estudiante="{{ estudiante.usuario.get_full_name }}" data-tutor-actual="{{ estudiante.tutor.get_full_name }}" data-tutor-actual-id="{{ estudiante.tutor_id|default:'' }}">
+  {% csrf_token %}
+  {{ form.familiar }}
+  <div class="encaja">
+    <div class="partes" id="bloques" data-paginar data-pag-variable data-foco="titulo" data-estado="Parte {n} de {total}">
+      {% if form.errors %}<div class="parte" data-pag-inicio>{% include "usuarios/_errores.html" %}</div>{% endif %}
 
-  {% if estudiante %}
-  {# Solo ?estudiante= en la dirección: así se guarda siempre el estudiante que se ve. #}
-  <form class="formulario admin__tarjeta" method="post" action="?estudiante={{ estudiante.codigo_estudiante|urlencode }}" novalidate data-vinculos data-estudiante="{{ estudiante.usuario.get_full_name }}" data-tutor-actual="{{ estudiante.tutor.get_full_name }}" data-tutor-actual-id="{{ estudiante.tutor_id|default:'' }}">
-    {% csrf_token %}
-    {% include "usuarios/_errores.html" %}
+      <section class="parte parte--caja" aria-labelledby="vinculos-tutor-t">
+        <h2 id="vinculos-tutor-t">Tutor</h2>
+        <div class="campo">{{ form.tutor.as_field_group }}</div>
+        {# RF1.2.4: al cambiar de tutor se avisa antes de guardar (lo escribe usuarios.js). #}
+        <p class="aviso-pendiente" role="status" data-aviso-tutor hidden></p>
+      </section>
 
-    <div class="vinculos__ficha">
-      <img class="vinculos__avatar" src="{{ estudiante.avatar.url }}" alt="" width="72" height="72">
-      <div>
-        <h2>{{ estudiante.usuario.get_full_name }}</h2>
-        <p class="admin__nota">{{ estudiante.codigo_estudiante }} · {{ estudiante.clase.nombre }}</p>
-      </div>
-    </div>
-
-    {% if form.sin_guardar %}
-    <p class="aviso-pendiente" role="status"><span aria-hidden="true">✎</span> Hay cambios sin guardar. Pulsa «Guardar vínculos».</p>
-    {% endif %}
-
-    {{ form.familiar }}
-
-    <section class="admin__seccion" aria-labelledby="vinculos-tutor-t">
-      <h3 id="vinculos-tutor-t">Tutor</h3>
-      <div class="campo">{{ form.tutor.as_field_group }}</div>
-      {# RF1.2.4: al cambiar de tutor se avisa antes de guardar (lo escribe usuarios.js). #}
-      <p class="aviso-pendiente" role="status" data-aviso-tutor hidden></p>
-    </section>
-
-    <section class="admin__seccion" aria-labelledby="vinculos-fam-t">
-      <h3 id="vinculos-fam-t">Familiar</h3>
-      <ul class="vinculos__lista">
-        {% with familiar=form.familiar_elegido %}
-        {% if familiar %}
-        <li class="vinculos__persona">
-          <span><b>{{ familiar.get_full_name }}</b><span class="admin__nota">Usuario: {{ familiar.username }}</span></span>
-          <button class="boton--aux" type="submit" name="accion" value="quitar">Quitar<span class="visualmente-oculto"> el vínculo con {{ familiar.get_full_name }}</span></button>
-        </li>
-        {% else %}
-        <li class="vinculos__persona vinculos__persona--vacio">Sin familiar vinculado.</li>
-        {% endif %}
-        {% endwith %}
-      </ul>
-      <p class="admin__nota">Cada estudiante tiene como mucho un familiar.</p>
-      <div class="campo">
-        <label for="{{ form.nuevo_familiar.id_for_label }}">{{ form.nuevo_familiar.label }}</label>
-        {% if form.nuevo_familiar.errors %}<p class="campo__error" id="{{ form.nuevo_familiar.auto_id }}_error">{{ form.nuevo_familiar.errors.0 }}</p>{% endif %}
-        <div class="campo__fila">
-          {{ form.nuevo_familiar }}
-          <button class="boton--aux" type="submit" name="accion" value="anadir">Añadir</button>
+      {# Después de «Quitar» o «Añadir» se vuelve a este bloque, no al primero. #}
+      <section class="parte parte--caja" aria-labelledby="vinculos-fam-t"{% if request.POST.accion == "quitar" or request.POST.accion == "anadir" %} data-pag-inicio{% endif %}>
+        <h2 id="vinculos-fam-t">Familiar</h2>
+        <ul class="vinculos__lista">
+          {% with familiar=form.familiar_elegido %}
+          {% if familiar %}
+          <li class="vinculos__persona">
+            <span><b>{{ familiar.get_full_name }}</b><span class="admin__nota">Usuario: {{ familiar.username }}</span></span>
+            <button class="boton--aux" type="submit" name="accion" value="quitar">Quitar<span class="visualmente-oculto"> el vínculo con {{ familiar.get_full_name }}</span></button>
+          </li>
+          {% else %}
+          <li class="vinculos__persona vinculos__persona--vacio">Sin familiar vinculado.</li>
+          {% endif %}
+          {% endwith %}
+        </ul>
+        <div class="campo">
+          <label for="{{ form.nuevo_familiar.id_for_label }}">{{ form.nuevo_familiar.label }}</label>
+          <p class="admin__nota">Cada estudiante tiene como mucho un familiar.</p>
+          {% if form.nuevo_familiar.errors %}<p class="campo__error" id="{{ form.nuevo_familiar.auto_id }}_error">{{ form.nuevo_familiar.errors.0 }}</p>{% endif %}
+          <div class="campo__fila">
+            {{ form.nuevo_familiar }}
+            <button class="boton--aux" type="submit" name="accion" value="anadir">Añadir</button>
+          </div>
         </div>
-      </div>
-    </section>
-
-    <div class="admin__botonera">
-      <a class="boton boton--aux" href="{% url 'usuarios:panel' %}">Cancelar</a>
-      <button class="boton--principal boton--mediano" type="submit" name="accion" value="guardar">Guardar vínculos</button>
+      </section>
     </div>
-  </form>
-  {% else %}
-  <p class="admin__nota">Elige un estudiante para ver y cambiar su tutor y su familiar.</p>
-  {% endif %}
-  {% endif %}
-</div>
+  </div>
+
+  {# «Guardar» sale en el último bloque, en el sitio de «Siguiente»; para dejarlo, «‹ Vínculos». #}
+  {% if form.sin_guardar %}<p class="pie__estado" role="status"><span aria-hidden="true">●</span> Hay cambios sin guardar. Pulsa «Guardar».</p>{% endif %}
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Tutor y familiar" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" name="accion" value="guardar" data-solo-ultima="bloques">Guardar<span class="visualmente-oculto"> vínculos</span></button>
+    </div>
+  </div>
+</form>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

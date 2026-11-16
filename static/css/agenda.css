@@ -2,83 +2,19 @@
  * Despega · Agenda del estudiante (HU-02-01 a HU-02-04).
  * Sigue el boceto docs/iteracion-1/bocetos/despega_mockup_v3.html:
  *   B06 Tareas de hoy, B07 Tarea y B08 ¿Has terminado?
+ * Los botones, la barra de título, la línea de tiempo y el paginador están en base.css.
  * Solo variables de tokens.css y rem, para que el perfil de cada estudiante
  * (tema, letra, tamaño de botones) se aplique sin tocar este archivo.
  */
 
-.agenda {
-  display: flex;
-  flex-direction: column;
-  gap: var(--separacion);
-}
-.agenda h1,
 .agenda h2,
 .agenda p {
   margin: 0;
 }
 
-/* --- Botones con aspecto de botón aunque sean enlaces --- */
-a.boton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  text-decoration: none;
-}
-.boton--aux {
-  padding: 0.25rem 1rem;
-}
-/* «Empezar» y «Terminar»: lo más grande de la pantalla (RNF4.1.7) */
-.boton--principal {
-  min-height: var(--toque-grande);
-  padding: 0.5rem 2rem;
-  font-size: 1.5rem;
-  color: var(--blanco);
-  background: var(--petroleo);
-}
-.boton--principal:hover {
-  background: var(--verde-oscuro);
-}
-
-/* --- Cabecera de la pantalla (boceto: .cab-est) --- */
-.cab-est {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.3rem 0.75rem;
-  min-height: var(--toque);
-}
-.cab-est h1 {
-  flex: 1 1 8em;
-  min-width: 0;
-  font-size: 1.75rem;
-}
-.cab-est h1 {
-  flex: 0 1 auto;
-}
-.cab-est__quien {
-  font-weight: 600;
-  color: var(--gris);
-}
-.reloj {
-  margin-left: auto;
-  font-family: var(--fuente-titulos);
-  font-weight: 800;
-  color: var(--petroleo);
-}
-
-/* --- Tarjetas de la agenda (B06) --- */
-.tarjetas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
-  gap: var(--separacion);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.tarjetas > li {
-  display: flex;
-}
+/* --- Tarjetas de la agenda (B06) en la línea de tiempo (.linea, en base.css) ---
+ * En vertical (móvil): imagen a la izquierda y textos a la derecha. En horizontal (desde
+ * 48rem): hora arriba, junto a la línea, imagen grande, nombre y estado. */
 .tarjeta {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -87,7 +23,7 @@ a.boton {
   align-items: center;
   width: 100%;
   min-height: var(--toque-grande);
-  padding: 0.6rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   color: var(--texto);
   text-decoration: none;
   background: var(--blanco);
@@ -104,10 +40,40 @@ a.tarjeta:hover {
 }
 .tarjeta__imagen {
   grid-row: 1 / 4;
+  grid-column: 1;
   width: 4rem;
   height: 4rem;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff; /* los pictogramas están hechos para fondo blanco */
   border-radius: 1rem;
+}
+.tarjeta > :not(.tarjeta__imagen) {
+  grid-column: 2;
+}
+@media (min-width: 48rem) {
+  .linea .tarjeta {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    justify-items: center;
+    row-gap: 0.4rem;
+    padding: 0.6rem 0.5rem 0.75rem;
+    text-align: center;
+  }
+  .linea .tarjeta > * {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .linea .tarjeta__imagen {
+    width: min(100%, 9rem, 24dvh);
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .linea .tarjeta__nombre {
+    font-size: 1.15rem;
+  }
+  .linea .chip {
+    justify-self: center;
+  }
 }
 .tarjeta__hora {
   font-family: var(--fuente-titulos);
@@ -164,17 +130,13 @@ a.tarjeta:hover {
   width: 2.5rem;
   height: 2.5rem;
 }
-.restantes {
-  align-self: center;
-  padding: 0.5rem 0.75rem;
-  font-weight: 700;
-  color: var(--petroleo);
-}
-
 /* --- Siguiente tarea al pie, 10 minutos antes (RF2.10.1) --- */
 .pie-siguiente {
   display: flex;
   justify-content: flex-end;
+}
+.pie-siguiente:empty {
+  display: none;
 }
 .siguiente {
   display: flex;
@@ -201,18 +163,38 @@ a.tarjeta:hover {
   color: var(--petroleo);
 }
 
-/* --- Pantalla de la tarea (B07): dos columnas si caben --- */
+/* --- Pantalla de la tarea (B07) ---
+ * En el móvil, una columna: qué es, el tiempo, el paso que toca y el botón principal.
+ * Desde 48rem, dos columnas: a la izquierda qué es y el tiempo; a la derecha qué hago ahora
+ * (el paso y «Empezar / Terminar»), con el botón siempre abajo a la derecha. */
 .ejec {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-  gap: 1rem 1.5rem;
-  align-items: start;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 .col {
   display: flex;
   flex-direction: column;
-  gap: var(--separacion);
+  gap: 0.6rem;
   min-width: 0;
+}
+.col--hacer {
+  flex: 1 1 auto;
+}
+.col--hacer .zona-botones {
+  margin-top: auto;
+}
+@media (min-width: 48rem) {
+  .ejec {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem 1.5rem;
+    align-items: stretch;
+  }
+  .col {
+    gap: var(--separacion);
+  }
 }
 .ficha {
   display: flex;
@@ -225,21 +207,59 @@ a.tarjeta:hover {
 }
 .ficha__imagen {
   flex: none;
-  width: 6rem;
-  height: 6rem;
-  object-fit: cover;
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+  background: #ffffff;
   border-radius: 1.25rem;
+}
+@media (min-width: 48rem) {
+  .ficha__imagen {
+    width: min(9rem, 22dvh);
+    height: min(9rem, 22dvh);
+  }
 }
 .ficha__hora {
   color: var(--gris);
 }
 .desc {
-  display: grid;
-  gap: 0.5rem;
-  justify-items: start;
-  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border: 2px solid var(--petroleo);
   border-radius: var(--radio-tarjeta);
+}
+.desc p {
+  flex: 1 1 12rem;
+}
+.desc .boton {
+  flex: none;
+  margin-left: auto;
+  background: var(--blanco);
+}
+/* En el móvil, descripción y altavoz en una fila: el botón enseña solo el altavoz
+   (su nombre, «Escuchar la descripción», lo sigue leyendo el lector de pantalla). */
+@media (max-width: 30rem) {
+  .desc {
+    flex-wrap: nowrap;
+    padding: 0.4rem 0.6rem;
+  }
+  .desc p {
+    flex: 1 1 auto;
+  }
+  .desc .boton {
+    padding-inline: 0.5rem;
+  }
+  .desc .desc__texto-boton {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 .pasos__titulo {
   font-size: 1.25rem;
@@ -260,7 +280,8 @@ a.tarjeta:hover {
 .paso img {
   width: 4rem;
   height: 4rem;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff;
   border-radius: 1rem;
 }
 .paso__texto {
@@ -335,38 +356,76 @@ a.tarjeta:hover {
   color: var(--petroleo);
 }
 
-/* «Antes» y «Después» */
-.contexto {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+/* --- Un solo paso por pantalla (revisión con la profesora) ---
+ * Con JavaScript, paginar.js deja a la vista solo el paso que toca; aquí se le da el sitio:
+ * imagen grande, texto y «Hecho» al lado. Las marcas dicen por dónde voy (✓ 2 3 4). */
+.pasos__marcas {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-left: auto;
 }
-.contexto > div {
-  display: grid;
-  gap: 0.15rem;
-  align-content: start;
-  padding: 0.4rem 0.6rem;
-  border: 2px dashed var(--gris);
-  border-radius: 0.8rem;
-}
-.contexto span {
-  font-size: 1rem;
-  color: var(--gris);
-}
-.contexto b {
-  font-family: var(--fuente-titulos);
-  color: var(--petroleo);
-}
-.contexto__vacio {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.contexto__vacio .vacio__dibujo {
+.pasos__marca {
+  display: inline-grid;
+  place-items: center;
   width: 1.75rem;
   height: 1.75rem;
+  font-family: var(--fuente-titulos);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--petroleo);
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 50%;
 }
-
+.pasos__marca--hecha {
+  border-style: dashed;
+}
+.pasos__marca--actual {
+  color: var(--blanco);
+  background: var(--petroleo);
+  outline: 2px solid var(--petroleo);
+  outline-offset: 2px;
+}
+.js .pasos--completos {
+  display: none;
+}
+.js .pasos > .paso {
+  grid-template-columns: auto 1fr;
+  border-color: var(--petroleo);
+}
+.js .pasos > .paso .paso__texto {
+  font-size: 1.15rem;
+}
+@media (min-width: 48rem) {
+  .js .pasos > .paso {
+    grid-template-columns: auto 1fr auto;
+    padding: 0.75rem;
+  }
+  .js .pasos > .paso img {
+    width: min(8rem, 20dvh);
+    height: min(8rem, 20dvh);
+  }
+  .js .pasos > .paso .paso__accion {
+    grid-column: auto;
+  }
+  .js .pasos > .paso .paso__boton {
+    min-height: var(--toque-grande);
+    padding-inline: 1.5rem;
+    font-size: 1.25rem;
+  }
+}
+.confirmar__nombre {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.confirmar--pagina {
+  align-items: center;
+}
 /* Contenedores que HTMX rellena (HU-02-05): sin caja propia, para no añadir huecos. */
 .mensajes-zona,
 .confirmar-zona {
@@ -407,9 +466,6 @@ dialog.confirmar::backdrop {
 .confirmar h2 {
   margin: 0 0 1rem;
   font-size: 1.5rem;
-}
-.confirmar--pagina {
-  align-items: center;
 }
 .fila-botones {
   display: flex;

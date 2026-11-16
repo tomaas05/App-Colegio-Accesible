@@ -1,0 +1,3 @@
+{# Día de la semana como en el boceto B30: su letra dentro de una forma con color.        #}
+{# Recibe: numero (1 = lunes … 7 = domingo; número o texto). Decorativo: el nombre va al lado. #}
+{% with n=numero|add:0 %}<span class="dia-forma dia-forma--{{ n }}" aria-hidden="true"><span>{% if n == 1 %}L{% elif n == 2 %}M{% elif n == 3 %}X{% elif n == 4 %}J{% elif n == 5 %}V{% elif n == 6 %}S{% else %}D{% endif %}</span></span>{% endwith %}

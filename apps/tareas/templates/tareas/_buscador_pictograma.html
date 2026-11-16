@@ -10,7 +10,7 @@
             hx-get="{% url 'pictogramas:buscar' %}" hx-include="#q-{{ campo }}" hx-vals='{"campo": "{{ campo }}"}'
             hx-target="#resultados-{{ campo }}" hx-swap="innerHTML" hx-sync="this:replace">Buscar</button>
   </div>
-  <p class="campo__ayuda" id="ayuda-{{ campo }}">Por ejemplo: lavarse las manos.</p>
+  <p class="campo__ayuda" id="ayuda-{{ campo }}">Por ejemplo: lavarse las manos. Sin internet, sube una imagen.</p>
   {# Región viva: dice cuántos pictogramas hay o qué ha fallado, sin mover el foco. #}
   <p class="buscador-picto__estado" id="estado-{{ campo }}" role="status"></p>
   <div class="buscador-picto__resultados" id="resultados-{{ campo }}">

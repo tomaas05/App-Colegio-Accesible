@@ -8,6 +8,7 @@ import pytest
 from axe_playwright_python.sync_playwright import Axe
 
 from apps.usuarios.models import Usuario
+from tests.e2e.ayudas import ir_a
 
 pytestmark = pytest.mark.e2e
 
@@ -85,6 +86,8 @@ def test_buscador_de_pictogramas_con_resultados_y_un_paso(
     page.set_viewport_size({"width": ancho, "height": alto})
     page.goto(live_server.url + "/tareas/crear/")
 
+    # El formulario va por pantallas (decisión 0005): «Siguiente» hasta llegar al buscador.
+    ir_a(page, "#q-arasaac_id_tarea")
     # Con teclado: escribir, Intro busca (no envía el formulario) y el foco no se pierde.
     page.focus("#q-arasaac_id_tarea")
     page.keyboard.type("perro")
@@ -103,6 +106,7 @@ def test_buscador_de_pictogramas_con_resultados_y_un_paso(
     caja = page.locator("label.picto", has_text="perro guía").bounding_box()
     assert caja["width"] >= 48 and caja["height"] >= 48
 
+    ir_a(page, "[data-anadir-paso]")
     page.get_by_role("button", name="Añadir paso").click()
     page.get_by_text("Paso 1 añadido.").wait_for()
     assert page.evaluate("document.activeElement.name") == "pasos-0-descripcion"

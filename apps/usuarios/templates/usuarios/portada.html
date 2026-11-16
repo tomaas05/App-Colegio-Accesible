@@ -1,31 +1,38 @@
 {% extends "base.html" %}
-{% load static pictos %}
+{% load static %}
 
-{% block titulo %}¿Quién eres? · Despega{% endblock %}
+{% block titulo %}¿Cuál es tu clase? · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
+{# Bocetos B01 + B02 · Primera pantalla. HU-01-06. Aquí llega quien no ha entrado (LOGIN_URL). #}
+{# Revisión con la profesora: las clases salen directamente y la entrada de los adultos va     #}
+{# en pequeño, al final (también al final del barrido: el estudiante no pasa por ella).        #}
+{% block volver %}<img class="barra__logo" src="{% static 'img/logo-despega.webp' %}" alt="Despega" width="337" height="140">{% endblock %}
+{% block h1 %}¿Cuál es tu clase?{% endblock %}
+
 {% block contenido %}
-{# Boceto B01 · Inicio. HU-01-06. Aquí llega quien no ha entrado (LOGIN_URL). #}
-{% with siguiente=request.GET.next %}
-<div class="acceso-est">
-  <div class="cab-acceso cab-acceso--centro">
-    <img class="cab-acceso__logo" src="{% static 'img/logo-despega.webp' %}" alt="Despega" width="337" height="140">
-    <h1>¿Quién eres?</h1>
-  </div>
-  <ul class="losetas losetas--grandes">
+<div class="encaja encaja--centro">
+  {% if clases %}
+  <ul class="losetas" id="clases" aria-labelledby="titulo" data-paginar>
+    {% for clase in clases %}
     <li>
-      <a class="loseta" href="{% url 'usuarios:clases' %}{% if siguiente %}?next={{ siguiente|urlencode }}{% endif %}">
-        {% pictograma "mochila" "🎒" %}
-        <span class="loseta__nombre">Estudiante</span>
+      <a class="loseta" href="{% url 'usuarios:avatares' clase.pk %}{% if next %}?next={{ next|urlencode }}{% endif %}">
+        {# El nombre ya se lee: la imagen es decorativa para el lector de pantalla. #}
+        {% if clase.imagen %}<img class="loseta__imagen" src="{{ clase.imagen.url }}" alt="" width="96" height="96">{% else %}<span class="loseta__dibujo" aria-hidden="true">🏫</span>{% endif %}
+        <span class="loseta__nombre">{{ clase.nombre }}</span>
+        {% if clase.tutor_corto %}<span class="loseta__sub">{{ clase.tutor_corto }}</span>{% endif %}
       </a>
     </li>
-    <li>
-      <a class="loseta" href="{% url 'usuarios:entrar' %}{% if siguiente %}?next={{ siguiente|urlencode }}{% endif %}">
-        {% pictograma "llave" "🔑" %}
-        <span class="loseta__nombre">Adulto</span>
-      </a>
-    </li>
+    {% endfor %}
   </ul>
+  {% else %}
+  <p class="aviso-vacio">Todavía no hay ninguna clase. Pide ayuda a tu tutor.</p>
+  {% endif %}
 </div>
-{% endwith %}
+<div class="pie">
+  {% include "_paginador.html" with de="clases" que="Más clases" only %}
+  <p class="pie__acciones entrada-adulto">
+    <a class="boton boton--aux" href="{% url 'usuarios:entrar' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Soy un adulto</a>
+  </p>
+</div>
 {% endblock %}

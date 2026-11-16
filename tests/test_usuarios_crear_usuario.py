@@ -4,6 +4,8 @@ Una prueba por cada prueba de aceptación de Jira (PA1 a PA5) y algunas más.
 Solo el administrador crea cuentas. Datos de prueba: `admin` / «despega2026».
 """
 
+import re
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
@@ -285,7 +287,7 @@ def test_pa4_cargo_25_estudiantes_y_la_fila_mala_se_indica(admin):
     assert not Usuario.objects.filter(first_name="Malo").exists()
     contenido = respuesta.content.decode()
     assert "Se han creado 25 cuentas en PTVAL 1." in contenido
-    assert '<th scope="row">14</th>' in contenido
+    assert re.search(r'<th [^>]*scope="row"[^>]*>14</th>', contenido)  # la fila mala
     assert "No hay ninguna imagen «dragón» en la rejilla." in contenido
     assert Estudiante.objects.filter(clase=ptval1(), usuario__first_name="Alumno25").exists()
 

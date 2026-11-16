@@ -3,27 +3,11 @@
  * Boceto B52 · Tutor · Perfil visual. Solo variables de tokens.css y rem.
  */
 
-.perfil-pagina {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  width: min(72rem, 100%);
-  margin-inline: auto;
-}
-.perfil-pagina h1,
-.perfil-pagina h2,
-.perfil-pagina p {
-  margin: 0;
-}
-.perfil-intro {
-  color: var(--gris);
-}
-
 /* --- Lista de estudiantes del tutor (/perfil/) --- */
 .perfil-estudiantes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+  gap: 0.75rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -31,14 +15,17 @@
 .perfil-estudiantes > li {
   display: flex;
 }
+/* Cada alumno: avatar, nombre y, si hay sitio, cómo tiene puesto el perfil. */
 .perfil-estudiante-card {
   display: flex;
   flex: 1;
+  flex-direction: column;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.35rem;
   min-height: var(--toque-grande);
-  padding: 0.85rem 1rem;
+  padding: 0.6rem 0.5rem;
   color: var(--texto);
+  text-align: center;
   text-decoration: none;
   background: var(--blanco);
   border: 2px solid var(--petroleo);
@@ -57,35 +44,31 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  min-width: 0;
 }
 .perfil-estudiante-card__info b {
   font-family: var(--fuente-titulos);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
+  line-height: 1.2;
   color: var(--petroleo);
 }
 .perfil-estudiante-card__info span {
   font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
+  line-height: 1.3;
   color: var(--gris);
 }
-
-/* --- Aviso de guardado --- */
-.aviso-ok {
-  padding: 0.75rem 1rem;
-  font-weight: 700;
-  color: var(--petroleo);
-  background: var(--menta);
-  border: 2px solid var(--petroleo);
-  border-radius: 1rem;
+@media (max-width: 47.99rem) {
+  .perfil-estudiante-card__info span {
+    display: none;
+  }
+}
+@media (min-width: 48rem) {
+  .perfil-estudiantes {
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  }
 }
 
-/* --- B52 · Formulario y vista previa --- */
-.perfil-rejilla {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: 1.5rem;
-  align-items: start;
-}
-
+/* --- Opciones como tarjetas (radio y casilla) --- */
 .grupo-opciones {
   margin: 0;
   padding: 0.85rem 1rem;
@@ -98,6 +81,14 @@
   font-family: var(--fuente-titulos);
   font-weight: 800;
   color: var(--petroleo);
+}
+/* Una frase que explica las opciones (Crear tareas). No cambia con el perfil del alumno. */
+.grupo-opciones__ayuda {
+  flex: none;
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--gris);
 }
 .opciones-lista {
   display: flex;
@@ -136,143 +127,120 @@
   accent-color: var(--petroleo);
 }
 
-/* --- Recuadro de vista previa en vivo --- */
-.perfil-previa {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 1.1rem;
+
+/* --- B52 · Perfil visual por categorías (decisión 0005) ---
+ * .perfil-tarjeta es la tarjeta de configuración: lleva los data-* del perfil que se está
+ * eligiendo y por eso sus colores, su letra y sus botones cambian al momento (tokens.css).
+ * No hay vista previa aparte. */
+.perfil {
+  gap: 0.75rem;
+}
+.perfil h2,
+.perfil p {
+  margin: 0;
+}
+.perfil-tarjeta {
+  gap: 0.75rem;
+  padding: 0.85rem;
+  font-family: var(--fuente-texto);
+  font-size: var(--tamano-base);
   color: var(--texto);
   background: var(--blanco);
   border: 3px solid var(--petroleo);
   border-radius: var(--radio-tarjeta);
-  font-family: var(--fuente-texto);
 }
-.perfil-previa h2 {
-  font-size: 1.35rem;
+.perfil-tarjeta h2,
+.perfil-tarjeta legend {
+  font-family: var(--fuente-titulos);
+  font-size: 1.1em;
+  font-weight: 800;
   color: var(--petroleo);
 }
-.perfil-previa__resumen {
-  font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
+/* Paso 1: las categorías, con lo que cada una tiene elegido. */
+.perfil-categorias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 7em), 1fr)); /* em: con letra grande, menos columnas */
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.perfil-categorias > li {
+  display: flex;
+}
+.perfil-categoria {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.1rem;
+  min-height: max(var(--toque-grande), 4em);
+  padding: 0.4rem 0.6rem;
+  hyphens: auto; /* «Tempori-zador» y no «Temporiza-dor» (lang="es" en base.html) */
+  font-family: var(--fuente-texto);
+  font-size: 1em;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--texto);
+  text-align: left;
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-left-width: 0.4rem;
+  border-radius: 1rem;
+}
+.perfil-categoria b {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.perfil-categoria span {
   color: var(--gris);
 }
-.perfil-previa__marco {
+/* Paso 2: las opciones de una categoría. Sin caja propia: la caja es la tarjeta. */
+.perfil-panel.grupo-opciones {
+  min-inline-size: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.perfil-panel > legend {
+  padding: 0;
+}
+.perfil-panel .opciones-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+}
+.opciones-grupo {
+  display: contents;
+}
+.perfil-panel .opcion-radio,
+.perfil-panel .opcion-check {
+  display: flex;
+  background: var(--blanco);
+}
+.opcion__fuente {
+  font-family: var(--fuente-texto);
+}
+/* Sin JavaScript se ven todas las categorías seguidas: cada una con su separación. */
+html:not(.js) .perfil-panel {
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--menta);
+}
+/* «Hay cambios sin guardar»: una línea encima de los botones, siempre con su sitio. */
+.perfil-pie > .paginador {
+  flex: 1 1 100%;
+}
+.perfil-pie > .pie__estado {
+  flex: 1 1 100%;
+  min-height: 1.5em;
+}
+/* Aviso al salir con cambios sin guardar. */
+.perfil-salir p {
+  margin: 0 0 1rem;
+}
+.perfil-salir__botones {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.85rem;
-  font-size: var(--tamano-base);
-  background: var(--blanco);
-  border: 2px dashed var(--verde-oscuro);
-  border-radius: 1rem;
-}
-.perfil-previa__tarjeta {
-  padding: 0.65rem 0.85rem;
-  color: var(--texto);
-  background: var(--menta);
-  border: 3px solid var(--petroleo);
-  border-radius: 1rem;
-}
-.perfil-previa__hora {
-  font-family: var(--fuente-titulos);
-  font-weight: 800;
-  font-size: 1em;
-  color: var(--verde-oscuro);
-}
-.perfil-previa__nombre {
-  font-family: var(--fuente-titulos);
-  font-weight: 800;
-  color: var(--petroleo);
-}
-.perfil-previa__boton {
-  width: 100%;
-  min-height: var(--toque);
-  padding-block: 0.2rem;
-  line-height: 1.1;
-  font-size: var(--tamano-base);
-  color: var(--blanco);
-  background: var(--petroleo);
-  border-color: var(--petroleo);
-}
-.perfil-previa__boton:hover {
-  background: var(--verde-oscuro);
-}
-
-/* Variables de la vista previa según lo elegido en el formulario */
-.perfil-previa[data-paleta="suave"] {
-  --petroleo: #164652;
-  --verde-oscuro: #216b67;
-  --menta: #edf6f3;
-  --texto: #233135;
-  --gris: #526368;
-  --blanco: #fafdfb;
-}
-.perfil-previa[data-paleta="alto_contraste"] {
-  --petroleo: #002233;
-  --verde-oscuro: #003d52;
-  --menta: #e6f2ff;
-  --texto: #000000;
-  --gris: #222b2e;
-  --blanco: #ffffff;
-}
-.perfil-previa[data-tema="oscuro"] {
-  --petroleo: #b8ece3;
-  --verde-oscuro: #88d9cb;
-  --menta: #182f37;
-  --texto: #f2f7f6;
-  --gris: #b8ccd0;
-  --blanco: #0f1d22;
-}
-.perfil-previa[data-tema="oscuro"][data-paleta="suave"] {
-  --petroleo: #c4efe7;
-  --verde-oscuro: #96dfd2;
-  --menta: #1f333a;
-  --texto: #eaf2f0;
-  --gris: #c2d4d8;
-  --blanco: #162429;
-}
-.perfil-previa[data-tema="oscuro"][data-paleta="alto_contraste"] {
-  --petroleo: #ffffff;
-  --verde-oscuro: #99f2e6;
-  --menta: #0d1f26;
-  --texto: #ffffff;
-  --gris: #d9e6e8;
-  --blanco: #000000;
-}
-.perfil-previa[data-fuente="nunito"] {
-  --fuente-texto: "Nunito", Arial, sans-serif;
-  --fuente-titulos: "Nunito", Arial, sans-serif;
-}
-.perfil-previa[data-fuente="open_sans"] {
-  --fuente-texto: "Open Sans", Arial, sans-serif;
-  --fuente-titulos: "Open Sans", Arial, sans-serif;
-}
-.perfil-previa[data-fuente="atkinson"] {
-  --fuente-texto: "Atkinson Hyperlegible", Verdana, sans-serif;
-  --fuente-titulos: "Atkinson Hyperlegible", Verdana, sans-serif;
-}
-.perfil-previa[data-fuente="lexend"] {
-  --fuente-texto: "Lexend", "Trebuchet MS", sans-serif;
-  --fuente-titulos: "Lexend", "Trebuchet MS", sans-serif;
-}
-.perfil-previa[data-letra="16"] {
-  --tamano-base: 1rem;
-}
-.perfil-previa[data-letra="20"] {
-  --tamano-base: 1.25rem;
-}
-.perfil-previa[data-letra="24"] {
-  --tamano-base: 1.5rem;
-}
-.perfil-previa[data-letra="32"] {
-  --tamano-base: 2rem;
-}
-.perfil-previa[data-botones="48"] {
-  --toque: 3rem;
-}
-.perfil-previa[data-botones="64"] {
-  --toque: 4rem;
-}
-.perfil-previa[data-botones="80"] {
-  --toque: 5rem;
+  gap: var(--separacion);
 }

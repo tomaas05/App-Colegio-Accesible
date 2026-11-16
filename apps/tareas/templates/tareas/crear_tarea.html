@@ -4,62 +4,83 @@
 {% block titulo %}Crear tarea · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
 
+{# Bocetos B40 · Crear tarea y B41 · Pasos de una tarea. HU-03-01.                            #}
+{# Sin desplazamiento (decisión 0005): el formulario está hecho de bloques pequeños (.bloque) #}
+{# y en cada pantalla se ven los que caben, con «Anterior / Siguiente». El título de cada     #}
+{# grupo («Imagen de la tarea», «Paso 2») se repite en cada pantalla donde sale uno suyo.    #}
+{# «Guardar tarea» está en la última pantalla, en el sitio de «Siguiente».                    #}
+{% block pantalla %}pantalla--estrecha{% endblock %}
+{% block volver %}{% url 'tareas:catalogo' as atras %}{% include "_volver.html" with url=atras texto="Tareas creadas" etiqueta="Volver a Tareas creadas" only %}{% endblock %}
+{% block h1 %}Crear tarea{% endblock %}
+
 {% block contenido %}
-{# Bocetos B40 · Crear tarea y B41 · Pasos de una tarea. HU-03-01. #}
-<div class="admin tarea-form">
-  <div class="admin__cab">
-    <a class="boton boton--aux" href="{% url 'tareas:catalogo' %}"><span aria-hidden="true">‹</span> Tareas creadas</a>
-    <h1>Crear tarea</h1>
-  </div>
+{% include "usuarios/_mensajes.html" %}
 
-  {% include "usuarios/_mensajes.html" %}
+<form class="formulario encaja" method="post" enctype="multipart/form-data" novalidate data-form-tarea>
+  {% csrf_token %}
+  <div class="encaja">
+    <div class="bloques" id="bloques" data-paginar data-pag-variable data-items=".bloque" data-foco="titulo" data-estado="Parte {n} de {total}">
+      {% if form.errors or formset.total_error_count or formset.non_form_errors %}
+      <div class="bloque" data-pag-inicio>
+        {% include "usuarios/_errores.html" %}
+        {% if formset.total_error_count or formset.non_form_errors %}
+        <div class="aviso-error" role="alert">
+          <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
+          <div>
+            {% for error in formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}
+            {% if formset.total_error_count %}<p>A algún paso le falta un dato. Los pasos con error están marcados.</p>{% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
 
-  <form class="formulario" method="post" enctype="multipart/form-data" novalidate data-form-tarea>
-    {% csrf_token %}
-    {% include "usuarios/_errores.html" %}
-    {% if formset.total_error_count %}
-    <div class="aviso-error" role="alert">
-      <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
-      <p>A algún paso le falta un dato. Revisa los pasos marcados más abajo.</p>
-    </div>
-    {% endif %}
+      <fieldset class="grupo">
+        <legend>Datos de la tarea</legend>
+        <div class="bloque">
+          {% include "tareas/_campo.html" with campo=form.nombre %}
+          {% include "tareas/_campo.html" with campo=form.descripcion %}
+        </div>
+        <div class="bloque">{% include "tareas/_campo.html" with campo=form.ambito %}</div>
+      </fieldset>
 
-    <fieldset class="admin__tarjeta">
-      <legend>Datos de la tarea</legend>
-      {% include "tareas/_campo.html" with campo=form.nombre %}
-      {% include "tareas/_campo.html" with campo=form.descripcion %}
-      {% include "tareas/_campo.html" with campo=form.ambito %}
-    </fieldset>
+      <fieldset class="grupo">
+        <legend>Imagen de la tarea</legend>
+        <div class="bloque">
+          <p class="campo__ayuda">Sube una imagen de tu equipo o busca un pictograma.</p>
+          {% include "tareas/_campo.html" with campo=form.imagen %}
+        </div>
+        <div class="bloque">{% include "tareas/_buscador_pictograma.html" with campo=form.arasaac_id_tarea.html_name elegido=form.pictograma_elegido %}</div>
+        <div class="bloque">{% include "tareas/_campo.html" with campo=form.descripcion_imagen %}</div>
+      </fieldset>
 
-    <fieldset class="admin__tarjeta">
-      <legend>Imagen de la tarea</legend>
-      <p>Sube una imagen de tu equipo o busca un pictograma.</p>
-      {% include "tareas/_campo.html" with campo=form.imagen %}
-      {% include "tareas/_buscador_pictograma.html" with campo=form.arasaac_id_tarea.html_name elegido=form.pictograma_elegido %}
-      {% include "tareas/_campo.html" with campo=form.descripcion_imagen %}
-    </fieldset>
-
-    <fieldset class="admin__tarjeta">
-      <legend>Pasos</legend>
       {{ formset.management_form }}
-      {% for error in formset.non_form_errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
-      <ol class="pasos-form" id="contenedor-pasos" role="list">
+      {# Cada paso es un grupo con sus bloques. HTMX añade los nuevos al final. #}
+      <ol class="pasos-form" id="contenedor-pasos" role="list" aria-label="Pasos">
         {% for paso_form in formset %}{% include "tareas/_paso.html" with numero=forloop.counter %}{% endfor %}
       </ol>
-      {# Solo con JavaScript (tarea.js le quita el hidden): HTMX pide un paso vacío. #}
-      <button class="boton--aux" type="button" data-anadir-paso hidden
-              hx-get="{% url 'tareas:anadir_paso' %}" hx-target="#contenedor-pasos" hx-swap="beforeend">
-        <span aria-hidden="true">+</span> Añadir paso
-      </button>
-      <p class="buscador-picto__estado" role="status" data-pasos-estado></p>
-    </fieldset>
 
-    <div class="tarea-form__acciones">
-      <button class="boton--principal boton--mediano" type="submit" data-revisar>Guardar tarea</button>
-      <a class="boton boton--aux" href="{% url 'tareas:catalogo' %}">Cancelar</a>
+      <div class="bloque bloque--anadir">
+        <p class="campo__ayuda">Los pasos son opcionales. Cada uno, con su imagen y su texto.</p>
+        {# Solo con JavaScript (tarea.js le quita el hidden): HTMX pide un paso vacío. #}
+        <button class="boton--aux" type="button" data-anadir-paso hidden
+                hx-get="{% url 'tareas:anadir_paso' %}" hx-target="#contenedor-pasos" hx-swap="beforeend">
+          <span aria-hidden="true">+</span> Añadir paso
+        </button>
+      </div>
     </div>
-  </form>
-</div>
+  </div>
+
+  {# Lo que pasa con los pasos («Paso 2 añadido»): siempre a la vista, encima del pie. #}
+  <p class="pie__estado" role="status" data-pasos-estado></p>
+  {# Para dejarla sin guardar, «‹ Tareas creadas» de la barra de título. #}
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Partes del formulario" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-revisar data-solo-ultima="bloques">Guardar tarea</button>
+    </div>
+  </div>
+</form>
 
 {# Vista previa antes de guardar (B40, paso 5). Solo con JavaScript; sin él se guarda directamente. #}
 <dialog class="confirmar" id="vista-previa" aria-labelledby="vista-previa-titulo">

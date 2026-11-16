@@ -58,6 +58,12 @@ def panel_de(client, username):
     return client.get(reverse("usuarios:panel")).content.decode()
 
 
+def alumnos_de(client, username):
+    """El tutor ve a sus estudiantes en «Alumnos», no en el panel (revisión con la profesora)."""
+    client.force_login(adulto(username))
+    return client.get(reverse("perfil:lista")).content.decode()
+
+
 def codigos(usuario):
     return set(estudiantes_de(usuario).values_list("codigo_estudiante", flat=True))
 
@@ -83,7 +89,7 @@ def test_pa1_vinculo_tutor_y_familiar_y_los_dos_lo_ven(admin, client):
     assert "Vínculos de Mateo García guardados. Su tutor ahora es Pedro Gómez Sanz." in aviso
     assert 'role="status"' in aviso
 
-    assert "Mateo García" in panel_de(client, "tutor2")
+    assert "Mateo García" in alumnos_de(client, "tutor2")
     familiar = panel_de(client, "familiar")
     assert "Mateo García" in familiar
     assert "Lucía Fernández" in familiar  # un familiar puede tener a más de un estudiante
@@ -188,12 +194,13 @@ def test_pa3_un_tutor_no_ve_a_los_estudiantes_de_otro_tutor(client, datos):
     assert codigos(adulto("tutor")) == PTVAL_1
     assert codigos(adulto("tutor2")) == PTVAL_2
 
-    ana = panel_de(client, "tutor")
-    assert "Tus estudiantes" in ana
+    # En el panel, el tutor no ve a sus alumnos: los ve al entrar en «Alumnos».
+    assert "Tus estudiantes" not in panel_de(client, "tutor")
+    ana = alumnos_de(client, "tutor")
     assert "Mateo García" in ana
     assert "Daniela Torres" not in ana and "Pablo Díaz" not in ana
 
-    pedro = panel_de(client, "tutor2")
+    pedro = alumnos_de(client, "tutor2")
     assert "Daniela Torres" in pedro
     assert "Mateo García" not in pedro
 
@@ -225,12 +232,12 @@ def test_pa4_un_familiar_sin_estudiantes_lo_ve_dicho(client, datos):
 
 def test_cada_clase_ensena_a_su_tutor_para_reconocerla(client, datos):
     """B02: «PTVAL 1 · A. Martín». Al cambiar el tutor de todos, cambia también aquí."""
-    contenido = client.get(reverse("usuarios:clases")).content.decode()
+    contenido = client.get(reverse("inicio")).content.decode()
     assert '<span class="loseta__sub">A. Martín</span>' in contenido
     assert '<span class="loseta__sub">P. Gómez</span>' in contenido
     # Con dos tutores en la misma clase no se pone ninguno, para no confundir.
     Estudiante.objects.filter(codigo_estudiante="A02").update(tutor=adulto("tutor2"))
-    contenido = client.get(reverse("usuarios:clases")).content.decode()
+    contenido = client.get(reverse("inicio")).content.decode()
     assert "A. Martín" not in contenido
 
 
@@ -269,7 +276,7 @@ def test_el_panel_del_administrador_no_lista_estudiantes(admin):
 )
 def test_buscar_elige_el_primero_que_coincide(admin, texto, nombre):
     contenido = admin.get(url(q=texto)).content.decode()
-    assert f"<h2>{nombre}</h2>" in contenido
+    assert f'data-estudiante="{nombre}"' in contenido  # su formulario de vínculos
 
 
 def test_buscar_sin_resultados(admin):

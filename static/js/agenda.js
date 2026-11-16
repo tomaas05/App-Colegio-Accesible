@@ -1,7 +1,7 @@
 /*
  * Despega · Pantallas de la agenda del estudiante (B06 y B07).
  * Cuatro cosas, todas opcionales: sin JavaScript las pantallas siguen funcionando.
- *  1. Reloj de la cabecera, puesto en hora cada segundo (RNF2.1.2).
+ *  1. (El reloj pasó a base.js: ahora está en la barra de título de todas las pantallas.)
  *  2. «Escuchar la descripción» con la voz del dispositivo (HU-02-02). Solo suena al
  *     pulsarlo; el botón sigue oculto si el navegador no tiene voz.
  *  3. Confirmación de «Terminar» en un <dialog> (B08, RF2.5.1). Sin JavaScript, el
@@ -11,23 +11,11 @@
 (function () {
   "use strict";
 
-  // 1. Reloj
-  var relojes = document.querySelectorAll("[data-reloj]");
+  // 1. El reloj de la barra de título lo lleva base.js (está en todas las pantallas del estudiante).
+
+  // Dos cifras: lo usa el temporizador (4) para «24:58».
   function dos(n) {
     return n < 10 ? "0" + n : String(n);
-  }
-  function tic() {
-    var d = new Date();
-    var texto = dos(d.getHours()) + ":" + dos(d.getMinutes());
-    relojes.forEach(function (r) {
-      if (r.textContent !== texto) {
-        r.textContent = texto;
-      }
-    });
-  }
-  if (relojes.length) {
-    tic();
-    window.setInterval(tic, 1000);
   }
 
   // 2. Escuchar

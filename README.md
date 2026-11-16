@@ -8,8 +8,8 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 
 | Dirección | Pantalla | HU | Responsable |
 | --- | --- | --- | --- |
-| `/` | Portada «¿Quién eres?»: Estudiante o Adulto (B01). Aquí llega quien no ha entrado | HU-01-06 | Manu |
-| `/estudiante/` | ¿Cuál es tu clase? (B02) → avatares de la clase (B03) → 3 imágenes o contraseña | HU-01-06 | Manu |
+| `/` | Portada «¿Cuál es tu clase?» y, en pequeño, «Soy un adulto» (B01 + B02). Aquí llega quien no ha entrado | HU-01-06 | Manu |
+| `/estudiante/clase/<id>/` | Avatares de la clase (B03) → 3 imágenes o contraseña. `/estudiante/` lleva a la portada | HU-01-06 | Manu |
 | `/entrar/` | Entrar como tutor, profesional, familiar o administrador (B12), con bloqueo tras 5 fallos | HU-01-07 | Manu |
 | `/panel/` | Pantalla principal del adulto, con su nombre y sus opciones (B13) | HU-01-07 | Manu |
 | `/usuarios/` | Cuentas con filtros (B20), crear cuenta (B21) y cargar una lista de estudiantes desde un CSV. Solo el administrador | HU-01-01 | Manu |
@@ -18,14 +18,14 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/agenda/tarea/<id>/` | Detalle de una tarea: pasos, temporizador, Empezar y Terminar | HU-02-02 a HU-02-04 · HU-07-01 | Tomás · Jorge |
 | `/tareas/crear/` · `/tareas/catalogo/` · `/tareas/asignar/` | Crear una tarea, ver las creadas y asignarlas a mis estudiantes. Solo tutor, profesional y familiar | HU-03-01 · HU-03-03 | Úrsula |
 | `/pictogramas/buscar/` · `/pictogramas/<id>.png` | Buscador de pictogramas de ARASAAC en el servidor y copia local de cada uno. Solo adultos ([decisión 0004](docs/decisiones/0004-pictogramas-arasaac.md)) | HU-03-01 | Úrsula |
-| `/perfil/` · `/perfil/<codigo>/` | Elegir estudiante y configurar su perfil visual y temporizador (B52, B54) | HU-04-01 · HU-07-01 | Jorge |
+| `/perfil/` · `/perfil/<codigo>/` | «Alumnos» del tutor; al pulsar uno, su perfil visual por categorías y temporizador (B52, B54) | HU-04-01 · HU-07-01 | Jorge |
 | `/horario/` · `/horario/mi-horario/` | El administrador carga el horario de cada clase (B37); el estudiante ve el de su clase | HU-03-11 | Javi |
 | `/panel/mis-estudiantes/` | El profesional elige en la lista del centro los estudiantes que atiende (B26) | HU-01-08 | Javi |
 | `/panel/mis-estudiantes/<código>/agenda/` | Agenda de un estudiante que atiendo, solo consulta, día a día (B27) | HU-01-09 | Javi |
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
 
-Los adultos tienen una barra con el logotipo (lleva a su pantalla principal) y un panel lateral con sus opciones; las pantallas de entrada y las del estudiante van sin barra, como en los bocetos: [decisión 0003](docs/decisiones/0003-estructura-y-navegacion.md). La auditoría de interfaz está en [docs/iteracion-1/auditoria-ui.md](docs/iteracion-1/auditoria-ui.md).
+Los adultos tienen una barra con el logotipo (lleva a su pantalla principal) y un panel lateral con sus opciones: [decisión 0003](docs/decisiones/0003-estructura-y-navegacion.md). Todas las pantallas tienen además una barra de título (dónde estoy, la fecha de hoy y, el estudiante, su nombre y la hora) y ninguna se desplaza: lo que no cabe pasa de pantalla con «Anterior / Siguiente» ([decisión 0005](docs/decisiones/0005-sin-desplazamiento-y-revision-profesora.md)). La auditoría de interfaz está en [docs/iteracion-1/auditoria-ui.md](docs/iteracion-1/auditoria-ui.md).
 
 ## Tecnologías
 

@@ -16,13 +16,13 @@ def test_contrasenas_con_argon2():
     assert base.PASSWORD_HASHERS[0].endswith("Argon2PasswordHasher")
 
 
-def test_pagina_de_inicio_responde(client):
+def test_pagina_de_inicio_responde(client, db):
     respuesta = client.get(reverse("inicio"))
     assert respuesta.status_code == 200
     assert b'<html lang="es">' in respuesta.content
 
 
-def test_htmx_servido_desde_nuestro_servidor(client):
+def test_htmx_servido_desde_nuestro_servidor(client, db):
     respuesta = client.get(reverse("inicio"))
     assert b"/static/vendor/htmx/htmx.min.js" in respuesta.content
     assert b"unpkg.com" not in respuesta.content

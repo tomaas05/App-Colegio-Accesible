@@ -39,11 +39,20 @@ def lucia():
 # --- Portada «¿Quién eres?» (B01) y LOGIN_URL ---
 
 
-def test_la_portada_lleva_a_estudiante_y_a_adulto(client, datos):
+def test_la_portada_ensena_las_clases_y_en_pequeno_la_entrada_de_adultos(client, datos):
+    """Revisión con la profesora: las clases salen directamente; el adulto entra por un
+    botón pequeño, al final (también al final del barrido)."""
     contenido = client.get(reverse("inicio")).content.decode()
-    assert "¿Quién eres?" in contenido
-    assert f'href="{reverse("usuarios:clases")}"' in contenido
-    assert f'href="{reverse("usuarios:entrar")}"' in contenido
+    assert "¿Cuál es tu clase?" in contenido and url_clase("PTVAL 1") in contenido
+    adulto = contenido.index(f'href="{reverse("usuarios:entrar")}"')
+    assert contenido.index(url_clase("PTVAL 2")) < adulto
+    assert "Soy un adulto" in contenido[adulto:] and "boton--aux" in contenido[adulto - 60 : adulto]
+
+
+def test_la_direccion_antigua_de_las_clases_lleva_a_la_portada(client, datos):
+    respuesta = client.get(reverse("usuarios:clases") + "?next=/agenda/")
+    assert respuesta.status_code == 302
+    assert respuesta["Location"] == reverse("inicio") + "?next=%2Fagenda%2F"
 
 
 def test_quien_no_ha_entrado_va_a_la_portada_y_no_pierde_la_pantalla_pedida(client, datos):
@@ -52,11 +61,11 @@ def test_quien_no_ha_entrado_va_a_la_portada_y_no_pierde_la_pantalla_pedida(clie
     assert respuesta["Location"] == reverse("inicio") + "?next=" + reverse("agenda:dia")
 
     portada = client.get(respuesta["Location"]).content.decode()
-    assert reverse("usuarios:clases") + "?next=/agenda/" in portada
+    assert url_clase("PTVAL 1") + "?next=/agenda/" in portada
 
 
 def test_la_lista_de_clases_ensena_las_clases_con_estudiantes(client, datos):
-    contenido = client.get(reverse("usuarios:clases")).content.decode()
+    contenido = client.get(reverse("inicio")).content.decode()
     assert "PTVAL 1" in contenido
     assert "PTVAL 2" in contenido
     assert url_clase("PTVAL 1") in contenido

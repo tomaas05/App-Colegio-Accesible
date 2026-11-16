@@ -1,0 +1,4 @@
+{# Botón «volver» de la barra de título, siempre el primero. Recibe: url, texto y, si el #}
+{# texto corto no basta para el lector de pantalla, etiqueta. siguiente: el ?next= de la  #}
+{# entrada, para no perder la pantalla que se pedía.                                     #}
+<a class="boton boton--aux barra__volver" href="{{ url }}{% if siguiente %}?next={{ siguiente|urlencode }}{% endif %}"{% if etiqueta %} aria-label="{{ etiqueta }}"{% endif %}><span aria-hidden="true">‹</span> {{ texto|default:"Volver" }}</a>

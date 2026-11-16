@@ -5,18 +5,23 @@
  */
 
 /* --- B37 · Administrador --- */
-.horario__clase,
-.horario__form {
+.horario__clase {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 1rem;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
 }
-.horario__clase .campo,
-.horario__form .campo {
-  flex: 1 1 12rem;
+.horario__clase label {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
 }
-.horario .campo select {
+.horario__clase select {
+  flex: 1 1 10rem;
+}
+.horario__clase select,
+.horario__form select {
+  min-width: 0;
   min-height: var(--toque);
   padding: 0.4rem 0.75rem;
   font: inherit;
@@ -25,144 +30,243 @@
   border: 2px solid var(--petroleo);
   border-radius: 0.75rem;
 }
-.horario .boton--aux {
-  min-height: var(--toque);
+.horario__clase select {
+  max-width: 20rem;
 }
-.horario .aviso-ok {
-  padding: 0.75rem 1rem;
-  background: var(--menta);
-  border: 3px solid var(--verde-oscuro);
-  border-radius: 1rem;
+.horario__poner > form,
+.horario__poner > p {
+  margin: 0.5rem 0 0;
 }
-.horario .aviso-ok p {
+/* Día, franja, asignatura y «Poner» en una fila si caben. */
+.horario__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  align-items: end;
+  gap: 0.5rem 0.75rem;
+}
+.horario__form .campo select {
+  width: 100%;
+}
+.horario__titulo {
+  flex: none;
   margin: 0;
-  font-weight: 700;
-}
-.horario section h2 {
-  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
 }
 .horario__caja {
-  max-width: 100%;
-  overflow-x: auto;
+  overflow: hidden;
   border: 2px solid var(--menta);
   border-radius: 1rem;
 }
-.horario__caja:focus-visible {
-  outline: var(--foco-grosor) solid var(--focus);
-  outline-offset: var(--foco-separacion);
-}
 .horario__tabla {
   width: 100%;
-  min-width: 48rem;
   border-collapse: collapse;
-}
-.horario__tabla caption {
-  padding: 0.75rem 1rem;
-  color: var(--gris);
-  text-align: left;
+  table-layout: fixed;
 }
 .horario__tabla th,
 .horario__tabla td {
-  padding: 0.5rem;
+  padding: 0.35rem 0.4rem;
   vertical-align: top;
   text-align: left;
   border-top: 1px solid var(--menta);
+  overflow-wrap: normal;
+  hyphens: auto;
 }
 .horario__tabla thead th {
+  padding-block: 0.2rem;
   font-family: var(--fuente-titulos);
   color: var(--petroleo);
   background: var(--menta);
 }
+.horario__tabla thead th:first-child {
+  width: 7.5rem;
+}
 .horario__tabla tbody th {
-  white-space: nowrap;
+  font-size: 1rem;
   color: var(--petroleo);
 }
 .horario__tabla td form {
-  margin-top: 0.4rem;
+  margin-top: 0.25rem;
 }
 .horario__asignatura {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
+  font-size: 1rem;
   font-weight: 700;
+  line-height: 1.25;
 }
 .horario__asignatura img {
   flex: none;
-  border-radius: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.4rem;
 }
 .horario__quitar {
   font-size: 1rem;
+  padding-inline: 0.75rem;
+  white-space: nowrap;
 }
 .horario__libre {
   color: var(--gris);
   font-style: italic;
 }
-.horario__poner {
-  padding: 1.25rem;
-  border: 2px solid var(--menta);
-  border-radius: 1.25rem;
+.horario__dia {
+  display: none;
 }
-.horario__poner p {
-  margin-top: 0.75rem;
+/* En el móvil cada franja es una tarjeta: su hora y debajo los 5 días, uno por línea, con
+   la forma y la letra del día (como en «Mi horario»). Se ve una franja cada vez. */
+@media (max-width: 47.99rem) {
+  .horario__tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .horario__tabla,
+  .horario__tabla tbody,
+  .horario__tabla tr,
+  .horario__tabla tbody th,
+  .horario__tabla td {
+    display: block;
+  }
+  .horario__tabla tr {
+    padding: 0.25rem 0.6rem;
+  }
+  .horario__tabla tbody th {
+    padding: 0 0 0.25rem;
+    font-family: var(--fuente-titulos);
+    font-size: 1.15rem;
+    border: 0;
+  }
+  .horario__tabla td {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: var(--toque);
+    padding: 0;
+  }
+  .horario__tabla td form {
+    margin: 0 0 0 auto;
+  }
+  .horario__dia {
+    display: inline-flex;
+  }
+  .horario__dia .dia-forma {
+    width: 2.1rem;
+    height: 2.1rem;
+    font-size: 1rem;
+  }
+  .horario__asignatura {
+    min-width: 0;
+  }
+  .horario__clase select {
+    max-width: none;
+  }
+  /* La clase ya se ve en su lista: el título solo se lee. */
+  .horario__titulo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .horario__tabla td {
+    min-height: 2.75rem;
+  }
+  .horario__poner .admin__nota {
+    display: none;
+  }
+  /* Con «Poner» abierto, la lista de clases también se esconde (el resumen dice cuál es). */
+  .js .pantalla:has(.horario__poner[open]) .horario__clase {
+    display: none;
+  }
 }
 
 /* --- Mi horario (estudiante): grande, con imagen y nombre --- */
-.mi-horario {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  width: min(48rem, 100%);
-  margin-inline: auto;
-}
-.mi-horario h1 {
+.mi-horario h2 {
   margin: 0;
+}
+.mi-horario__cab {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
 }
 .mi-horario__dias {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--separacion);
+  gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.mi-horario__dias .boton {
-  min-height: var(--toque);
-}
-/* El día elegido: fondo y borde grueso, no solo el color. */
-.mi-horario__dias [aria-current="page"] {
-  color: var(--blanco);
-  background: var(--petroleo);
-  border-width: 3px;
-}
-.mi-horario__lista {
-  display: flex;
-  flex-direction: column;
-  gap: var(--separacion);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.mi-horario__casilla {
-  display: flex;
+/* Cada día: su forma con la letra y, si cabe, el nombre. Mínimo 48 px de alto y de ancho. */
+.mi-horario__dia {
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: var(--toque);
+  min-height: var(--toque);
+  padding: 0.2rem 0.6rem;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+  text-decoration: none;
+  background: var(--blanco);
   border: 2px solid var(--petroleo);
-  border-radius: var(--radio-tarjeta);
-}
-.mi-horario__casilla img {
-  flex: none;
   border-radius: 1rem;
 }
-.mi-horario__casilla div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.mi-horario__dia:hover {
+  background: var(--menta-hover);
 }
-.mi-horario__casilla b {
-  font-family: var(--fuente-titulos);
-  font-size: 1.5rem;
-  color: var(--petroleo);
+/* El día elegido: fondo y borde grueso, no solo el color. */
+.mi-horario__dia[aria-current="page"] {
+  background: var(--menta);
+  border-width: 4px;
+}
+.mi-horario__hoy {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin-left: auto;
+  font-size: 1.4rem;
+}
+/* En el móvil, de cada día solo la forma con su letra (el nombre lo lee el lector de
+   pantalla y el día elegido se ve escrito al lado). */
+@media (max-width: 47.99rem) {
+  .mi-horario__dia-nombre {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .mi-horario__cab,
+  .mi-horario__cab nav {
+    width: 100%;
+  }
+  /* Los cinco días en una fila, aunque el perfil pida botones de 80 px: se reparten el ancho. */
+  .mi-horario__dias {
+    flex-wrap: nowrap;
+  }
+  .mi-horario__dias li {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .mi-horario__dia {
+    width: 100%;
+    min-width: 0;
+    padding: 0.2rem;
+  }
+  .mi-horario__hoy {
+    margin-left: 0;
+    font-size: 1.25rem;
+  }
 }
 .mi-horario__vacio {
   font-size: 1.25rem;

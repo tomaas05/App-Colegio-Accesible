@@ -36,17 +36,32 @@
     estado.textContent = texto;
   }
 
+  /* El formulario va por pantallas (paginar.js): antes de llevar el foco a un elemento se
+     vuelve a repartir y se enseña la pantalla donde está. */
+  function enfocar(elemento) {
+    var paginar = window.Despega && window.Despega.paginar;
+    if (paginar) {
+      paginar.reajustar();
+      paginar.mostrar(elemento);
+    }
+    if (elemento) elemento.focus();
+  }
+
   /* HTMX pide un paso vacío: se le dice cuántos hay sin evaluar código (sin hx-vals js:). */
   anadir.addEventListener("htmx:configRequest", function (evento) {
     evento.detail.parameters.total_forms = lista.querySelectorAll("[data-paso]").length;
   });
-  lista.addEventListener("htmx:afterSwap", function (evento) {
+  /* afterSettle: paginar.js ya ha preparado las listas nuevas; en el siguiente fotograma se
+     enseña la pantalla del paso nuevo y se lleva el foco a su descripción. */
+  lista.addEventListener("htmx:afterSettle", function (evento) {
     if (evento.target !== lista) return;
     numerar();
     var nuevo = lista.lastElementChild;
     var primero = nuevo && nuevo.querySelector("textarea, input:not([type=hidden])");
-    if (primero) primero.focus();
-    avisar("Paso " + pasosVisibles().length + " añadido.");
+    window.requestAnimationFrame(function () {
+      enfocar(primero);
+      avisar("Paso " + pasosVisibles().length + " añadido.");
+    });
   });
 
   lista.addEventListener("click", function (evento) {
@@ -57,9 +72,10 @@
       /* No se borra del HTML: el formulario de Django necesita el índice. Se marca DELETE. */
       paso.querySelector('input[name$="-DELETE"]').value = "on";
       paso.hidden = true;
+      paso.setAttribute("data-pag-fuera", ""); // ya no cuenta al repartir las pantallas
       numerar();
+      enfocar(anadir);
       avisar("Paso quitado. Quedan " + pasosVisibles().length + ".");
-      anadir.focus();
       return;
     }
     var visibles = pasosVisibles();
@@ -68,7 +84,7 @@
     if (boton.dataset.pasoMover === "-1") lista.insertBefore(paso, otro);
     else lista.insertBefore(otro, paso);
     numerar();
-    boton.focus();
+    enfocar(boton);
     avisar("Ahora es el paso " + (pasosVisibles().indexOf(paso) + 1) + ".");
   });
 
@@ -83,7 +99,7 @@
   /* Elegir un pictograma y subir un archivo se excluyen: gana lo último que se toca. */
   formulario.addEventListener("change", function (evento) {
     var campo = evento.target;
-    var grupo = campo.closest("fieldset.admin__tarjeta, [data-paso]");
+    var grupo = campo.closest("fieldset.grupo");
     if (!grupo) return;
     if (campo.type === "file" && campo.value) {
       var ninguno = grupo.querySelector('.pictos input[type=radio][value=""]');
@@ -133,7 +149,7 @@
   function pintarVistaPrevia() {
     zona.textContent = "";
     zona.appendChild(elemento("h3", valor("#id_nombre") || "Sin nombre"));
-    var imagen = imagenDe(formulario.querySelectorAll("fieldset.admin__tarjeta")[1]);
+    var imagen = imagenDe(formulario.querySelector("#id_descripcion_imagen").closest("fieldset.grupo"));
     if (imagen) zona.appendChild(imagen);
     if (valor("#id_descripcion")) zona.appendChild(elemento("p", valor("#id_descripcion")));
     var pasos = pasosVisibles();

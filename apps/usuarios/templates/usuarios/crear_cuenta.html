@@ -4,39 +4,44 @@
 {% block titulo %}Crear cuenta · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
+{# Boceto B21 · Crear cuenta. HU-01-01, pruebas de aceptación 1, 2 y 3.                     #}
+{# Sin desplazamiento (decisión 0005): el formulario va por bloques y, si no caben todos,   #}
+{# se pasa de uno a otro con «Anterior / Siguiente». «Crear cuenta» sale en el último.      #}
+{% block volver %}{% url 'usuarios:lista' as atras %}{% include "_volver.html" with url=atras texto="Usuarios" etiqueta="Volver a Usuarios" only %}{% endblock %}
+{% block h1 %}Crear cuenta{% endblock %}
+
 {% block contenido %}
-{# Boceto B21 · Crear cuenta. HU-01-01, pruebas de aceptación 1, 2 y 3. #}
-<div class="admin admin--estrecho">
-  <div class="admin__cab">
-    <a class="boton boton--aux" href="{% url 'usuarios:lista' %}"><span aria-hidden="true">‹</span> Usuarios</a>
-    <div class="admin__titulo">
-      <h1>Crear cuenta</h1>
-      <p class="admin__nota">Los campos con * son obligatorios.</p>
-    </div>
-  </div>
+<form class="formulario encaja" method="post" enctype="multipart/form-data" novalidate data-crear-cuenta>
+  {% csrf_token %}
+  <div class="encaja">
+    <div class="partes" id="bloques" data-paginar data-pag-variable data-foco="titulo" data-estado="Paso {n} de {total}">
+      {% if form.errors %}<div class="parte" data-pag-inicio>{% include "usuarios/_errores.html" %}</div>{% endif %}
 
-  <form class="formulario admin__tarjeta" method="post" enctype="multipart/form-data" novalidate data-crear-cuenta>
-    {% csrf_token %}
-    {% include "usuarios/_errores.html" %}
+      <fieldset class="parte parte--caja">
+        <legend>Quién es</legend>
+        <p class="admin__nota">Los campos con * son obligatorios.</p>
+        <div class="campo">{{ form.rol.as_field_group }}</div>
+        <div class="campo">{{ form.nombre.as_field_group }}</div>
+        <div class="campo">{{ form.apellidos.as_field_group }}</div>
+      </fieldset>
 
-    <div class="campo">{{ form.rol.as_field_group }}</div>
-    <div class="admin__dos">
-      <div class="campo">{{ form.nombre.as_field_group }}</div>
-      <div class="campo">{{ form.apellidos.as_field_group }}</div>
-    </div>
-
-    {# Sin JavaScript se ven las dos secciones; con él, solo la del rol elegido. #}
-    <fieldset class="admin__seccion" data-solo="estudiante">
-      <legend>Si es estudiante</legend>
-      <div class="admin__dos">
+      {# Sin JavaScript se ven todos los bloques; con él, solo los del rol elegido. #}
+      <fieldset class="parte parte--caja" data-solo="estudiante">
+        <legend><span class="sin-js">Si es estudiante: </span>Clase y avatar</legend>
         <div class="campo">{{ form.clase.as_field_group }}</div>
         <div class="campo">{{ form.avatar.as_field_group }}</div>
-      </div>
-      <p class="admin__nota">El código de estudiante (A01, A02…) se asigna solo.</p>
-      <div class="campo campo--opciones">{{ form.metodo_acceso.as_field_group }}</div>
+        <p class="admin__nota">El código de estudiante (A01, A02…) se asigna solo.</p>
+      </fieldset>
 
-      <fieldset class="rejilla-acceso" data-rejilla-acceso data-solo-metodo="imagenes"{% if form.imagenes.errors %} aria-describedby="id_imagenes_error"{% endif %}>
-        <legend>Sus 3 imágenes, en cualquier orden *</legend>
+      <fieldset class="parte parte--caja" data-solo="estudiante">
+        <legend><span class="sin-js">Si es estudiante: </span>Cómo entra</legend>
+        <div class="campo campo--opciones">{{ form.metodo_acceso.as_field_group }}</div>
+        <div class="campo" data-solo-metodo="contrasena">{{ form.contrasena_estudiante.as_field_group }}</div>
+        <div class="campo campo--casilla">{{ form.usa_lector_pantalla }} {{ form.usa_lector_pantalla.label_tag }}</div>
+      </fieldset>
+
+      <fieldset class="parte parte--caja rejilla-acceso" data-rejilla-acceso data-solo="estudiante" data-solo-metodo="imagenes"{% if form.imagenes.errors %} aria-describedby="id_imagenes_error"{% endif %}>
+        <legend>Sus 3 imágenes *</legend>
         {% if form.imagenes.errors %}<p class="campo__error" id="id_imagenes_error">{{ form.imagenes.errors.0 }}</p>{% endif %}
         <ul class="losetas losetas--acceso" id="id_imagenes">
           {% for imagen in form.fields.imagenes.queryset %}
@@ -52,33 +57,35 @@
         <p class="contador" data-contador aria-live="polite" hidden>Has elegido <b data-contador-n>0</b> de 3.</p>
       </fieldset>
 
-      <div class="campo" data-solo-metodo="contrasena">{{ form.contrasena_estudiante.as_field_group }}</div>
-      <div class="campo campo--casilla">{{ form.usa_lector_pantalla }} {{ form.usa_lector_pantalla.label_tag }}</div>
-    </fieldset>
-
-    <fieldset class="admin__seccion" data-solo="adulto">
-      <legend>Si es tutor, profesional, familiar o administrador</legend>
-      <div class="admin__dos">
+      <fieldset class="parte parte--caja" data-solo="adulto">
+        <legend><span class="sin-js">Si es tutor, profesional, familiar o administrador: </span>Su cuenta</legend>
         <div class="campo">{{ form.usuario.as_field_group }}</div>
         <div class="campo">{{ form.correo.as_field_group }}</div>
-      </div>
-      <div class="campo">
-        {{ form.contrasena.label_tag }}
-        {% if form.contrasena.help_text %}<div class="helptext" id="{{ form.contrasena.auto_id }}_helptext">{{ form.contrasena.help_text }}</div>{% endif %}
-        {{ form.contrasena.errors }}
-        <div class="campo__fila">
-          {{ form.contrasena }}
-          <button class="boton--aux" type="button" data-ver-clave aria-controls="{{ form.contrasena.id_for_label }}" aria-pressed="false" hidden>Mostrar</button>
-        </div>
-      </div>
-    </fieldset>
+      </fieldset>
 
-    <div class="admin__botonera">
-      <a class="boton boton--aux" href="{% url 'usuarios:lista' %}">Cancelar</a>
-      <button class="boton--principal boton--mediano" type="submit">Crear cuenta</button>
+      <fieldset class="parte parte--caja" data-solo="adulto">
+        <legend><span class="sin-js">Si es tutor, profesional, familiar o administrador: </span>Su contraseña</legend>
+        <div class="campo">
+          {{ form.contrasena.label_tag }}
+          {% if form.contrasena.help_text %}<div class="helptext" id="{{ form.contrasena.auto_id }}_helptext">{{ form.contrasena.help_text }}</div>{% endif %}
+          {{ form.contrasena.errors }}
+          <div class="campo__fila">
+            {{ form.contrasena }}
+            <button class="boton--aux" type="button" data-ver-clave aria-controls="{{ form.contrasena.id_for_label }}" aria-pressed="false" hidden>Mostrar</button>
+          </div>
+        </div>
+      </fieldset>
     </div>
-  </form>
-</div>
+  </div>
+
+  {# Para dejarlo sin guardar, «‹ Usuarios» de la barra de título. #}
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Pasos del formulario" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-solo-ultima="bloques">Crear cuenta</button>
+    </div>
+  </div>
+</form>
 {% endblock %}
 
 {% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

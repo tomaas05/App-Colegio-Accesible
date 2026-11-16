@@ -61,6 +61,18 @@ class TipoTemporizador(models.TextChoices):
     NUMERICO = "numerico", "Numérico"
 
 
+class CreacionTareas(models.TextChoices):
+    """Cómo crea tareas el estudiante (RF3.3.3, revisión con la profesora, decisión 0005).
+
+    Las pantallas del estudiante son de la iteración 3 (HU-03-09): «asistente» es el paso a
+    paso con imágenes del boceto B31 y «completa», el mismo formulario que los adultos (B32).
+    """
+
+    NINGUNA = "ninguna", "No crea tareas"
+    ASISTENTE = "asistente", "Paso a paso, con imágenes"
+    COMPLETA = "completa", "Igual que los adultos"
+
+
 class MetodoAcceso(models.TextChoices):
     IMAGENES = "imagenes", "Tres imágenes"
     CONTRASENA = "contrasena", "Contraseña de texto"
@@ -109,6 +121,13 @@ class Perfil(models.Model):
         choices=MetodoAcceso.choices,
         default=MetodoAcceso.IMAGENES,
         help_text="Qué se le pide al estudiante después de pulsar su avatar.",
+    )
+    creacion_tareas = models.CharField(
+        "creación de tareas",
+        max_length=10,
+        choices=CreacionTareas.choices,
+        default=CreacionTareas.NINGUNA,
+        help_text="Si el estudiante puede crear sus tareas de ocio y con qué pantallas.",
     )
     usa_lector_pantalla = models.BooleanField(
         "usa lector de pantalla",
