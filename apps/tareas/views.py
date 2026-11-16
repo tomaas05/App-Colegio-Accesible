@@ -30,9 +30,12 @@ SIN_PICTOGRAMA = (
 @gestiona_tareas
 @require_GET
 def catalogo_tareas(request):
-    tareas = Tarea.objects.annotate(n_pasos=Count("pasos")).order_by("-id")
+    tareas = (
+        Tarea.objects.annotate(n_pasos=Count("pasos"))
+        .prefetch_related("planes_b")
+        .order_by("-id")
+    )
     return render(request, "tareas/catalogo.html", {"tareas": tareas})
-
 
 def _poner_pictograma(objeto, identificador):
     """Si no se ha subido un archivo, la imagen es la copia local del pictograma elegido."""

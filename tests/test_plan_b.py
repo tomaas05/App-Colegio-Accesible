@@ -35,12 +35,15 @@ class PlanBTareaTests(TestCase):
         )
 
     def test_anadir_varias_actividades_alternativas(self):
-        """Criterio 1: Añado una o varias actividades alternativas a una tarea."""
-        tarea_b1 = Tarea.objects.create(nombre="Plan B 1", creador=self.tutor_user, descripcion_imagen="D1")
-        tarea_b2 = Tarea.objects.create(nombre="Plan B 2", creador=self.tutor_user, descripcion_imagen="D2")
-
-        self.client.force_login(self.tutor_user)
-        response = self.client.post(
+         """Criterio 1: Añado una o varias actividades alternativas a una tarea."""
+         tarea_b1 = Tarea.objects.create(
+            nombre="Plan B 1", creador=self.tutor_user, descripcion_imagen="D1"
+        )
+         tarea_b2 = Tarea.objects.create(
+            nombre="Plan B 2", creador=self.tutor_user, descripcion_imagen="D2"
+        )
+         self.client.force_login(self.tutor_user)
+         response = self.client.post(
             reverse("tareas:crear_tarea"),
             {
                 "nombre": "Tarea Principal",
@@ -55,17 +58,20 @@ class PlanBTareaTests(TestCase):
                 "pasos-MAX_NUM_FORMS": "1000",
             },
         )
-
-        self.assertEqual(response.status_code, 302)
-        tarea_creada = Tarea.objects.get(nombre="Tarea Principal")
-        self.assertEqual(tarea_creada.planes_b.count(), 2)
-        self.assertIn(tarea_b1, tarea_creada.planes_b.all())
-        self.assertIn(tarea_b2, tarea_creada.planes_b.all())
+         self.assertEqual(response.status_code, 302)
+         tarea_creada = Tarea.objects.get(nombre="Tarea Principal")
+         self.assertEqual(tarea_creada.planes_b.count(), 2)
+         self.assertIn(tarea_b1, tarea_creada.planes_b.all())
+         self.assertIn(tarea_b2, tarea_creada.planes_b.all())
 
     def test_tarea_muestra_que_tiene_plan_b_en_catalogo(self):
         """Criterio 2: La tarea muestra que tiene plan B."""
-        tarea_alt = Tarea.objects.create(nombre="Alternativa", creador=self.tutor_user, descripcion_imagen="Alt")
-        tarea_ppal = Tarea.objects.create(nombre="Principal con Plan B", creador=self.tutor_user, descripcion_imagen="Ppal")
+        tarea_alt = Tarea.objects.create(
+            nombre="Alternativa", creador=self.tutor_user, descripcion_imagen="Alt"
+        )
+        tarea_ppal = Tarea.objects.create(
+            nombre="Principal con Plan B", creador=self.tutor_user, descripcion_imagen="Ppal"
+        )
         tarea_ppal.planes_b.add(tarea_alt)
 
         self.client.force_login(self.tutor_user)
@@ -77,8 +83,12 @@ class PlanBTareaTests(TestCase):
 
     def test_eliminar_alternativa_deja_de_aparecer(self):
         """Criterio 3: Elimino una alternativa y deja de aparecer."""
-        tarea_alt = Tarea.objects.create(nombre="Alternativa Temporal", creador=self.tutor_user, descripcion_imagen="Temp")
-        tarea_ppal = Tarea.objects.create(nombre="Editarme", creador=self.tutor_user, descripcion_imagen="Ppal")
+        tarea_alt = Tarea.objects.create(
+            nombre="Alternativa Temporal", creador=self.tutor_user, descripcion_imagen="Temp"
+        )
+        tarea_ppal = Tarea.objects.create(
+            nombre="Editarme", creador=self.tutor_user, descripcion_imagen="Ppal"
+        )
         tarea_ppal.planes_b.add(tarea_alt)
 
         self.client.force_login(self.tutor_user)
