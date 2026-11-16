@@ -40,12 +40,13 @@ class TareaForm(ConPictograma, forms.ModelForm):
 
     class Meta:
         model = Tarea
-        fields = ["nombre", "descripcion", "imagen", "descripcion_imagen", "ambito"]
+        fields = ["nombre", "descripcion", "imagen", "descripcion_imagen", "ambito", "planes_b"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control"}),
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "descripcion_imagen": forms.TextInput(attrs={"class": "form-control"}),
             "ambito": forms.Select(attrs={"class": "form-select"}),
+            "planes_b": forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -53,6 +54,9 @@ class TareaForm(ConPictograma, forms.ModelForm):
         self.fields["descripcion_imagen"].required = True
         # La imagen puede ser un archivo o un pictograma de ARASAAC: lo comprueba clean().
         self.fields["imagen"].required = False
+        # Excluir la propia tarea del queryset para evitar auto-referencias circulares
+        if self.instance and self.instance.pk:
+            self.fields["planes_b"].queryset = Tarea.objects.exclude(pk=self.instance.pk)
 
     def clean_arasaac_id_tarea(self):
         return _id_de_pictograma(self.cleaned_data.get("arasaac_id_tarea"))

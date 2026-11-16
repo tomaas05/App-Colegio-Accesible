@@ -42,6 +42,13 @@ class Tarea(models.Model):
         "ámbito", max_length=10, choices=Ambito.choices, default=Ambito.ESCOLAR
     )
     creador = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name="tareas_creadas")
+    planes_b = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        verbose_name="planes B",
+        help_text="Actividades alternativas si esta no se puede realizar",
+    )
 
     class Meta:
         verbose_name = "tarea"

@@ -30,7 +30,9 @@ SIN_PICTOGRAMA = (
 @gestiona_tareas
 @require_GET
 def catalogo_tareas(request):
-    tareas = Tarea.objects.annotate(n_pasos=Count("pasos")).order_by("-id")
+    tareas = (
+        Tarea.objects.annotate(n_pasos=Count("pasos")).prefetch_related("planes_b").order_by("-id")
+    )
     return render(request, "tareas/catalogo.html", {"tareas": tareas})
 
 
@@ -46,6 +48,9 @@ def _guardar(form, formset, usuario):
     tarea.creador = usuario
     _poner_pictograma(tarea, form.cleaned_data.get("arasaac_id_tarea"))
     tarea.save()
+
+    form.save_m2m()
+
     validos = [
         paso_form
         for paso_form in formset.forms
