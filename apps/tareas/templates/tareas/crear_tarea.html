@@ -41,7 +41,10 @@
           {% include "tareas/_campo.html" with campo=form.nombre %}
           {% include "tareas/_campo.html" with campo=form.descripcion %}
         </div>
-        <div class="bloque">{% include "tareas/_campo.html" with campo=form.ambito %}</div>
+        <div class="bloque">
+          {% include "tareas/_campo.html" with campo=form.ambito %}
+          {% include "tareas/_campo.html" with campo=form.planes_b %}
+        </div>
       </fieldset>
 
       <fieldset class="grupo">

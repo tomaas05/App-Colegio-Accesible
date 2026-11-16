@@ -1,7 +1,10 @@
 /* Despega · Crear tarea (Úrsula): pasos, buscador de pictogramas y vista previa.
- * Sin eventos en línea ni HTML escrito a mano: todo se engancha por atributos data-
- * y el texto del usuario se pone con textContent (nunca con innerHTML).
- * El navegador no habla con ARASAAC: la búsqueda la hace el servidor (decisión 0004).
+- Sin eventos en línea ni HTML escrito a mano:
+todo se engancha por atributos data-
+- y el texto del usuario se pone con textContent (nunca con innerHTML).
+
+- El navegador no habla con ARASAAC: la búsqueda la hace el servidor (decisión 0004).
+
  */
 (function () {
   "use strict";
@@ -146,12 +149,26 @@
     var campo = (dentro || formulario).querySelector(selector);
     return campo ? campo.value.trim() : "";
   }
+
   function pintarVistaPrevia() {
     zona.textContent = "";
     zona.appendChild(elemento("h3", valor("#id_nombre") || "Sin nombre"));
     var imagen = imagenDe(formulario.querySelector("#id_descripcion_imagen").closest("fieldset.grupo"));
     if (imagen) zona.appendChild(imagen);
     if (valor("#id_descripcion")) zona.appendChild(elemento("p", valor("#id_descripcion")));
+
+    var planesB = formulario.querySelectorAll('input[name="planes_b"]:checked');
+    if (planesB.length > 0) {
+      zona.appendChild(elemento("p", "Planes B alternativos (" + planesB.length + "):"));
+      var ulPlanes = elemento("ul");
+      planesB.forEach(function (check) {
+        var textoPlanB = check.closest("div") ? check.closest("div").textContent.trim() : check.value;
+        ulPlanes.appendChild(elemento("li", textoPlanB));
+      });
+      zona.appendChild(ulPlanes);
+    }
+    // -----------------------------------------------------------
+
     var pasos = pasosVisibles();
     zona.appendChild(elemento("p", pasos.length ? "Pasos: " + pasos.length : "Sin pasos."));
     if (pasos.length) {

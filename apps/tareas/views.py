@@ -46,6 +46,9 @@ def _guardar(form, formset, usuario):
     tarea.creador = usuario
     _poner_pictograma(tarea, form.cleaned_data.get("arasaac_id_tarea"))
     tarea.save()
+
+    form.save_m2m()
+
     validos = [
         paso_form
         for paso_form in formset.forms
@@ -59,7 +62,6 @@ def _guardar(form, formset, usuario):
         _poner_pictograma(paso, paso_form.cleaned_data.get("arasaac_id_paso"))
         paso.save()
     return tarea
-
 
 @gestiona_tareas
 @require_http_methods(["GET", "POST"])

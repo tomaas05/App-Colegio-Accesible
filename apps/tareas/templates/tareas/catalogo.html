@@ -26,7 +26,11 @@
       {% if tarea.imagen %}<img class="catalogo__imagen" src="{{ tarea.imagen.url }}" alt="{{ tarea.descripcion_imagen }}" width="96" height="96" loading="lazy">{% endif %}
       <div class="catalogo__texto">
         <h2>{{ tarea.nombre }}</h2>
-        <p class="catalogo__datos">{{ tarea.get_ambito_display }} · {% if tarea.n_pasos %}{{ tarea.n_pasos }} paso{{ tarea.n_pasos|pluralize }}{% else %}sin pasos{% endif %}</p>
+        <p class="catalogo__datos">
+          {{ tarea.get_ambito_display }} ·
+          {% if tarea.n_pasos %}{{ tarea.n_pasos }} paso{{ tarea.n_pasos|pluralize }}{% else %}sin pasos{% endif %}
+          {% if tarea.planes_b.exists %} · 💡 Tiene plan B{% endif %}
+        </p>
         {% if tarea.descripcion %}<p class="catalogo__desc">{{ tarea.descripcion|truncatechars:90 }}</p>{% endif %}
       </div>
       <a class="boton boton--aux" href="{% url 'tareas:asignar_tarea_con_id' tarea.id %}">Asignar <span class="visualmente-oculto">«{{ tarea.nombre }}»</span></a>
