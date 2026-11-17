@@ -23,6 +23,7 @@ urlpatterns = [
     path("tareas/", include("apps.tareas.urls")),
     path("horario/", include("apps.horario.urls")),
     path("perfil/", include("apps.perfil.urls")),
+    path("centro/", include("apps.centro.urls")),
     # Buscador de pictogramas de ARASAAC en el servidor (decisión 0004).
     path("pictogramas/", include("apps.comun.urls")),
     # Entrar, salir y panel del adulto: /entrar/, /salir/ y /panel/ (HU-01-07).

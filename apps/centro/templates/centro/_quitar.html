@@ -1,0 +1,7 @@
+{# Formulario vacío de «Quitar»: su botón está en el pie del formulario de al lado (form="quitar"). #}
+{# Recibe: mes («2026-11») y, para el comedor, dia (fecha).                                       #}
+<form id="quitar" method="post" hidden>
+  {% csrf_token %}
+  <input type="hidden" name="mes" value="{{ mes }}">
+  {% if dia %}<input type="hidden" name="dia" value="{{ dia|date:'Y-m-d' }}">{% endif %}
+</form>

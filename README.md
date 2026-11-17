@@ -22,6 +22,7 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/horario/` · `/horario/mi-horario/` | El administrador carga el horario de cada clase (B37); el estudiante ve el de su clase | HU-03-11 | Javi |
 | `/panel/mis-estudiantes/` | El profesional elige en la lista del centro los estudiantes que atiende (B26) | HU-01-08 | Javi |
 | `/panel/mis-estudiantes/<código>/agenda/` | Agenda de un estudiante que atiendo, solo consulta, día a día (B27) | HU-01-09 | Javi |
+| `/centro/comedor/` | El administrador asigna, mes a mes, el comedor de cada día y el reparto del menú a un estudiante, y sube el menú del mes. Salen en su agenda como una tarea más; lo que no tiene estudiante, «Pendiente de asignar» (B67) | HU-05-03 | Javi |
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
 
