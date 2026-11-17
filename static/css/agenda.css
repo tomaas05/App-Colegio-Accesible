@@ -646,3 +646,284 @@ dialog.confirmar::backdrop {
     font-size: 1.15rem;
   }
 }
+
+/* --- HU-02-06 · Mi semana (boceto B30) ---
+ * Dos partes: de lunes a viernes y fin de semana. En el móvil y la tableta en vertical,
+ * una debajo de otra (y cada una en su pantalla si no caben); desde 48rem, una al lado de
+ * la otra, con un día en cada columna. Cada día lleva su forma, su letra y su color
+ * (_dia_forma.html); el de hoy, borde grueso, fondo de su color y «▶ Hoy». */
+.semana-hoy {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.6rem;
+  width: fit-content;
+  padding: 0.3rem 0.8rem 0.3rem 0.4rem;
+  font-family: var(--fuente-titulos);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--petroleo);
+  background: color-mix(in srgb, var(--dia-c, var(--menta)) 30%, var(--blanco));
+  border: 3px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+}
+.semana-hoy--1, .semana-dia--1 { --dia-c: var(--dia-l); }
+.semana-hoy--2, .semana-dia--2 { --dia-c: var(--dia-m); }
+.semana-hoy--3, .semana-dia--3 { --dia-c: var(--dia-x); }
+.semana-hoy--4, .semana-dia--4 { --dia-c: var(--dia-j); }
+.semana-hoy--5, .semana-dia--5 { --dia-c: var(--dia-v); }
+.semana-hoy--6, .semana-dia--6,
+.semana-hoy--7, .semana-dia--7 { --dia-c: var(--dia-f); }
+
+.semana {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+}
+.js .semana {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.semana__grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  min-height: 0;
+}
+.semana__grupo > h2 {
+  font-size: 1rem;
+}
+.semana__dias {
+  display: grid;
+  grid-auto-rows: minmax(var(--toque), auto);
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.semana__grupo--fin .semana__dias {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.semana__dias > li {
+  display: flex;
+  min-width: 0;
+}
+
+/* Un día: forma · nombre y cuántas · tareas. En estrecho, las tareas a la derecha o, si no
+   caben, en una segunda línea; se ven 3 y «+N más». */
+.semana-dia {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  min-width: 0;
+  min-height: var(--toque);
+  padding: 0.35rem 0.6rem;
+  color: var(--texto);
+  text-decoration: none;
+  background: var(--blanco);
+  border: 3px solid var(--petroleo);
+  border-radius: var(--radio-tarjeta);
+}
+.semana-dia:hover {
+  background: var(--menta-hover);
+}
+.semana__grupo--fin .semana-dia {
+  background: color-mix(in srgb, var(--dia-f) 35%, var(--blanco));
+}
+.semana-dia--hoy,
+.semana__grupo--fin .semana-dia--hoy {
+  border-width: 5px;
+  background: color-mix(in srgb, var(--dia-c) 30%, var(--blanco));
+}
+.semana-dia:hover,
+.semana-dia--hoy:hover {
+  background: var(--menta-hover);
+}
+.semana-dia__info {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.semana-dia__nombre {
+  font-family: var(--fuente-titulos);
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--petroleo);
+}
+.semana-dia__fecha {
+  color: var(--verde-oscuro);
+}
+.semana-dia__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.35rem;
+}
+.semana-dia__cuenta,
+.semana-dia__hoy {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.semana-dia__cuenta {
+  font-weight: 700;
+}
+.semana-dia__tareas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+.semana-dia__tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.semana-dia__tarea img {
+  width: 1.9rem;
+  height: 1.9rem;
+  object-fit: contain;
+  background: #ffffff; /* los pictogramas están hechos para fondo blanco */
+  border: 2px solid var(--petroleo);
+  border-radius: 0.45rem;
+}
+.semana-dia__hora {
+  display: none;
+  font-family: var(--fuente-titulos);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--verde-oscuro);
+}
+.semana-dia__tarea:nth-child(n + 4),
+.semana-dia__mas--largo {
+  display: none;
+}
+.semana-dia__mas {
+  padding: 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1.5;
+  color: var(--petroleo);
+  white-space: nowrap;
+  background: var(--blanco);
+  border: 2px dashed var(--petroleo);
+  border-radius: 999px;
+}
+
+/* Hasta 64rem (móvil y tableta en vertical): un día por fila, lo más bajo posible; los
+   títulos de las partes, solo para el lector de pantalla (los días que no caben pasan a
+   otra pantalla y un título se quedaría solo). El fin de semana, también un día por fila. */
+@media (max-width: 63.99rem) {
+  .semana__grupo > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .semana__grupo--fin .semana__dias {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 29.99rem) {
+  /* En el móvil, «Hoy es…» ya lo dicen la barra de título y la tarjeta de hoy. */
+  .semana-hoy {
+    display: none;
+  }
+  .semana-dia .dia-forma {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.9rem;
+  }
+  .semana-dia__nombre {
+    font-size: 1rem;
+  }
+  .semana-dia__tarea img {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+}
+/* Con sitio a lo ancho (tableta en vertical), en la misma fila caben las 6 con su hora. */
+@media (min-width: 30rem) and (max-width: 63.99rem) {
+  .semana-dia__info {
+    flex: 0 0 9rem;
+  }
+  .semana-dia__tareas {
+    gap: 0.3rem 0.6rem;
+  }
+  .semana-dia__hora {
+    display: inline;
+  }
+  .semana-dia__tarea:nth-child(n + 4) {
+    display: flex;
+  }
+  .semana-dia__mas--corto {
+    display: none;
+  }
+  .semana-dia__mas--largo {
+    display: inline;
+  }
+}
+
+/* Ancho (tableta en horizontal y ordenador): las dos partes una al lado de la otra, un día
+   por columna y, en cada uno, hasta 6 tareas con su hora. */
+@media (min-width: 64rem) {
+  .semana {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
+  }
+  .semana__grupo--lab .semana__dias {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .semana__dias {
+    flex: 1 1 auto;
+    grid-auto-rows: minmax(0, 1fr);
+  }
+  .semana-dia {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    padding: 0.5rem;
+  }
+  .semana-dia__info {
+    flex: none;
+  }
+  .semana-dia__tareas {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .semana-dia__hora {
+    display: inline;
+  }
+  .semana-dia__tarea img {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+  .semana-dia__tarea:nth-child(n + 4) {
+    display: flex;
+  }
+  .semana-dia__mas--corto {
+    display: none;
+  }
+  .semana-dia__mas--largo {
+    display: inline;
+  }
+}
+
+/* Texto que en el móvil no se ve (para que dos botones quepan en una fila) pero se lee. */
+@media (max-width: 29.99rem) {
+  .solo-ancho {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}

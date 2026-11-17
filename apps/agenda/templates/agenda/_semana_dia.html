@@ -1,0 +1,24 @@
+{# Un día en «Mi semana» (B30): su forma, su nombre y su fecha, «Hoy», cuántas tareas y la   #}
+{# hora y el pictograma de las primeras. Lleva a ese día entero (hoy, a la agenda). Las      #}
+{# vistas previas son decorativas (aria-hidden): el nombre del enlace dice el día y cuántas; #}
+{# las tareas se leen al abrirlo. Se pintan hasta 6: en pantallas estrechas se ven 3 y      #}
+{# «+N más», y en anchas las 6 con su hora (CSS, sin JavaScript).                           #}
+{# Recibe: d (servicios.DiaDeLaSemana).                                                      #}
+{% with total=d.tareas|length %}
+<li{% if d.es_hoy %} data-pag-inicio{% endif %}>
+  <a class="semana-dia semana-dia--{{ d.numero }}{% if d.es_hoy %} semana-dia--hoy{% endif %}" href="{% if d.es_hoy %}{% url 'agenda:dia' %}{% else %}{% url 'agenda:otro_dia' d.fecha|date:'Y-m-d' %}{% endif %}"{% if d.es_hoy %} aria-current="date"{% endif %}>
+    {% include "_dia_forma.html" with numero=d.numero only %}
+    <span class="semana-dia__info">
+      <span class="semana-dia__nombre">{{ d.nombre }} <span class="semana-dia__fecha">{{ d.fecha.day }}</span></span>
+      <span class="semana-dia__meta">{% if d.es_hoy %}<span class="chip semana-dia__hoy"><span aria-hidden="true">▶</span> Hoy</span>{% endif %}<span class="semana-dia__cuenta">{% if total == 0 %}Sin tareas{% elif total == 1 %}1 tarea{% else %}{{ total }} tareas{% endif %}</span></span>
+    </span>
+    {% if total %}
+    <span class="semana-dia__tareas" aria-hidden="true">
+      {% for t in d.tareas|slice:":6" %}<span class="semana-dia__tarea"><span class="semana-dia__hora">{{ t.inicio|time:"H:i" }}</span><img src="{{ t.tarea.imagen.url }}" alt="" width="32" height="32" loading="lazy"></span>{% endfor %}
+      {% if total > 3 %}<span class="semana-dia__mas semana-dia__mas--corto">+{{ total|add:-3 }} más ›</span>{% endif %}
+      {% if total > 6 %}<span class="semana-dia__mas semana-dia__mas--largo">+{{ total|add:-6 }} más ›</span>{% endif %}
+    </span>
+    {% endif %}
+  </a>
+</li>
+{% endwith %}

@@ -1,9 +1,12 @@
-"""Pantallas de la agenda del estudiante (Tomás): HU-02-01 a HU-02-04, HU-02-07 y
-HU-07-04. HU-02-05: Javi.
+"""Pantallas de la agenda del estudiante (Tomás): HU-02-01 a HU-02-04, HU-02-06, HU-02-07
+y HU-07-04. HU-02-05: Javi.
 
 Bocetos: docs/iteracion-1/bocetos/despega_mockup_v3.html, pantallas B06 (Tareas de hoy),
-B07 (Tarea, también los pasos), B08 (¿Has terminado? / ¿No puedes hacerla?) y B11 (plan B).
+B07 (Tarea, también los pasos), B08 (¿Has terminado? / ¿No puedes hacerla?), B11 (plan B)
+y B30 (semana).
 """
+
+from datetime import date
 
 from django.contrib import messages
 from django.http import Http404, HttpResponse
@@ -12,6 +15,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.comun.models import Notificacion, TipoAviso, avisar, pendientes
+from apps.tareas import planificacion
 from apps.tareas.models import Asignacion, Paso, Tarea
 
 from . import servicios
@@ -252,3 +256,56 @@ def paso_hecho(request, pk, paso_pk):
         messages.error(request, str(error))
         return redirect("agenda:detalle", pk=pk)
     return redirect(reverse("agenda:detalle", args=[pk]) + "#pasos")
+
+
+# --- HU-02-06 · Ver mi semana y mi horario de clases (B30) ----------------------------
+
+
+@estudiante_requerido
+@require_GET
+def semana(request):
+    """B30 · Los 7 días de esta semana con su nombre, su letra, su forma y su color, y en
+    cada uno la hora y el pictograma de sus tareas (PA1 y PA2). Al tocar un día se abre
+    entero (PA3). El horario de la clase está en «Mi horario de clase» (PA4 y PA5)."""
+    ahora = servicios.ahora()
+    dias = servicios.semana(request.estudiante, ahora)
+    return render(
+        request,
+        "agenda/semana.html",
+        {
+            "estudiante": request.estudiante,
+            "laborables": dias[:5],
+            "fin_de_semana": dias[5:],
+            "hoy": next(d for d in dias if d.es_hoy),
+            "hoy_fecha": f"{ahora.day} de {planificacion.MESES[ahora.month - 1]}",
+        },
+    )
+
+
+@estudiante_requerido
+@require_GET
+def otro_dia(request, fecha):
+    """HU-02-06, PA3 · Un día de esta semana, entero: sus tareas en la línea de tiempo, solo
+    para ver (no se empiezan antes de su día). Hoy es la agenda de siempre."""
+    try:
+        dia = date.fromisoformat(fecha)
+    except ValueError:
+        raise Http404 from None
+    ahora = servicios.ahora()
+    if dia == ahora.date():
+        return redirect("agenda:dia")
+    if servicios.lunes_de(dia) != servicios.lunes_de(ahora.date()):
+        raise Http404  # solo los días de esta semana
+    tareas = servicios.tareas_del_dia(request.estudiante, dia, ahora)
+    return render(
+        request,
+        "agenda/otro_dia.html",
+        {
+            "estudiante": request.estudiante,
+            "tareas": tareas,
+            "fecha": dia,
+            "fecha_texto": planificacion.fecha_en_texto(dia),
+            "dia_nombre": planificacion.DIAS[dia.weekday()],
+            "pasado": dia < ahora.date(),
+        },
+    )
