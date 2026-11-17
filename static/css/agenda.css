@@ -564,3 +564,18 @@ dialog.confirmar::backdrop {
 .tiempo__boton-ocultar {
   align-self: flex-start;
 }
+
+/* --- Tarea cancelada (HU-03-05): tachada y más clara; la etiqueta «✕ Cancelada» --- */
+/* --- dice lo mismo con texto, así que el color no es la única señal (RNF4.1.3).  --- */
+.tarjeta--cancelada .tarjeta__nombre,
+.tarjeta--cancelada .tarjeta__hora {
+  text-decoration: line-through;
+}
+.tarjeta--cancelada .tarjeta__imagen {
+  opacity: 0.5;
+}
+
+/* --- Aviso de un cambio (HU-03-04 y HU-03-05) --- */
+.aviso-cambio__quedan {
+  margin: 0 0 1rem;
+}

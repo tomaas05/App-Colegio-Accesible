@@ -122,6 +122,8 @@
       <p class="estado-grande"><span aria-hidden="true">✓</span> ¡Hecha!</p>
       {% elif t.estado == "vencida" %}
       <p class="estado-grande">Ya ha pasado la hora.</p>
+      {% elif t.estado == "cancelada" %}
+      <p class="estado-grande">Se ha cancelado. No la tienes que hacer.</p>
       {% endif %}
     </div>
     </div>

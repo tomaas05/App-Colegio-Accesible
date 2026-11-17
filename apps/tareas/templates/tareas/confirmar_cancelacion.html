@@ -1,45 +1,39 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block titulo %}Cancelar asignación · Despega{% endblock %}
-{% block estilos %}
-<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
-<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
-{% endblock %}
+{% block titulo %}¿Cancelar «{{ tarea.nombre }}»? · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
 
-{% block volver %}
-{% url 'tareas:tareas_planificadas' as atras %}
-{% include "_volver.html" with url=atras texto="Planificadas" etiqueta="Volver a tareas planificadas" only %}
-{% endblock %}
-
-{% block h1 %}Cancelar tarea planificada{% endblock %}
+{# HU-03-05 · Antes de cancelar se pide confirmación (PA3). Como «Eliminar cuenta» (B24):  #}
+{# «No» a la izquierda y «Sí, cancelar» a la derecha y separados: lo destructivo nunca es  #}
+{# lo primero que se pulsa.                                                                #}
+{% block pantalla %}pantalla--estrecha{% endblock %}
+{% block volver %}{% include "_volver.html" with url=volver texto="Planificadas" etiqueta="Volver a Tareas planificadas sin cancelar" only %}{% endblock %}
+{% block h1 %}Cancelar tarea{% endblock %}
 
 {% block contenido %}
-<main class="encaja" id="contenido-principal">
-  <div class="parte parte--caja" style="max-width: 600px; margin: 0 auto; text-align: center;">
-    <h2>¿Estás seguro de que deseas cancelar esta tarea?</h2>
-
-    <div style="margin: 1.5rem 0; padding: 1rem; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 6px; text-align: left; display: inline-block; width: 100%;">
-      <p style="margin: 0.3rem 0; color: #333;">Tarea: <strong>{{ asignacion.tarea.nombre }}</strong></p>
-      <p style="margin: 0.3rem 0; color: #333;">Estudiante: <strong>{{ asignacion.estudiante.usuario.get_full_name }}</strong></p>
-      <p style="margin: 0.3rem 0; color: #333;">
-        Horario: <strong>{{ asignacion.hora_inicio|time:"H:i" }} – {{ asignacion.hora_fin|time:"H:i" }}</strong>
-      </p>
-    </div>
-
-    <p class="admin__nota" style="margin-bottom: 2rem; color: #333;">Esta acción impedirá que el estudiante tenga que realizarla y le enviará un aviso automático.</p>
-
-    <form method="post" style="display: flex; justify-content: center; align-items: center; gap: 1rem;">
+<section class="baja cancelar" aria-labelledby="cancelar-titulo" aria-describedby="cancelar-texto">
+  <div class="cancelar__cab">
+    <img src="{{ tarea.imagen.url }}" alt="" width="80" height="80">
+    <h2 id="cancelar-titulo">¿Cancelar «{{ tarea.nombre }}» de {{ estudiante.usuario.get_full_name }}{% if alcance == "dia" %} el {{ fecha_texto }}{% endif %}?</h2>
+  </div>
+  <div id="cancelar-texto">
+    {% if alcance == "dia" %}
+    <p>Solo ese día, {{ horas_texto }}. Los demás días sigue igual.</p>
+    {% else %}
+    <p>Toda la serie: {{ horas_texto }}, {{ dias_texto }}. Ya no se hará más.</p>
+    {% endif %}
+    <p>{{ estudiante.usuario.first_name }} la verá como «Cancelada» en su agenda y recibirá un aviso.</p>
+  </div>
+  <div class="baja__botones">
+    <a class="boton boton--aux" href="{{ volver }}">No</a>
+    <form method="post">
       {% csrf_token %}
-      {% if request.GET.dia %}
-      <input type="hidden" name="dia" value="{{ request.GET.dia }}">
-      {% endif %}
-      <input type="hidden" name="alcance" value="{{ request.GET.alcance|default:'serie' }}">
-
-      <a href="{% url 'tareas:tareas_planificadas' %}" class="boton boton--secundario boton--mediano" style="text-decoration: none; text-align: center;">Volver atrás</a>
-      <!-- Color rojo oscuro (#a81c1c) con alto contraste certificado para cumplir WCAG AA con texto blanco -->
-      <button class="boton boton--principal boton--mediano" type="submit" style="background-color: #a81c1c; border-color: #a81c1c; color: #fff;">Sí, cancelar</button>
+      <input type="hidden" name="alcance" value="{{ alcance }}">
+      {% if fecha %}<input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">{% endif %}
+      {% for clave, valor in filtros.items %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
+      <button class="boton boton--peligro" type="submit">Sí, cancelar<span class="visualmente-oculto"> «{{ tarea.nombre }}»</span></button>
     </form>
   </div>
-</main>
+</section>
 {% endblock %}

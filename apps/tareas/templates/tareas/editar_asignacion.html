@@ -1,43 +1,38 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block titulo %}Editar asignación · Despega{% endblock %}
-{% block estilos %}
-<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
-<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
-{% endblock %}
+{% block titulo %}Modificar «{{ tarea.nombre }}» · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
 
-{% block volver %}
-{% url 'tareas:tareas_planificadas' as atras %}
-{% include "_volver.html" with url=atras texto="Planificadas" etiqueta="Volver a tareas planificadas" only %}
-{% endblock %}
-
-{% block h1 %}Editar planificación{% endblock %}
+{# Boceto B44 · Modificar la tarea. HU-03-04. Solo este día: sus horas. Toda la serie:   #}
+{# horas, días y fechas. Sin desplazamiento: los bloques que no caben pasan de pantalla. #}
+{% block volver %}{% include "_volver.html" with url=volver texto="Planificadas" etiqueta="Volver a Tareas planificadas sin cambiar nada" only %}{% endblock %}
+{% block h1 %}Modificar<span class="visualmente-oculto"> «{{ tarea.nombre }}»</span>{% endblock %}
+{% block sub %}<span class="barra__sub barra__persona"><img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40"> {{ estudiante.usuario.get_full_name }}</span>{% endblock %}
 
 {% block contenido %}
-{% include "usuarios/_mensajes.html" %}
-
 <form class="formulario encaja" method="post" novalidate>
   {% csrf_token %}
+  <input type="hidden" name="alcance" value="{{ alcance }}">
+  {% if fecha %}<input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">{% endif %}
+  {% for clave, valor in filtros.items %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
   <div class="encaja">
     <div class="partes" id="bloques" data-paginar data-pag-variable data-foco="titulo" data-estado="Parte {n} de {total}">
       {% if form.errors %}<div class="parte" data-pag-inicio>{% include "usuarios/_errores.html" %}</div>{% endif %}
 
-      <!-- Información fija de la tarea y el estudiante pulsado -->
-      <fieldset class="parte parte--caja">
-        <legend>Datos de la asignación</legend>
-        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-          {% if asignacion.tarea.imagen %}
-          <img src="{{ asignacion.tarea.imagen.url }}" alt="" width="64" height="64" style="border-radius: 4px; object-fit: cover;">
-          {% endif %}
+      <section class="parte parte--caja parte--titulo-borde" aria-labelledby="que-t">
+        <h2 id="que-t">Qué cambia</h2>
+        <div class="planificada__cab">
+          <img src="{{ tarea.imagen.url }}" alt="" width="64" height="64">
           <div>
-            <h2 style="margin: 0; font-size: 1.25rem;">{{ asignacion.tarea.nombre }}</h2>
-            <p style="margin: 0.25rem 0; color: #555;">Estudiante: <strong>{{ asignacion.estudiante.usuario.get_full_name }}</strong></p>
+            <p class="planificada__nombre">{{ tarea.nombre }}</p>
+            <p class="planificada__datos">{% if alcance == "dia" %}Solo el {{ fecha_texto }}{% else %}Toda la serie{% endif %}</p>
+            {% if alcance == "serie" %}<p class="planificada__serie">{% include "tareas/_dias.html" with dias=asignacion.dias_semana only %}</p>{% endif %}
           </div>
         </div>
-      </fieldset>
+        <p class="admin__nota">{{ estudiante.usuario.first_name }} recibirá un aviso con el cambio.</p>
+      </section>
 
-      <!-- Horario -->
       <fieldset class="parte parte--caja">
         <legend>A qué hora</legend>
         <div class="admin__dos">
@@ -46,37 +41,32 @@
         </div>
       </fieldset>
 
-      <!-- Días de la semana -->
+      {% if alcance == "serie" %}
       {% with campo=form.dias_semana %}
-      <fieldset class="parte parte--caja">
+      <fieldset class="parte parte--caja" id="{{ campo.auto_id }}"{% if campo.errors %} aria-describedby="{{ campo.auto_id }}_error"{% endif %}>
         <legend>Qué días</legend>
-        {% for error in campo.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+        {% for error in campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ error }}</p>{% endfor %}
         <ul class="casillas casillas--dias">
           {% for opcion in campo %}
-          <li>
-            <label class="casilla">
-              {{ opcion.tag }}
-              {% include "_dia_forma.html" with numero=opcion.data.value only %}
-              <span class="casilla__dia">{{ opcion.choice_label }}</span>
-            </label>
-          </li>
+          <li><label class="casilla">{{ opcion.tag }} {% include "_dia_forma.html" with numero=opcion.data.value only %} <span class="casilla__dia">{{ opcion.choice_label }}</span></label></li>
           {% endfor %}
         </ul>
       </fieldset>
       {% endwith %}
 
-      <!-- Vigencia -->
       <fieldset class="parte parte--caja">
         <legend>Desde cuándo y hasta cuándo</legend>
-        <p class="admin__nota">El primer día es obligatorio; sin último día, vale para siempre.</p>
+        <p class="admin__nota">Sin último día, sigue siempre.</p>
         <div class="admin__dos">
           {% include "tareas/_campo.html" with campo=form.vigencia_desde %}
           {% include "tareas/_campo.html" with campo=form.vigencia_hasta %}
         </div>
       </fieldset>
+      {% endif %}
     </div>
   </div>
 
+  {# Para dejarlo como estaba, «‹ Planificadas» de la barra de título. #}
   <div class="pie pie--pasos">
     {% include "_paginador.html" with de="bloques" que="Partes del formulario" final=True only %}
     <div class="pie__acciones">

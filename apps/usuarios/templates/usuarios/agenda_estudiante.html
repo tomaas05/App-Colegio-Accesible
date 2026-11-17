@@ -31,7 +31,7 @@
           <li class="consulta__tarea">
             <img src="{{ t.tarea.imagen.url }}" alt="" width="56" height="56">
             <div class="consulta__cuerpo">
-              <p class="consulta__hora">{{ t.asignacion.hora_inicio|time:"H:i" }} – {{ t.asignacion.hora_fin|time:"H:i" }}</p>
+              <p class="consulta__hora">{{ t.hora_inicio|time:"H:i" }} – {{ t.hora_fin|time:"H:i" }}</p>
               <h3>{{ t.tarea.nombre }}</h3>
               <p class="consulta__estado">
                 <span>Estado: <b>{{ t.estado }}</b></span>

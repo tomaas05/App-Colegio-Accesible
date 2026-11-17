@@ -6,7 +6,9 @@ Javi reutiliza `agenda_del_dia` en HU-01-09 (agenda de solo lectura del profesio
 recibe un Estudiante, no mira quién está conectado.
 
 Los estados «vencida» y «tiempo agotado» NO se guardan: se calculan a partir de las
-horas cada vez que se consulta (no hay tareas programadas en segundo plano).
+horas cada vez que se consulta (no hay tareas programadas en segundo plano). Tampoco
+«cancelada»: sale de la planificación (apps/tareas/planificacion.py, HU-03-04 y HU-03-05),
+que también da las horas de cada día si se han cambiado solo para ese día.
 """
 
 from dataclasses import dataclass
@@ -15,9 +17,9 @@ from functools import cached_property
 from typing import NamedTuple
 
 from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 
+from apps.tareas import planificacion
 from apps.tareas.models import Asignacion
 
 from .models import Ejecucion, EjecucionPaso, EstadoEjecucion, EstadoPaso
@@ -80,6 +82,17 @@ class TareaDelDia:
     momento: str = ""  # «anterior», «actual», «siguiente» o vacío
     # Otra tarea que impide empezar esta antes de su hora (la rellena agenda_del_dia).
     bloqueada_por: "TareaDelDia | None" = None
+    # Cómo queda ese día (planificacion.Ocurrencia): horas de ese día y si está cancelada.
+    ocurrencia: "planificacion.Ocurrencia | None" = None
+
+    @property
+    def cancelada(self):
+        return bool(self.ocurrencia and self.ocurrencia.cancelada)
+
+    @property
+    def cambiada(self):
+        """Ese día tiene otras horas («solo este día», HU-03-04)."""
+        return bool(self.ocurrencia and self.ocurrencia.cambiada)
 
     @property
     def tarea(self):
@@ -87,15 +100,20 @@ class TareaDelDia:
 
     @cached_property
     def inicio(self):
-        return _momento(self.fecha, self.asignacion.hora_inicio)
+        hora = self.ocurrencia.hora_inicio if self.ocurrencia else self.asignacion.hora_inicio
+        return _momento(self.fecha, hora)
 
     @cached_property
     def fin(self):
-        return _momento(self.fecha, self.asignacion.hora_fin)
+        hora = self.ocurrencia.hora_fin if self.ocurrencia else self.asignacion.hora_fin
+        return _momento(self.fecha, hora)
 
     @cached_property
     def estado(self):
         guardado = self.ejecucion.estado if self.ejecucion else EstadoEjecucion.PENDIENTE
+        # Cancelada (HU-03-05): solo si no la había empezado (no se cancela lo empezado).
+        if self.cancelada and guardado == EstadoEjecucion.PENDIENTE:
+            return EstadoEjecucion.CANCELADA
         if guardado == EstadoEjecucion.PENDIENTE and self.ahora >= self.fin:
             return EstadoEjecucion.VENCIDA
         if guardado == EstadoEjecucion.EN_CURSO and self.ahora >= self.fin:
@@ -218,41 +236,52 @@ class Agenda:
     aviso: TareaDelDia | None  # la siguiente, si empieza dentro de AVISO_MINUTOS (RF2.10.1)
 
 
+def tareas_del_dia(estudiante, fecha, ahora_):
+    """Las tareas de un día con su ejecución, ordenadas por la hora de ese día.
+
+    Incluye las canceladas que el estudiante aún tiene que ver tachadas (HU-03-05, PA1).
+    """
+    ocurrencias = planificacion.ocurrencias_del_dia(estudiante, fecha)
+    ejecuciones = {
+        e.asignacion_id: e
+        for e in Ejecucion.objects.filter(
+            asignacion__in=[o.asignacion for o in ocurrencias], fecha=fecha
+        )
+    }
+    return [
+        TareaDelDia(o.asignacion, ejecuciones.get(o.asignacion.pk), fecha, ahora_, ocurrencia=o)
+        for o in ocurrencias
+    ]
+
+
 def agenda_del_dia(estudiante, ahora_=None):
     """Tareas de hoy del estudiante, ordenadas por hora (HU-02-01)."""
     ahora_ = ahora_ or ahora()
     hoy = ahora_.date()
-    asignaciones = list(
-        estudiante.asignaciones.select_related("tarea")
-        .filter(cancelada=False, vigencia_desde__lte=hoy, dias_semana__contains=[hoy.isoweekday()])
-        .filter(Q(vigencia_hasta__isnull=True) | Q(vigencia_hasta__gte=hoy))
-        .order_by("hora_inicio")
-    )
-    ejecuciones = {
-        e.asignacion_id: e for e in Ejecucion.objects.filter(asignacion__in=asignaciones, fecha=hoy)
-    }
-    tareas = [TareaDelDia(a, ejecuciones.get(a.pk), hoy, ahora_) for a in asignaciones]
+    tareas = tareas_del_dia(estudiante, hoy, ahora_)
+    # Las canceladas se ven, tachadas, pero no cuentan como actual, anterior ni siguiente.
+    activas = [t for t in tareas if t.estado != EstadoEjecucion.CANCELADA]
 
     # La actual: la que está en marcha (puede haberse empezado antes de su hora) o, si no
     # hay ninguna, la que toca por la hora. Anterior y siguiente, sus vecinas en la lista.
-    en_marcha = next((t for t in tareas if t.estado == EstadoEjecucion.EN_CURSO), None)
-    actual = en_marcha or next((t for t in tareas if t.en_su_hora), None)
+    en_marcha = next((t for t in activas if t.estado == EstadoEjecucion.EN_CURSO), None)
+    actual = en_marcha or next((t for t in activas if t.en_su_hora), None)
     if actual:
-        i = tareas.index(actual)
-        anterior = tareas[i - 1] if i > 0 else None
-        siguiente = tareas[i + 1] if i + 1 < len(tareas) else None
+        i = activas.index(actual)
+        anterior = activas[i - 1] if i > 0 else None
+        siguiente = activas[i + 1] if i + 1 < len(activas) else None
     else:
-        siguiente = next((t for t in tareas if t.inicio > ahora_), None)
-        anteriores = [t for t in tareas if t.fin <= ahora_]
+        siguiente = next((t for t in activas if t.inicio > ahora_), None)
+        anteriores = [t for t in activas if t.fin <= ahora_]
         anterior = anteriores[-1] if anteriores else None
 
     # Empezar antes de la hora solo si no hay otra en marcha ni otra a la que le toque ahora.
-    for t in tareas:
+    for t in activas:
         if ahora_ < t.inicio:
             t.bloqueada_por = next(
                 (
                     o
-                    for o in tareas
+                    for o in activas
                     if o is not t
                     and (
                         o.estado == EstadoEjecucion.EN_CURSO
@@ -306,11 +335,10 @@ def tarea_del_dia(estudiante, asignacion_id, ahora_=None):
     """
     ahora_ = ahora_ or ahora()
     hoy = ahora_.date()
-    asignacion = estudiante.asignaciones.select_related("tarea").get(pk=asignacion_id)
-    if not asignacion.aplica_el(hoy):
-        raise Asignacion.DoesNotExist
-    ejecucion = Ejecucion.objects.filter(asignacion=asignacion, fecha=hoy).first()
-    return TareaDelDia(asignacion, ejecucion, hoy, ahora_)
+    for t in tareas_del_dia(estudiante, hoy, ahora_):
+        if t.asignacion.pk == asignacion_id:
+            return t
+    raise Asignacion.DoesNotExist
 
 
 def _asegurar_pasos(ejecucion):
@@ -340,6 +368,8 @@ def empezar(estudiante, asignacion_id, ahora_=None):
         )
         if ejecucion.estado == EstadoEjecucion.EN_CURSO:
             return ejecucion  # cerró y reabrió la app: retoma con su hora original
+        if t.cancelada:
+            raise ErrorDeAgenda("Esta tarea se ha cancelado.")
         if ejecucion.estado != EstadoEjecucion.PENDIENTE:
             raise ErrorDeAgenda("Esta tarea ya no se puede empezar.")
         if t.aun_no_es_la_hora:

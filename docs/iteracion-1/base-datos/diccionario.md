@@ -26,6 +26,8 @@ No se guardan fotografías, documentos de identidad ni datos médicos (RNF1.1.3)
 | método de acceso del estudiante | `imagenes` (3 imágenes de la rejilla), `contrasena` (texto) | `imagenes` |
 | creación de tareas del estudiante | `ninguna`, `asistente` (paso a paso, boceto B31), `completa` (como los adultos, B32) | `ninguna` |
 | días de la semana | 1 = lunes … 7 = domingo | — |
+| tipo de excepción (RI3.2.3) | `modificada` (otras horas ese día), `cancelada` (ese día no se hace) | — |
+| tipo de aviso | `cambio`, `cancelacion`, `plan_b` | `cambio` |
 
 ---
 
@@ -215,8 +217,40 @@ App `tareas` · Requisitos: RI3.2.1, RI3.2.2 · Incluye los atributos de la anti
 | dias_semana | smallint[] | no | al menos un día; valores de 1 a 7 | Días en que se repite | RI3.2.1, RF3.2.2 |
 | vigencia_desde | date | no | | Primer día en que aplica | RI3.2.1 |
 | vigencia_hasta | date | sí | igual o posterior a vigencia_desde | Último día; vacío = sin fecha de fin | RI3.2.1 |
+| cancelada | boolean | no | por defecto falso | La serie entera se ha cancelado | HU-03-05 |
+| cancelada_el | date | sí | obligatoria si `cancelada` | Desde qué día está cancelada (hoy, o mañana si hoy ya la había empezado). El estudiante la ve tachada 7 días más | HU-03-05 |
 
-Que no se solape con otra asignación del mismo estudiante se comprueba en el código (RF3.2.3). Que el administrador no asigne se comprueba en el código (anotación del E/R).
+Que no se solape con otra asignación del mismo estudiante se comprueba en el código (RF3.2.3), con las horas de cada día (las de la serie o las de su excepción) y sin contar lo cancelado (`apps/tareas/planificacion.py`). Que el administrador no asigne se comprueba en el código (anotación del E/R).
+
+## excepcion_asignacion
+
+App `tareas` · Requisito: RI3.2.3 · HU-03-04 y HU-03-05 · Lo que cambia un solo día de una asignación («Solo este día»), sin tocar los demás días de la serie.
+
+| Campo | Tipo | Nulo | Restricciones | Descripción | Origen |
+| --- | --- | --- | --- | --- | --- |
+| id | bigint | no | PK | Identificador | — |
+| asignacion_id | bigint | no | → asignacion, cascada | Asignación a la que afecta | RI3.2.3 |
+| fecha | date | no | | El día concreto | RF3.5.2 |
+| tipo | varchar(12) | no | lista «tipo de excepción» | Otras horas o cancelada | RF3.5.2 |
+| hora_inicio | time | sí | obligatoria si `modificada`; vacía si `cancelada` | Hora de inicio de ese día | HU-03-04 |
+| hora_fin | time | sí | posterior a hora_inicio; vacía si `cancelada` | Hora de fin de ese día | HU-03-04 |
+| creada_por_id | bigint | no | → usuario, protegida | Quién hizo el cambio | RI3.2.3 |
+| creada_el | timestamptz | no | automática | Cuándo | RI3.2.3 |
+
+*UK* (asignacion_id, fecha): un día tiene como mucho un cambio. Si se vuelven a poner las horas de siempre, la fila se borra.
+
+## plan_b
+
+App `tareas` · HU-03-06 (RF3.4.3, RI3.3.1) · Las alternativas de una tarea, por orden de preferencia. Sustituye al ManyToMany sin orden de la primera versión de la HU (la migración 0007 copia lo que hubiera).
+
+| Campo | Tipo | Nulo | Restricciones | Descripción | Origen |
+| --- | --- | --- | --- | --- | --- |
+| id | bigint | no | PK | Identificador técnico | — |
+| tarea_id | bigint | no | → tarea, cascada | Tarea que puede no poder hacerse | RI3.3.1 |
+| alternativa_id | bigint | no | → tarea, cascada; distinta de tarea_id | Tarea que se ofrece en su lugar | RI3.3.1 |
+| orden | smallint | no | mayor que 0 | Prioridad: 1 es la que se ofrece primero | RF3.4.3 |
+
+*UK* (tarea_id, alternativa_id).
 
 ## ejecucion
 
@@ -245,3 +279,20 @@ App `agenda` · Requisito: RI2.1.2 · Relación *avanza*.
 | estado | varchar(10) | no | lista «estado de paso» | Pendiente o hecho | RI2.1.2 |
 
 *UK* (ejecucion_id, paso_id).
+
+## notificacion
+
+App `comun` · HU-03-04, HU-03-05 (y HU-07-04, HU-07-05) · Un aviso para una persona.
+
+| Campo | Tipo | Nulo | Restricciones | Descripción | Origen |
+| --- | --- | --- | --- | --- | --- |
+| id | bigint | no | PK | Identificador | — |
+| destinatario_id | bigint | no | → usuario, cascada | Quién lo recibe | HU-03-04 |
+| tipo | varchar(12) | no | lista «tipo de aviso» | De qué es el aviso | HU-03-05, HU-07-04 |
+| mensaje | text | no | | Una frase corta | RNF2.3.3 |
+| tarea_id | bigint | sí | → tarea, se pone a nulo | La tarea de la que habla: su imagen es el pictograma del aviso | RF2.12.1 |
+| leida | boolean | no | por defecto falso | Ya lo ha visto | HU-07-05 |
+| vista_el | timestamptz | sí | | Cuándo pulsó «Entendido» | HU-07-05 |
+| fecha_creacion | timestamptz | no | automática | Cuándo se creó | — |
+
+Índice (destinatario_id, leida) para buscar rápido los avisos sin ver. Un aviso se da por visto al pulsar «Entendido», no al abrir la pantalla.
