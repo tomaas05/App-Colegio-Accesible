@@ -31,6 +31,7 @@ from PIL import Image, ImageDraw
 from apps.comun import pictos_interfaz
 from apps.comun.fuentes import fuente_titulos
 from apps.tareas.models import Ambito, Asignacion, Tarea
+from apps.usuarios.models import Estudiante
 
 from .models import ComedorDelDia, RepartoMenu, TareaDelCentro, TipoTareaCentro
 
@@ -229,11 +230,47 @@ class Resultado:
     sustituido: object = None  # el estudiante que estaba antes (PA4), si había otro
 
 
+def _bloquear(estudiante):
+    """Bloquea al estudiante hasta el final de la transacción: dos asignaciones a la vez
+    no pueden quedar solapadas en su agenda sin que la comprobación de choques lo vea."""
+    Estudiante.objects.select_for_update().filter(pk=estudiante.pk).exists()
+
+
+def _ultimo_dia_hecho(asignacion, desde):
+    """El último día, desde `desde`, en el que el estudiante ya ha empezado o terminado la
+    tarea (hay ejecución), o None."""
+    return (
+        asignacion.ejecuciones.filter(fecha__gte=desde)
+        .order_by("-fecha")
+        .values_list("fecha", flat=True)
+        .first()
+    )
+
+
+def _retirar(asignacion, desde):
+    """La asignación deja de tocar desde `desde` sin perder lo que el estudiante ya ha hecho:
+    si ya la ha empezado ese día (o después), se queda hasta ese día; si no había empezado
+    nunca, se borra; si no, termina el día antes."""
+    hasta = desde - timedelta(days=1)
+    hecho = _ultimo_dia_hecho(asignacion, desde)
+    if hecho:
+        hasta = hecho
+    if hasta < asignacion.vigencia_desde and not asignacion.ejecuciones.exists():
+        asignacion.delete()
+    elif asignacion.vigencia_hasta is None or asignacion.vigencia_hasta > hasta:
+        asignacion.vigencia_hasta = max(hasta, asignacion.vigencia_desde)
+        asignacion.save(update_fields=["vigencia_hasta"])
+
+
+OTRO_A_LA_VEZ = "No se ha guardado: otra persona lo estaba cambiando a la vez. Vuelve a probar."
+
+
 def asignar_comedor(fecha, estudiante, hora_inicio, hora_fin, por):
     """PA1: pone la tarea «Comedor» en la agenda del estudiante ese día, a esa hora.
 
-    PA4: si ese día ya tenía otro estudiante, lo sustituye (su tarea desaparece de su
-    agenda). Con el mismo estudiante, solo cambia la hora.
+    PA4: si ese día ya tenía otro estudiante, lo sustituye: su tarea desaparece de su
+    agenda, salvo que ya la haya empezado (lo que ha hecho no se pierde). Con el mismo
+    estudiante, solo cambia la hora.
     """
     if fecha.isoweekday() not in DIAS_LECTIVOS:
         raise ErrorDeCentro("No se ha guardado: el comedor solo se asigna de lunes a viernes.")
@@ -241,36 +278,43 @@ def asignar_comedor(fecha, estudiante, hora_inicio, hora_fin, por):
         raise ErrorDeCentro("No se ha guardado: ese día ya ha pasado.")
     _comprobar_horas(hora_inicio, hora_fin)
 
-    with transaction.atomic():
-        anterior = (
-            ComedorDelDia.objects.select_for_update()
-            .select_related("asignacion__estudiante__usuario")
-            .filter(fecha=fecha)
-            .first()
-        )
-        vieja = anterior.asignacion if anterior else None
-        _comprobar_que_no_choca(
-            estudiante, [fecha.isoweekday()], fecha, fecha, hora_inicio, hora_fin, vieja
-        )
-        sustituido = None
-        if vieja and vieja.estudiante_id == estudiante.pk:
-            vieja.hora_inicio, vieja.hora_fin = hora_inicio, hora_fin
-            vieja.save(update_fields=["hora_inicio", "hora_fin"])
-        else:
-            if vieja:
-                sustituido = vieja.estudiante
-                vieja.delete()  # se lleva su fila de ComedorDelDia
-            asignacion = Asignacion.objects.create(
-                tarea=tarea_de(TipoTareaCentro.COMEDOR, por),
-                estudiante=estudiante,
-                asignado_por=por,
-                hora_inicio=hora_inicio,
-                hora_fin=hora_fin,
-                dias_semana=[fecha.isoweekday()],
-                vigencia_desde=fecha,
-                vigencia_hasta=fecha,
+    try:
+        with transaction.atomic():
+            _bloquear(estudiante)
+            anterior = (
+                ComedorDelDia.objects.select_for_update()
+                .select_related("asignacion__estudiante__usuario")
+                .filter(fecha=fecha)
+                .first()
             )
-            ComedorDelDia.objects.create(fecha=fecha, asignacion=asignacion)
+            vieja = anterior.asignacion if anterior else None
+            _comprobar_que_no_choca(
+                estudiante, [fecha.isoweekday()], fecha, fecha, hora_inicio, hora_fin, vieja
+            )
+            sustituido = None
+            if vieja and vieja.estudiante_id == estudiante.pk:
+                vieja.hora_inicio, vieja.hora_fin = hora_inicio, hora_fin
+                vieja.save(update_fields=["hora_inicio", "hora_fin"])
+            else:
+                nueva = Asignacion.objects.create(
+                    tarea=tarea_de(TipoTareaCentro.COMEDOR, por),
+                    estudiante=estudiante,
+                    asignado_por=por,
+                    hora_inicio=hora_inicio,
+                    hora_fin=hora_fin,
+                    dias_semana=[fecha.isoweekday()],
+                    vigencia_desde=fecha,
+                    vigencia_hasta=fecha,
+                )
+                if anterior:
+                    sustituido = vieja.estudiante
+                    anterior.asignacion = nueva
+                    anterior.save(update_fields=["asignacion"])
+                    _retirar(vieja, fecha)
+                else:
+                    ComedorDelDia.objects.create(fecha=fecha, asignacion=nueva)
+    except IntegrityError as error:
+        raise ErrorDeCentro(OTRO_A_LA_VEZ) from error
 
     texto = (
         f"Comedor del {texto_fecha(fecha)}: {_nombre(estudiante)}, "
@@ -282,19 +326,23 @@ def asignar_comedor(fecha, estudiante, hora_inicio, hora_fin, por):
 
 
 def quitar_comedor(fecha):
-    """Deja el día pendiente de asignar. Devuelve el estudiante que tenía (o None)."""
+    """Deja el día pendiente de asignar. Devuelve el estudiante que tenía (o None). Si ya
+    había empezado la tarea, la conserva en su agenda."""
     if fecha < hoy():
         raise ErrorDeCentro("Ese día ya ha pasado: no se puede cambiar.")
-    comedor = (
-        ComedorDelDia.objects.select_related("asignacion__estudiante__usuario")
-        .filter(fecha=fecha)
-        .first()
-    )
-    if comedor is None:
-        return None
-    estudiante = comedor.asignacion.estudiante
-    comedor.asignacion.delete()
-    return estudiante
+    with transaction.atomic():
+        comedor = (
+            ComedorDelDia.objects.select_for_update()
+            .select_related("asignacion__estudiante__usuario")
+            .filter(fecha=fecha)
+            .first()
+        )
+        if comedor is None:
+            return None
+        vieja = comedor.asignacion
+        comedor.delete()
+        _retirar(vieja, fecha)
+    return vieja.estudiante
 
 
 # --- Reparto del menú de un mes (PA2, PA3, PA4) ------------------------------------------
@@ -312,8 +360,9 @@ def asignar_reparto(mes, estudiante, hora_inicio, hora_fin, dias, por):
     """PA2: pone la tarea «Reparto del menú» en la agenda del estudiante los días de la
     semana elegidos de ese mes (de hoy en adelante si el mes ya ha empezado).
 
-    PA4: si el mes ya tenía estudiante, lo sustituye desde hoy. Lo que el anterior ya ha
-    hecho (días pasados) se conserva: su tarea termina ayer en lugar de borrarse.
+    PA4: si el mes ya tenía otro estudiante, lo sustituye desde hoy. Lo que el anterior ya
+    ha hecho se conserva: su tarea termina ayer (o hoy, si hoy ya la ha empezado) en lugar
+    de borrarse. Con el mismo estudiante, solo cambian la hora y los días.
     """
     mes = primer_dia(mes)
     _comprobar_horas(hora_inicio, hora_fin)
@@ -324,24 +373,33 @@ def asignar_reparto(mes, estudiante, hora_inicio, hora_fin, dias, por):
     if not any(d.isoweekday() in dias for d in dias_lectivos(mes) if d >= desde):
         raise ErrorDeCentro("No se ha guardado: en lo que queda de mes no hay esos días.")
 
-    with transaction.atomic():
-        reparto, _ = RepartoMenu.objects.select_for_update().get_or_create(mes=mes)
-        vieja = reparto.asignacion
-        _comprobar_que_no_choca(estudiante, dias, desde, hasta, hora_inicio, hora_fin, vieja)
-        sustituido = vieja.estudiante if vieja and vieja.estudiante_id != estudiante.pk else None
-        reparto.asignacion = Asignacion.objects.create(
-            tarea=tarea_de(TipoTareaCentro.REPARTO_MENU, por),
-            estudiante=estudiante,
-            asignado_por=por,
-            hora_inicio=hora_inicio,
-            hora_fin=hora_fin,
-            dias_semana=dias,
-            vigencia_desde=desde,
-            vigencia_hasta=hasta,
-        )
-        reparto.save(update_fields=["asignacion"])
-        if vieja:
-            _terminar_antes_de(vieja, desde)
+    try:
+        with transaction.atomic():
+            _bloquear(estudiante)
+            reparto, _ = RepartoMenu.objects.select_for_update().get_or_create(mes=mes)
+            vieja = reparto.asignacion
+            _comprobar_que_no_choca(estudiante, dias, desde, hasta, hora_inicio, hora_fin, vieja)
+            sustituido = None
+            if vieja and vieja.estudiante_id == estudiante.pk:
+                vieja.hora_inicio, vieja.hora_fin, vieja.dias_semana = hora_inicio, hora_fin, dias
+                vieja.save(update_fields=["hora_inicio", "hora_fin", "dias_semana"])
+            else:
+                sustituido = vieja.estudiante if vieja else None
+                reparto.asignacion = Asignacion.objects.create(
+                    tarea=tarea_de(TipoTareaCentro.REPARTO_MENU, por),
+                    estudiante=estudiante,
+                    asignado_por=por,
+                    hora_inicio=hora_inicio,
+                    hora_fin=hora_fin,
+                    dias_semana=dias,
+                    vigencia_desde=desde,
+                    vigencia_hasta=hasta,
+                )
+                reparto.save(update_fields=["asignacion"])
+                if vieja:
+                    _retirar(vieja, desde)
+    except IntegrityError as error:
+        raise ErrorDeCentro(OTRO_A_LA_VEZ) from error
 
     texto = (
         f"Reparto del menú de {nombre_mes(mes)}: {_nombre(estudiante)}, {texto_dias(dias)} "
@@ -350,16 +408,6 @@ def asignar_reparto(mes, estudiante, hora_inicio, hora_fin, dias, por):
     if sustituido:
         texto += f" Sustituye a {_nombre(sustituido)}."
     return Resultado(texto, sustituido)
-
-
-def _terminar_antes_de(asignacion, dia):
-    """La asignación deja de tocar desde `dia`: termina el día antes o, si aún no había
-    empezado, se borra."""
-    if asignacion.vigencia_desde >= dia:
-        asignacion.delete()
-    else:
-        asignacion.vigencia_hasta = dia - timedelta(days=1)
-        asignacion.save(update_fields=["vigencia_hasta"])
 
 
 def quitar_reparto(mes):
@@ -378,30 +426,52 @@ def quitar_reparto(mes):
         vieja = reparto.asignacion
         reparto.asignacion = None
         reparto.save(update_fields=["asignacion"])
-        _terminar_antes_de(vieja, desde)
+        _retirar(vieja, desde)
     return vieja.estudiante
 
 
 # --- Menú del mes (para HU-06-03) -------------------------------------------------------
 
 
-def subir_menu(mes, archivo):
-    """Guarda (o cambia) el menú del mes. El anterior se borra del disco."""
+def _mes_que_se_puede_cambiar(mes):
     mes = primer_dia(mes)
     if ultimo_dia(mes) < hoy():
         raise ErrorDeCentro("No se ha guardado: ese mes ya ha pasado.")
-    reparto, _ = RepartoMenu.objects.get_or_create(mes=mes)
-    anterior = reparto.menu.name
-    reparto.menu.save(f"menu-{mes:%Y-%m}{_extension(archivo.name)}", archivo, save=True)
-    if anterior and anterior != reparto.menu.name:
-        reparto.menu.storage.delete(anterior)
+    return mes
+
+
+def subir_menu(mes, archivo):
+    """Guarda (o cambia) el menú del mes. El anterior se borra del disco.
+
+    Solo se guarda la columna del menú: si otro administrador asigna el reparto a la vez,
+    no se pisa su estudiante."""
+    mes = _mes_que_se_puede_cambiar(mes)
+    try:
+        with transaction.atomic():
+            reparto, _ = RepartoMenu.objects.select_for_update().get_or_create(mes=mes)
+            anterior = reparto.menu.name
+            reparto.menu.save(f"menu-{mes:%Y-%m}{_extension(archivo.name)}", archivo, save=False)
+            reparto.save(update_fields=["menu"])
+            nuevo = reparto.menu.name
+            if anterior and anterior != nuevo:
+                almacen = reparto.menu.storage
+                transaction.on_commit(lambda: almacen.delete(anterior))
+    except IntegrityError as error:
+        raise ErrorDeCentro(OTRO_A_LA_VEZ) from error
     return reparto
 
 
 def quitar_menu(mes):
-    reparto = RepartoMenu.objects.filter(mes=primer_dia(mes)).first()
-    if reparto and reparto.menu:
-        reparto.menu.delete(save=True)
+    mes = _mes_que_se_puede_cambiar(mes)
+    with transaction.atomic():
+        reparto = RepartoMenu.objects.select_for_update().filter(mes=mes).first()
+        if reparto is None or not reparto.menu:
+            return
+        anterior = reparto.menu.name
+        almacen = reparto.menu.storage
+        reparto.menu = ""
+        reparto.save(update_fields=["menu"])
+        transaction.on_commit(lambda: almacen.delete(anterior))
 
 
 def _extension(nombre):

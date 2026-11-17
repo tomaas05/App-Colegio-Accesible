@@ -13,10 +13,13 @@ from datetime import datetime, time, timedelta
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError, connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
 from apps.agenda import servicios as agenda
+from apps.agenda.models import Ejecucion
 from apps.centro import servicios
 from apps.centro.models import ComedorDelDia, RepartoMenu, TareaDelCentro, TipoTareaCentro
 from apps.tareas.models import Asignacion
@@ -90,7 +93,9 @@ def asignar_comedor(client, dia, estudiante, inicio="13:00", fin="14:00"):
     )
 
 
-def asignar_reparto(client, estudiante, dias=(1, 2, 3, 4, 5), inicio="11:00", fin="11:30", mes=MES):
+def asignar_reparto(
+    client, estudiante, dias=(1, 2, 3, 4, 5), inicio="11:00", fin="11:30", mes=MES, **kwargs
+):
     return client.post(
         URL,
         {
@@ -101,6 +106,7 @@ def asignar_reparto(client, estudiante, dias=(1, 2, 3, 4, 5), inicio="11:00", fi
             "reparto-hora_inicio": inicio,
             "reparto-hora_fin": fin,
         },
+        **kwargs,
     )
 
 
@@ -302,7 +308,7 @@ def test_pa4_sustituyo_al_estudiante_del_reparto_y_se_conserva_lo_hecho(admin, l
     # Lucía reparte desde el día 1; el miércoles se cambia por Mateo.
     servicios.asignar_reparto(MES, lucia, time(11), time(11, 30), [1, 2, 3, 4, 5], admin)
     vieja = RepartoMenu.objects.get(mes=MES).asignacion
-    vieja.vigencia_desde = MES  # como si se hubiera asignado a principio de mes
+    vieja.vigencia_desde = MIERCOLES - timedelta(days=7)  # como si se hubiera asignado antes
     vieja.save()
 
     resultado = servicios.asignar_reparto(
@@ -312,10 +318,98 @@ def test_pa4_sustituyo_al_estudiante_del_reparto_y_se_conserva_lo_hecho(admin, l
     assert resultado.sustituido == lucia
     assert RepartoMenu.objects.get(mes=MES).asignacion.estudiante == mateo
     vieja.refresh_from_db()
-    if MES < MIERCOLES:
-        assert vieja.vigencia_hasta == MIERCOLES - timedelta(days=1)  # lo de antes se queda
+    assert vieja.vigencia_hasta == MIERCOLES - timedelta(days=1)  # lo de antes se queda
     assert "Reparto del menú" not in tareas_del_dia(lucia, MIERCOLES)
     assert "Reparto del menú" in tareas_del_dia(mateo, MIERCOLES)
+
+
+def test_pa4_sustituyo_el_reparto_desde_la_pantalla(client, admin, lucia, mateo):
+    asignar_reparto(client, lucia)
+    respuesta = asignar_reparto(client, mateo, follow=True)
+
+    assert "Sustituye a Lucía Fernández" in html(respuesta)
+    assert RepartoMenu.objects.get(mes=MES).asignacion.estudiante == mateo
+    assert "Reparto del menú" not in tareas_del_dia(lucia, JUEVES)
+    assert "Reparto del menú" in tareas_del_dia(mateo, JUEVES)
+
+
+# Lo que el estudiante ya ha hecho no se pierde al cambiar o quitar su tarea.
+
+
+def hecha(asignacion, dia=MIERCOLES):
+    return Ejecucion.objects.create(asignacion=asignacion, fecha=dia, estado="hecha")
+
+
+def test_pa4_sustituir_el_comedor_de_hoy_conserva_lo_que_ya_ha_hecho(admin, lucia, mateo):
+    servicios.asignar_comedor(MIERCOLES, lucia, time(13), time(14), admin)
+    vieja = ComedorDelDia.objects.get(fecha=MIERCOLES).asignacion
+    ejecucion = hecha(vieja)
+
+    servicios.asignar_comedor(MIERCOLES, mateo, time(13), time(14), admin)
+
+    assert Ejecucion.objects.filter(pk=ejecucion.pk).exists()
+    assert ComedorDelDia.objects.get(fecha=MIERCOLES).asignacion.estudiante == mateo
+    assert "Comedor" in tareas_del_dia(lucia, MIERCOLES)  # con su «Hecha»
+
+
+def test_pa4_sustituir_el_comedor_sin_empezar_lo_quita_de_su_agenda(admin, lucia, mateo):
+    servicios.asignar_comedor(MIERCOLES, lucia, time(13), time(14), admin)
+    servicios.asignar_comedor(MIERCOLES, mateo, time(13), time(14), admin)
+
+    assert "Comedor" not in tareas_del_dia(lucia, MIERCOLES)
+    assert Asignacion.objects.filter(tarea__del_centro__tipo="comedor").count() == 1
+
+
+def test_quitar_el_comedor_de_hoy_conserva_lo_que_ya_ha_hecho(admin, lucia):
+    servicios.asignar_comedor(MIERCOLES, lucia, time(13), time(14), admin)
+    ejecucion = hecha(ComedorDelDia.objects.get(fecha=MIERCOLES).asignacion)
+
+    assert servicios.quitar_comedor(MIERCOLES) == lucia
+
+    assert not ComedorDelDia.objects.exists()
+    assert Ejecucion.objects.filter(pk=ejecucion.pk).exists()
+
+
+def test_pa4_el_mismo_estudiante_del_reparto_cambia_la_hora_sin_perder_lo_de_hoy(admin, lucia):
+    servicios.asignar_reparto(MES, lucia, time(11), time(11, 30), [1, 2, 3, 4, 5], admin)
+    asignacion = RepartoMenu.objects.get(mes=MES).asignacion
+    Asignacion.objects.filter(pk=asignacion.pk).update(vigencia_desde=MIERCOLES - timedelta(days=7))
+    ejecucion = hecha(asignacion)
+
+    servicios.asignar_reparto(MES, lucia, time(11, 30), time(11, 45), [1, 3, 5], admin)
+
+    asignacion.refresh_from_db()
+    assert RepartoMenu.objects.get(mes=MES).asignacion == asignacion
+    assert (asignacion.hora_inicio, asignacion.dias_semana) == (time(11, 30), [1, 3, 5])
+    assert Ejecucion.objects.filter(pk=ejecucion.pk).exists()
+
+
+def test_pa4_un_reparto_que_empezo_hoy_y_ya_esta_hecho_no_se_borra(admin, lucia, mateo):
+    servicios.asignar_reparto(MES, lucia, time(11), time(11, 30), [1, 2, 3, 4, 5], admin)
+    vieja = RepartoMenu.objects.get(mes=MES).asignacion
+    Asignacion.objects.filter(pk=vieja.pk).update(vigencia_desde=MIERCOLES)
+    ejecucion = hecha(vieja)
+
+    servicios.asignar_reparto(MES, mateo, time(11), time(11, 30), [1, 2, 3, 4, 5], admin)
+
+    vieja.refresh_from_db()
+    assert vieja.vigencia_hasta == MIERCOLES  # se queda hoy, que ya lo ha hecho
+    assert Ejecucion.objects.filter(pk=ejecucion.pk).exists()
+    assert "Reparto del menú" not in tareas_del_dia(lucia, JUEVES)
+
+
+def test_dos_administradores_a_la_vez_no_dan_error_500(client, admin, lucia, monkeypatch):
+    """El segundo que crea el mismo día choca con la restricción de la base de datos."""
+
+    def ya_existe(**kwargs):
+        raise IntegrityError("comedordeldia_fecha_key")
+
+    monkeypatch.setattr(ComedorDelDia.objects, "create", ya_existe)
+    respuesta = asignar_comedor(client, JUEVES, lucia)
+
+    assert respuesta.status_code == 400
+    assert "otra persona lo estaba cambiando" in html(respuesta)
+    assert not Asignacion.objects.filter(estudiante=lucia, tarea__del_centro__isnull=False).exists()
 
 
 def test_pa4_se_puede_quitar_y_vuelve_a_quedar_pendiente(client, admin, lucia):
@@ -408,6 +502,26 @@ def test_quito_el_menu_del_mes(client, admin):
     client.post(URL, {"mes": f"{MES:%Y-%m}", "accion": "quitar_menu"})
 
     assert servicios.menu_del_mes(MIERCOLES) is None
+
+
+def test_un_mes_pasado_no_deja_quitar_el_menu(admin):
+    pasado = servicios.mes_anterior(MES)
+    RepartoMenu.objects.create(mes=pasado, menu="menus/menu-viejo.pdf")
+
+    with pytest.raises(servicios.ErrorDeCentro):
+        servicios.quitar_menu(pasado)
+    assert RepartoMenu.objects.get(mes=pasado).menu
+
+
+def test_subir_el_menu_solo_guarda_el_menu(client, admin, lucia):
+    """Si otro administrador asigna el reparto a la vez, subir el menú no lo pisa."""
+    asignar_reparto(client, lucia)
+    with CaptureQueriesContext(connection) as consultas:
+        subir(client)
+
+    cambios = [c["sql"] for c in consultas.captured_queries if c["sql"].startswith("UPDATE")]
+    assert cambios and all("asignacion_id" not in c for c in cambios)
+    assert RepartoMenu.objects.get(mes=MES).asignacion.estudiante == lucia
 
 
 # --- Permisos y navegación ---------------------------------------------------------------
