@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Editar asignación · Despega{% endblock %}
+{% block estilos %}
+<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
+<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
+{% endblock %}
+
+{% block volver %}
+{% url 'tareas:tareas_planificadas' as atras %}
+{% include "_volver.html" with url=atras texto="Planificadas" etiqueta="Volver a tareas planificadas" only %}
+{% endblock %}
+
+{% block h1 %}Editar planificación{% endblock %}
+
+{% block contenido %}
+{% include "usuarios/_mensajes.html" %}
+
+<form class="formulario encaja" method="post" novalidate>
+  {% csrf_token %}
+  <div class="encaja">
+    <div class="partes" id="bloques" data-paginar data-pag-variable data-foco="titulo" data-estado="Parte {n} de {total}">
+      {% if form.errors %}<div class="parte" data-pag-inicio>{% include "usuarios/_errores.html" %}</div>{% endif %}
+
+      <!-- Información fija de la tarea y el estudiante pulsado -->
+      <fieldset class="parte parte--caja">
+        <legend>Datos de la asignación</legend>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+          {% if asignacion.tarea.imagen %}
+          <img src="{{ asignacion.tarea.imagen.url }}" alt="" width="64" height="64" style="border-radius: 4px; object-fit: cover;">
+          {% endif %}
+          <div>
+            <h2 style="margin: 0; font-size: 1.25rem;">{{ asignacion.tarea.nombre }}</h2>
+            <p style="margin: 0.25rem 0; color: #555;">Estudiante: <strong>{{ asignacion.estudiante.usuario.get_full_name }}</strong></p>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Horario -->
+      <fieldset class="parte parte--caja">
+        <legend>A qué hora</legend>
+        <div class="admin__dos">
+          {% include "tareas/_campo.html" with campo=form.hora_inicio %}
+          {% include "tareas/_campo.html" with campo=form.hora_fin %}
+        </div>
+      </fieldset>
+
+      <!-- Días de la semana -->
+      {% with campo=form.dias_semana %}
+      <fieldset class="parte parte--caja">
+        <legend>Qué días</legend>
+        {% for error in campo.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+        <ul class="casillas casillas--dias">
+          {% for opcion in campo %}
+          <li>
+            <label class="casilla">
+              {{ opcion.tag }}
+              {% include "_dia_forma.html" with numero=opcion.data.value only %}
+              <span class="casilla__dia">{{ opcion.choice_label }}</span>
+            </label>
+          </li>
+          {% endfor %}
+        </ul>
+      </fieldset>
+      {% endwith %}
+
+      <!-- Vigencia -->
+      <fieldset class="parte parte--caja">
+        <legend>Desde cuándo y hasta cuándo</legend>
+        <p class="admin__nota">El primer día es obligatorio; sin último día, vale para siempre.</p>
+        <div class="admin__dos">
+          {% include "tareas/_campo.html" with campo=form.vigencia_desde %}
+          {% include "tareas/_campo.html" with campo=form.vigencia_hasta %}
+        </div>
+      </fieldset>
+    </div>
+  </div>
+
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Partes del formulario" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-solo-ultima="bloques">Guardar cambios</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

@@ -10,4 +10,15 @@ urlpatterns = [
     path("catalogo/", views.catalogo_tareas, name="catalogo"),
     path("asignar/", views.asignar_tarea, name="asignar_tarea"),
     path("asignar/<int:tarea_id>/", views.asignar_tarea, name="asignar_tarea_con_id"),
+    path("planificadas/", views.tareas_planificadas, name="tareas_planificadas"),
+    path(
+        "asignaciones/<int:asignacion_id>/editar/",
+        views.editar_asignacion,
+        name="editar_asignacion",
+    ),
+    path(
+        "asignaciones/<int:asignacion_id>/cancelar/",
+        views.cancelar_asignacion,
+        name="confirmar_cancelacion",
+    ),
 ]

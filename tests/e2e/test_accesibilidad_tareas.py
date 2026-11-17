@@ -1,12 +1,16 @@
-"""Accesibilidad de las pantallas de gestión de tareas (HU-03-01 y HU-03-03 - Úrsula).
+"""Accesibilidad de las pantallas de gestión de tareas (HU-03-01, HU-03-03 y HU-03-04 - Úrsula).
 
 Comprobación axe WCAG 2.2 AA y sin scroll horizontal para diferentes resoluciones,
 iniciando sesión previamente como usuario tutor.
 """
 
+from datetime import date, time
+
 import pytest
 from axe_playwright_python.sync_playwright import Axe
 
+from apps.horario.models import Clase
+from apps.tareas.models import Ambito, Asignacion, DiaSemana, Tarea
 from apps.usuarios.models import Usuario
 from tests.e2e.ayudas import ir_a
 
@@ -19,10 +23,12 @@ RESOLUCIONES = {
 }
 ETIQUETAS_WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 
-# Rutas de las pantallas de creación y asignación de tareas
+# Rutas de las pantallas de gestión de tareas (incluyendo la edición de asignaciones HU-03-04)
 PANTALLAS = [
     "/tareas/crear/",
     "/tareas/asignar/",
+    "/tareas/asignaciones/1/editar/",
+    "/tareas/asignaciones/1/cancelar/",
 ]
 
 
@@ -35,6 +41,39 @@ def tutor_logueado(live_server, page, client):
     )
     tutor.set_password("despega2026")
     tutor.save()
+
+    # Creamos los datos mínimos necesarios para que la ruta de edición
+    # encuentre una asignación válida y no devuelva un 404.
+    clase_e, _ = Clase.objects.get_or_create(nombre="Aula E2E")
+    estudiante_user, _ = Usuario.objects.get_or_create(
+        username="estudiante_e2e",
+        defaults={"first_name": "Lucía", "last_name": "E2E", "rol": "estudiante"},
+    )
+    from apps.usuarios.models import Estudiante
+
+    estudiante, _ = Estudiante.objects.get_or_create(
+        usuario=estudiante_user, defaults={"codigo_estudiante": "EST999", "clase": clase_e}
+    )
+    tarea, _ = Tarea.objects.get_or_create(
+        nombre="Tarea E2E",
+        defaults={
+            "descripcion_imagen": "Icono de prueba",
+            "creador": tutor,
+            "ambito": Ambito.ESCOLAR,
+        },
+    )
+    Asignacion.objects.get_or_create(
+        id=1,
+        defaults={
+            "tarea": tarea,
+            "estudiante": estudiante,
+            "asignado_por": tutor,
+            "hora_inicio": time(9, 0),
+            "hora_fin": time(10, 0),
+            "dias_semana": [DiaSemana.LUNES],
+            "vigencia_desde": date(2026, 1, 1),
+        },
+    )
 
     client.force_login(tutor)
     page.context.add_cookies(

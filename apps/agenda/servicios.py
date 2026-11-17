@@ -224,7 +224,7 @@ def agenda_del_dia(estudiante, ahora_=None):
     hoy = ahora_.date()
     asignaciones = list(
         estudiante.asignaciones.select_related("tarea")
-        .filter(vigencia_desde__lte=hoy, dias_semana__contains=[hoy.isoweekday()])
+        .filter(cancelada=False, vigencia_desde__lte=hoy, dias_semana__contains=[hoy.isoweekday()])
         .filter(Q(vigencia_hasta__isnull=True) | Q(vigencia_hasta__gte=hoy))
         .order_by("hora_inicio")
     )

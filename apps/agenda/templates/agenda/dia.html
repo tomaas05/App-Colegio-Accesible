@@ -12,6 +12,11 @@
 {% block h1 %}Tareas de hoy{% endblock %}
 
 {% block contenido %}
+{% if aviso_reciente %}
+<div class="alerta alerta--info" role="region" aria-label="Aviso y cambios recientes" style="margin: 1rem auto; max-width: 800px; padding: 1rem; background-color: #e2f0d9; border: 1px solid #d0e1c9; border-radius: 4px; color: #274e13;">
+  <strong>Nuevo aviso:</strong> {{ aviso_reciente.mensaje }}
+</div>
+{% endif %}
 {% if not agenda.tareas %}
 <div class="encaja encaja--centro">
   <p class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>Hoy no tienes tareas.</span></p>
@@ -20,12 +25,12 @@
 <div class="encaja encaja--centro">
   <ol class="linea" id="tareas" aria-labelledby="titulo" data-paginar data-max="{{ perfil_activo.max_tarjetas|default:6 }}">
     {% for t in agenda.tareas %}
-      {% url 'agenda:detalle' t.asignacion.pk as enlace %}
-      {% if t == agenda.actual or not agenda.actual and t == agenda.siguiente %}
-      {% include "agenda/_tarjeta.html" with inicio=True %}
-      {% else %}
-      {% include "agenda/_tarjeta.html" %}
-      {% endif %}
+    {% url 'agenda:detalle' t.asignacion.pk as enlace %}
+    {% if t == agenda.actual or not agenda.actual and t == agenda.siguiente %}
+    {% include "agenda/_tarjeta.html" with inicio=True %}
+    {% else %}
+    {% include "agenda/_tarjeta.html" %}
+    {% endif %}
     {% endfor %}
   </ol>
 </div>

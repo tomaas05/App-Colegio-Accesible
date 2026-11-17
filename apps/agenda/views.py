@@ -10,6 +10,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from apps.comun.models import Notificacion
 from apps.tareas.models import Asignacion, Paso
 
 from . import servicios
@@ -26,6 +27,16 @@ def _usa_lector(estudiante):
 def dia(request):
     """HU-02-01. Ver mi agenda del día (B06)."""
     ahora = servicios.ahora()
+    aviso_reciente = (
+        Notificacion.objects.filter(destinatario=request.user, leida=False)
+        .order_by("-fecha_creacion")
+        .first()
+    )
+
+    # Si existe, lo marcamos como leído inmediatamente para que no vuelva a salir
+    if aviso_reciente:
+        aviso_reciente.leida = True
+        aviso_reciente.save()
     return render(
         request,
         "agenda/dia.html",
@@ -34,6 +45,7 @@ def dia(request):
             "agenda": servicios.agenda_del_dia(request.estudiante, ahora),
             "ahora": ahora,
             "titulo": servicios.titulo_de_hoy(ahora),
+            "aviso_reciente": aviso_reciente,
         },
     )
 

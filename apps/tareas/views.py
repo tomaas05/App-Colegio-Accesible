@@ -14,9 +14,9 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.comun import pictogramas
 from apps.horario.servicios import choca_con_horario_escolar
-from apps.usuarios.models import Rol
+from apps.usuarios.models import Estudiante, Rol
 
-from .forms import AsignacionForm, PasoFormSet, TareaForm
+from .forms import AsignacionForm, EditarAsignacionForm, PasoFormSet, TareaForm
 from .models import Asignacion, Tarea
 from .permisos import gestiona_tareas
 
@@ -148,3 +148,179 @@ def asignar_tarea(request, tarea_id=None):
         form = AsignacionForm(initial=inicial, usuario=request.user)
 
     return render(request, "tareas/asignar_tarea.html", {"form": form, "tarea": tarea_inicial})
+
+
+@gestiona_tareas
+def tareas_planificadas(request):
+    """Vista para listar y filtrar las tareas planificadas por estudiante y/o día."""
+    asignaciones = Asignacion.objects.filter(cancelada=False)
+
+    estudiante_seleccionado = request.GET.get("estudiante")
+    dia_seleccionado = request.GET.get("dia")
+
+    if estudiante_seleccionado:
+        asignaciones = asignaciones.filter(estudiante_id=estudiante_seleccionado)
+
+    if dia_seleccionado:
+        try:
+            dia_int = int(dia_seleccionado)
+            # Filtramos las asignaciones cuyo array dias_semana contenga el día seleccionado
+            asignaciones = [asig for asig in asignaciones if dia_int in asig.dias_semana]
+        except ValueError:
+            pass
+
+    estudiantes = Estudiante.objects.all()
+
+    return render(
+        request,
+        "tareas/tareas_planificadas.html",
+        {
+            "asignaciones": asignaciones,
+            "estudiantes": estudiantes,
+            "estudiante_seleccionado": estudiante_seleccionado or "",
+            "dia_seleccionado": dia_seleccionado or "",
+        },
+    )
+
+
+@gestiona_tareas
+@require_http_methods(["GET", "POST"])
+def editar_asignacion(request, asignacion_id):
+    """HU-03-04 · Modificar la hora, el día o la vigencia de una tarea con control de solapes."""
+    asignacion = get_object_or_404(Asignacion, id=asignacion_id)
+
+    if request.method == "POST":
+        form = EditarAsignacionForm(request.POST, instance=asignacion)
+
+        # HU-03-11, PA5 (Javi): el familiar solo pone tareas para casa fuera del horario escolar.
+        if (
+            form.is_valid()
+            and request.user.rol == Rol.FAMILIAR
+            and choca_con_horario_escolar(
+                form.cleaned_data["dias_semana"],
+                form.cleaned_data["hora_inicio"],
+                form.cleaned_data["hora_fin"],
+            )
+        ):
+            form.add_error(
+                None,
+                "Esas horas son de horario escolar. Las tareas para casa se ponen fuera "
+                "de las horas de clase.",
+            )
+
+        if form.is_valid():
+            datos = form.cleaned_data
+
+            # --- VALIDACIÓN DE SOLAPES ---
+            dias_nuevos = datos["dias_semana"]
+            hora_ini = datos["hora_inicio"]
+            hora_fin = datos["hora_fin"]
+
+            solapa = False
+            otras_asignaciones = Asignacion.objects.filter(
+                estudiante=asignacion.estudiante, cancelada=False
+            ).exclude(id=asignacion.id)
+            for otra in otras_asignaciones:
+                if any(d in otra.dias_semana for d in dias_nuevos):
+                    if hora_ini < otra.hora_fin and hora_fin > otra.hora_inicio:
+                        solapa = True
+                        break
+
+            if solapa:
+                form.add_error(
+                    None,
+                    "El cambio genera un solapamiento con otra tarea existente del estudiante.",
+                )
+            else:
+                with transaction.atomic():
+                    form.save()
+                    try:
+                        from apps.comun.models import Notificacion
+
+                        Notificacion.objects.create(
+                            destinatario=asignacion.estudiante.usuario,
+                            mensaje=(
+                                f"Se ha actualizado la planificación "
+                                f"de la tarea «{asignacion.tarea.nombre}»."
+                            ),
+                        )
+                    except Exception:
+                        pass
+
+                messages.success(
+                    request,
+                    f"La planificación de la tarea «{asignacion.tarea.nombre}» "
+                    f"se ha actualizado correctamente y se ha avisado al estudiante.",
+                )
+                return redirect("tareas:tareas_planificadas")
+    else:
+        form = EditarAsignacionForm(instance=asignacion)
+
+    return render(
+        request,
+        "tareas/editar_asignacion.html",
+        {
+            "form": form,
+            "asignacion": asignacion,
+            "tarea": asignacion.tarea,
+            "estudiante": asignacion.estudiante,
+        },
+    )
+
+
+@gestiona_tareas
+@require_http_methods(["GET", "POST"])
+def cancelar_asignacion(request, asignacion_id):
+    """HU-03-05 · Cancelar una tarea planificada (o un día específico de la serie)."""
+    asignacion = get_object_or_404(Asignacion, id=asignacion_id)
+
+    # Recogemos el día que venía filtrado (si lo hay)
+    dia_filtro = request.GET.get("dia") or request.POST.get("dia")
+
+    if request.method == "POST":
+        alcance = request.POST.get("alcance", "serie")  # 'dia' o 'serie'
+
+        if alcance == "dia" and dia_filtro:
+            try:
+                dia_int = int(dia_filtro)
+                if len(asignacion.dias_semana) <= 1 and dia_int in asignacion.dias_semana:
+                    asignacion.cancelada = True
+                elif dia_int in asignacion.dias_semana:
+                    asignacion.dias_semana = [d for d in asignacion.dias_semana if d != dia_int]
+
+                asignacion.save()
+            except ValueError:
+                pass
+        else:
+            asignacion.cancelada = True
+            asignacion.save()
+
+        try:
+            from apps.comun.models import Notificacion
+
+            Notificacion.objects.create(
+                destinatario=asignacion.estudiante.usuario,
+                mensaje=(
+                    f"Se ha cancelado la planificación de la tarea «{asignacion.tarea.nombre}»."
+                ),
+            )
+        except Exception:
+            pass
+
+        messages.success(
+            request,
+            f"La planificación de la tarea «{asignacion.tarea.nombre}» "
+            f"se ha actualizado correctamente.",
+        )
+        return redirect("tareas:tareas_planificadas")
+
+    return render(
+        request,
+        "tareas/confirmar_cancelacion.html",
+        {
+            "asignacion": asignacion,
+            "tarea": asignacion.tarea,
+            "estudiante": asignacion.estudiante,
+            "dia_filtro": dia_filtro,
+        },
+    )
