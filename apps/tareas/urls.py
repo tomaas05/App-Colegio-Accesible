@@ -22,4 +22,5 @@ urlpatterns = [
         views.cancelar_asignacion,
         name="confirmar_cancelacion",
     ),
+    path("<int:tarea_id>/pasos/", views.editar_pasos_tarea, name="editar_pasos_tarea"),
 ]

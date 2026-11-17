@@ -634,3 +634,48 @@ def _anadir_al_plan_b(tarea, alternativa):
     PlanB.objects.get_or_create(
         tarea=tarea, alternativa=alternativa, defaults={"orden": ultimo + 1}
     )
+
+
+@gestiona_tareas
+@require_http_methods(["GET", "POST"])
+def editar_pasos_tarea(request, tarea_id):
+    """HU-03-02 · Añadir, ordenar y modificar los pasos de una tarea existente."""
+    tarea = get_object_or_404(Tarea, id=tarea_id)
+
+    if request.method == "POST":
+        formset = PasoFormSet(request.POST, request.FILES, prefix="pasos", instance=tarea)
+        if formset.is_valid():
+            try:
+                with transaction.atomic():
+                    # Eliminamos primero los marcados para borrado
+                    for p_form in formset.deleted_forms:
+                        if p_form.instance.pk:
+                            p_form.instance.delete()
+
+                    # Obtenemos los formularios válidos que no están marcados para borrar
+                    validos = [
+                        p_form
+                        for p_form in formset.forms
+                        if p_form.cleaned_data and not p_form.cleaned_data.get("DELETE")
+                    ]
+                    # Ordenamos según el campo orden indicado
+                    validos.sort(key=lambda pf: pf.cleaned_data.get("orden") or 0)
+
+                    for orden, p_form in enumerate(validos, start=1):
+                        paso = p_form.save(commit=False)
+                        paso.tarea = tarea
+                        paso.orden = orden
+                        _poner_pictograma(paso, p_form.cleaned_data.get("arasaac_id_paso"))
+                        paso.save()
+
+            except pictogramas.ErrorArasaac:
+                messages.error(request, SIN_PICTOGRAMA)
+            else:
+                messages.success(
+                    request, f"Se han actualizado los pasos de la tarea «{tarea.nombre}»."
+                )
+                return redirect("tareas:catalogo")
+    else:
+        formset = PasoFormSet(prefix="pasos", instance=tarea)
+
+    return render(request, "tareas/editar_pasos.html", {"tarea": tarea, "formset": formset})

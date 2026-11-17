@@ -34,6 +34,7 @@
         {% if tarea.descripcion %}<p class="catalogo__desc">{{ tarea.descripcion|truncatechars:90 }}</p>{% endif %}
       </div>
       <div class="catalogo__botones">
+        <a class="boton boton--aux" href="{% url 'tareas:editar_pasos_tarea' tarea.id %}">Pasos<span class="visualmente-oculto"> de «{{ tarea.nombre }}»</span></a>
         <a class="boton boton--aux" href="{% url 'tareas:plan_b' tarea.id %}">Plan B<span class="visualmente-oculto"> de «{{ tarea.nombre }}»</span></a>
         <a class="boton boton--aux" href="{% url 'tareas:asignar_tarea_con_id' tarea.id %}">Asignar <span class="visualmente-oculto">«{{ tarea.nombre }}»</span></a>
       </div>
