@@ -1,16 +1,17 @@
 /*
- * Despega · Crear, ver y asignar tareas (Úrsula): HU-03-01 y HU-03-03.
- * Bocetos B40, B41 y B43. Se carga después de usuarios.css, de donde salen los botones,
- * los campos (.campo) y las tarjetas (.admin__tarjeta). Solo tokens y rem.
+- Despega · Crear, ver y asignar tareas (Úrsula): HU-03-01 y HU-03-03.
+- Bocetos B40, B41 y B43. Se carga después de usuarios.css, de donde salen los botones,
+- los campos (.campo) y las tarjetas (.admin__tarjeta). Solo tokens y rem.
  */
 .tarea-form {
   width: min(48rem, 100%);
 }
 
 /* --- Formulario por bloques (crear tarea): sin desplazamiento, decisión 0005 ---
- * Los bloques se reparten en pantallas (paginar.js, data-items=".bloque"). Un grupo
- * (fieldset con su título) se esconde entero si en esta pantalla no sale ninguno de los
- * suyos; si sale, su título va encima, así se sabe siempre de qué paso es. */
+- Los bloques se reparten en pantallas (paginar.js, data-items=".bloque"). Un grupo
+- (fieldset con su título) se esconde entero si en esta pantalla no sale ninguno de los
+- suyos; si sale, su título va encima, así se sabe siempre de qué paso es. */
+
 .bloques {
   display: flex;
   flex-direction: column;
@@ -302,8 +303,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-}
-.catalogo {
   align-content: start;
 }
 .catalogo__tarea {
@@ -379,4 +378,57 @@
   object-fit: contain;
   background: #ffffff;
   border-radius: 0.75rem;
+}
+
+/* --- Corrección estricta de desbordamiento horizontal y pasos en pantallas móviles (≤ 30rem / 480px) --- */
+@media (max-width: 30rem) {
+  .formulario,
+  #contenedor-pasos,
+  .encaja,
+  .paso-item,
+  .grupo {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Asegurar que los textareas e inputs no sobresalgan del ancho del dispositivo */
+  .formulario input,
+  .formulario textarea,
+  .formulario select,
+  .campo textarea {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Acciones inferiores adaptadas a columna única para evitar scroll horizontal */
+  .acciones {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .acciones .boton {
+    width: 100% !important;
+    text-align: center !important;
+  }
+}
+
+/* --- Estilos para las acciones del catálogo de tareas --- */
+.catalogo__acciones-pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-end;
+  min-width: 110px;
+}
+
+.catalogo__boton-pasos {
+  text-decoration: none;
+  width: 100%;
+  text-align: center;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
 }
