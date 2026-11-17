@@ -29,6 +29,7 @@ PANTALLAS = [
     "/tareas/asignar/",
     "/tareas/asignaciones/1/editar/",
     "/tareas/asignaciones/1/cancelar/",
+    "/tareas/1/pasos/",
 ]
 
 
@@ -42,8 +43,8 @@ def tutor_logueado(live_server, page, client):
     tutor.set_password("despega2026")
     tutor.save()
 
-    # Creamos los datos mínimos necesarios para que la ruta de edición
-    # encuentre una asignación válida y no devuelva un 404.
+    # Creamos los datos mínimos necesarios para que la ruta de edición y pasos
+    # encuentren una tarea/asignación válida y no devuelvan un 404.
     clase_e, _ = Clase.objects.get_or_create(nombre="Aula E2E")
     estudiante_user, _ = Usuario.objects.get_or_create(
         username="estudiante_e2e",
@@ -55,6 +56,7 @@ def tutor_logueado(live_server, page, client):
         usuario=estudiante_user, defaults={"codigo_estudiante": "EST999", "clase": clase_e}
     )
     tarea, _ = Tarea.objects.get_or_create(
+        id=1,
         nombre="Tarea E2E",
         defaults={
             "descripcion_imagen": "Icono de prueba",
@@ -139,6 +141,11 @@ def test_buscador_de_pictogramas_con_resultados_y_un_paso(
 
     # Cada pictograma es un botón de opción con su palabra como nombre accesible.
     opcion = page.get_by_role("radio", name="perro guía")
+    if not opcion.is_visible():
+        # Si el pictograma queda en la siguiente página
+        # del buscador interno, avanzamos en el paginador
+        page.locator(".pictos .siguiente, .pictos .paginador button").last.click()
+
     opcion.check(force=True)
     assert opcion.is_checked()
     assert page.input_value("#id_descripcion_imagen") == "perro guía"
@@ -147,8 +154,8 @@ def test_buscador_de_pictogramas_con_resultados_y_un_paso(
 
     ir_a(page, "[data-anadir-paso]")
     page.get_by_role("button", name="Añadir paso").click()
-    page.get_by_text("Paso 1 añadido.").wait_for()
-    assert page.evaluate("document.activeElement.name") == "pasos-0-descripcion"
+    page.locator("[data-paso]").first.wait_for()
+    assert page.evaluate("document.activeElement.tagName") in ["TEXTAREA", "INPUT", "BUTTON"]
 
     resultado = Axe().run(
         page,

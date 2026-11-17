@@ -107,7 +107,7 @@ PasoFormSet = inlineformset_factory(
     Tarea,
     Paso,
     form=PasoForm,
-    extra=0,
+    extra=1,
     can_delete=True,
 )
 
