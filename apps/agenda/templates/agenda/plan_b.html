@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Puedes hacer esto · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
+
+{# Boceto B11 · Plan B. HU-07-04: «{{ tarea }}» no se puede hacer y se ofrecen las       #}
+{# actividades de su plan B, por su orden (HU-03-06). Cada una es un botón: al pulsarla   #}
+{# sustituye a la tarea en la agenda, a la misma hora, y se vuelve a «Tareas de hoy».     #}
+{# Sin desplazamiento: las que no caben pasan a otra pantalla con «Anterior / Siguiente». #}
+{% block pantalla %}pantalla--ancha agenda{% endblock %}
+{% block volver %}{% url 'agenda:dia' as atras %}{% include "_volver.html" with url=atras texto="Tareas" etiqueta="Volver a las tareas sin elegir" only %}{% endblock %}
+{% block h1 %}Puedes hacer esto{% endblock %}
+
+{% block contenido %}
+<p class="plan-b-est__sub" id="plan-b-en-lugar">En lugar de «{{ t.tarea_original.nombre }}», de {{ t.inicio|time:"H:i" }} a {{ t.fin|time:"H:i" }}</p>
+<div class="encaja encaja--centro">
+  <ol class="plan-b-est" id="alternativas" aria-labelledby="titulo plan-b-en-lugar" data-paginar data-max="{{ perfil_activo.max_tarjetas|default:6 }}">
+    {% for alternativa in t.alternativas %}
+    <li>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="alternativa" value="{{ alternativa.pk }}">
+        <button type="submit" class="tarjeta plan-b-est__opcion">
+          <img class="tarjeta__imagen" src="{{ alternativa.imagen.url }}" alt="" width="96" height="96">
+          <span class="tarjeta__nombre">{{ alternativa.nombre }}</span>
+        </button>
+      </form>
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+<div class="pie">
+  {% include "_paginador.html" with de="alternativas" que="Más cosas que puedes hacer" only %}
+</div>
+{% endblock %}

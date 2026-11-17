@@ -62,3 +62,25 @@ pero tenía fallos que la iteración 2 no puede arrastrar, porque HU-02-06 (mi s
   filtrar `Asignacion` por su cuenta.
 - La migración `tareas.0007` copia el plan B antiguo (en el orden en que se añadió) y fecha las
   cancelaciones antiguas con el día de la migración. Se puede deshacer.
+
+## Ampliación (HU-07-04 y HU-02-07, rama `feat/confirmar-y-plan-b-estudiante`)
+
+- **Qué tareas tienen «No puedo hacerla»:** las del ámbito escolar, pendientes o en marcha
+  (RF2.15.1 dice «del horario escolar»). Las de ocio y casa no (en B07 las de casa no lo
+  tienen; la reprografía tampoco tiene plan B, según las notas del boceto).
+- **Lo puede marcar el estudiante** («No puedo hacerla», después de confirmar) **o un adulto**
+  que pueda cambiar esa tarea (`planificacion.puede_cambiar`), desde «Tareas planificadas» con
+  el día de hoy elegido, diciendo el motivo (RF2.15.1). Solo hoy: para otro día se cancela ese
+  día (HU-03-05).
+- **Elegir del plan B** (B11) cambia la tarea de ese día por la alternativa
+  (`Ejecucion.plan_b`): misma hora, sus pasos, se empieza y se termina como cualquier otra.
+  Se elige una vez; si tampoco se puede, se queda como «No se ha podido».
+- **El tutor se entera** con un aviso cuando el estudiante elige (dice qué ha elegido), cuando no
+  hay plan B, cuando tampoco puede la alternativa y cuando lo marca otro adulto. Lo ve en su
+  panel, uno cada vez, con «Visto». Es lo mínimo de PA5; las alertas completas (B28) son de
+  HU-06-02 (Manu), que puede leer `Notificacion` con `tipo = plan_b` y `Ejecucion.plan_b`.
+- **Confirmar** (HU-02-07): «Terminar» y «No puedo hacerla» usan la misma ventana
+  (`agenda/_confirmar.html`): pictograma de la tarea, una frase y «Sí» / «No», con el foco en
+  «No». Sin JavaScript, la misma pregunta en una página (`agenda/confirmar.html`).
+- **Cómo se ha sentido** con la alternativa (RF2.15.2 → RF6.1.1) queda para HU-06-01
+  (iteración 3).

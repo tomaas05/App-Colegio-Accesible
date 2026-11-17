@@ -29,8 +29,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from apps.comun.models import Notificacion, pendientes
 from apps.perfil.models import MetodoAcceso
 
 from . import atencion, bajas, consulta, edicion
@@ -97,11 +98,27 @@ def panel(request):
     estudiantes = None
     if lista_estudiantes_en_el_panel(request.user.rol):
         estudiantes = estudiantes_de(request.user)
+    # HU-07-04 (PA5): los avisos sin ver, de uno en uno (el más antiguo primero).
+    avisos = pendientes(request.user)
     return render(
         request,
         "usuarios/panel.html",
-        {"opciones": opciones_de(request.user.rol), "estudiantes": estudiantes},
+        {
+            "opciones": opciones_de(request.user.rol),
+            "estudiantes": estudiantes,
+            "aviso": avisos.first(),
+            "avisos_mas": max(avisos.count() - 1, 0),
+        },
     )
+
+
+@login_required
+@require_POST
+def aviso_visto(request, pk):
+    """«Visto» en un aviso del panel: queda la hora en que lo vio y sale el siguiente."""
+    aviso = get_object_or_404(Notificacion, pk=pk, destinatario=request.user)
+    aviso.marcar_vista()
+    return redirect("usuarios:panel")
 
 
 # --- HU-01-06 · Entrar como estudiante -------------------------------------------

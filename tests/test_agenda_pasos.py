@@ -356,7 +356,8 @@ def test_al_hacer_el_ultimo_paso_aparece_terminar(entra_lucia, hora, mochila, pa
     for paso in pasos[:-1]:
         entra_lucia.post(url_hecho(mochila, paso))
     html = entra_lucia.get(url_detalle(mochila)).content.decode()
-    assert "falta 1 paso" in html and ">Terminar<" not in html and "<dialog" not in html
+    # Ni «Terminar» ni su ventana (la de «No puedo hacerla», HU-07-04, sí está).
+    assert "falta 1 paso" in html and ">Terminar<" not in html and 'id="confirmar-fin"' not in html
 
     entra_lucia.post(url_hecho(mochila, pasos[-1]))
     html = entra_lucia.get(url_detalle(mochila)).content.decode()

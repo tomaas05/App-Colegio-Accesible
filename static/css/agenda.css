@@ -579,3 +579,70 @@ dialog.confirmar::backdrop {
 .aviso-cambio__quedan {
   margin: 0 0 1rem;
 }
+
+/* --- HU-07-04 · Plan B ---
+ * En la tarea (B07): «No puedo hacerla» debajo del principal, más pequeño, y la nota de
+ * que es una del plan B. B11: las actividades del plan B como tarjetas que se pulsan, en
+ * columna en el móvil y en fila desde 48rem (la imagen arriba, como en la agenda). */
+.boton--no-puedo {
+  align-self: center;
+  margin-top: var(--separacion);
+}
+.ficha__plan-b {
+  font-weight: 700;
+  color: var(--petroleo);
+}
+.plan-b-est__sub {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--petroleo);
+}
+.plan-b-est {
+  display: grid;
+  gap: var(--separacion);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-b-est form {
+  margin: 0;
+}
+.plan-b-est__opcion {
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.plan-b-est__opcion:hover {
+  background: var(--menta-hover);
+}
+/* Una sola fila (imagen y nombre), no las tres de las tarjetas de la agenda. */
+.plan-b-est .plan-b-est__opcion .tarjeta__imagen {
+  grid-row: 1;
+}
+@media (min-width: 48rem) {
+  .plan-b-est {
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 14rem));
+    justify-content: center;
+  }
+  .plan-b-est__opcion {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    row-gap: 0.4rem;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+  }
+  /* Dos clases, para ganar a «.tarjeta > :not(.tarjeta__imagen)» (columna 2). */
+  .plan-b-est .plan-b-est__opcion > * {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .plan-b-est__opcion .tarjeta__imagen {
+    width: min(100%, 9rem, 24dvh);
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .plan-b-est__opcion .tarjeta__nombre {
+    font-size: 1.15rem;
+  }
+}

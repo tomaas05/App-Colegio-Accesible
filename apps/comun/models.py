@@ -14,6 +14,7 @@ class TipoAviso(models.TextChoices):
     CAMBIO = "cambio", "Cambio"
     CANCELACION = "cancelacion", "Cancelación"
     PLAN_B = "plan_b", "Plan B"
+    NO_SE_PUEDE = "no_se_puede", "No se puede hacer"
 
 
 class Notificacion(models.Model):

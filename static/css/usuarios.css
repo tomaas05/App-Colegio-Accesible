@@ -154,6 +154,36 @@
 .panel__seccion {
   flex: none;
 }
+/* HU-07-04 · Un aviso cada vez, arriba del panel (como en B26: dentro de la pantalla). */
+.panel__aviso {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--menta);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.panel__aviso img {
+  flex: none;
+  background: #ffffff; /* los pictogramas están hechos para fondo blanco */
+  border-radius: 0.6rem;
+}
+.panel__aviso-texto {
+  flex: 1 1 14rem;
+  font-weight: 700;
+  color: var(--petroleo);
+}
+.panel__aviso-mas {
+  font-weight: 400;
+  color: var(--texto);
+}
+.panel__aviso form {
+  margin: 0;
+}
 
 /* --- HU-01-06 · Entrar como estudiante (B01 + B02, B03 y rejilla de imágenes) --- */
 /* La entrada de los adultos, en pequeño y al final de la primera pantalla. */

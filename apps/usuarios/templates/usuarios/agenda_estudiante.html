@@ -35,6 +35,9 @@
               <h3>{{ t.tarea.nombre }}</h3>
               <p class="consulta__estado">
                 <span>Estado: <b>{{ t.estado }}</b></span>
+                {# HU-07-04: no se pudo hacer; qué eligió del plan B y por qué, si lo dijo un adulto. #}
+                {% if t.ejecucion.plan_b %}<span>Plan B: <b>{{ t.ejecucion.plan_b.nombre }}</b></span>{% endif %}
+                {% if t.ejecucion.motivo %}<span>Motivo: {{ t.ejecucion.motivo }}</span>{% endif %}
                 {# PA2: lo de otros se marca como solo consulta; no hay botones de cambiar ni borrar. #}
                 {% if t.modificable %}
                 <span class="consulta__marca consulta__marca--mia">Creada por ti</span>

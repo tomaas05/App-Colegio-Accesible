@@ -1,7 +1,8 @@
-"""Pantallas de la agenda del estudiante (Tomás): HU-02-01 a HU-02-04. HU-02-05: Javi.
+"""Pantallas de la agenda del estudiante (Tomás): HU-02-01 a HU-02-04, HU-02-07 y
+HU-07-04. HU-02-05: Javi.
 
 Bocetos: docs/iteracion-1/bocetos/despega_mockup_v3.html, pantallas B06 (Tareas de hoy),
-B07 (Tarea, también los pasos) y B08 (¿Has terminado?).
+B07 (Tarea, también los pasos), B08 (¿Has terminado? / ¿No puedes hacerla?) y B11 (plan B).
 """
 
 from django.contrib import messages
@@ -10,8 +11,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from apps.comun.models import Notificacion, pendientes
-from apps.tareas.models import Asignacion, Paso
+from apps.comun.models import Notificacion, TipoAviso, avisar, pendientes
+from apps.tareas.models import Asignacion, Paso, Tarea
 
 from . import servicios
 from .acceso import estudiante_requerido
@@ -61,6 +62,13 @@ def aviso_visto(request, pk):
     agenda (que enseña el siguiente aviso, si hay más)."""
     aviso = get_object_or_404(Notificacion, pk=pk, destinatario=request.user)
     aviso.marcar_vista()
+    # HU-07-04: si un adulto ha dicho que hoy no se puede hacer una tarea con plan B, de
+    # aquí se va directo a elegir otra cosa.
+    if aviso.tipo == TipoAviso.NO_SE_PUEDE and aviso.tarea_id:
+        agenda = servicios.agenda_del_dia(request.estudiante)
+        for t in agenda.tareas:
+            if t.tarea_original.pk == aviso.tarea_id and t.debe_elegir_plan_b:
+                return redirect("agenda:plan_b", pk=t.asignacion.pk)
     return redirect("agenda:dia")
 
 
@@ -148,7 +156,82 @@ def terminar(request, pk):
         if t.en_curso:
             messages.error(request, "Todavía te faltan pasos por hacer.")
         return redirect("agenda:detalle", pk=pk)
-    return render(request, "agenda/confirmar_fin.html", {"t": t, "estudiante": request.estudiante})
+    return _confirmar(request, t, "¿Has terminado?", reverse("agenda:terminar", args=[pk]))
+
+
+def _confirmar(request, t, pregunta, accion):
+    """HU-02-07 · La confirmación en una página, para cuando no se abre el <dialog>."""
+    return render(
+        request,
+        "agenda/confirmar.html",
+        {"t": t, "pregunta": pregunta, "accion": accion, "estudiante": request.estudiante},
+    )
+
+
+def avisar_al_tutor(t):
+    """HU-07-04 (PA5): el tutor sabe qué tarea no se ha podido hacer y qué ha elegido."""
+    avisar(
+        t.asignacion.estudiante.tutor,
+        servicios.texto_para_el_tutor(t),
+        tipo=TipoAviso.PLAN_B,
+        tarea=t.tarea,
+    )
+
+
+@estudiante_requerido
+@require_http_methods(["GET", "POST"])
+def no_puedo(request, pk):
+    """HU-07-04 · «No puedo hacerla» (B07), después de confirmarlo (HU-02-07).
+
+    Con plan B, pasa a elegir otra cosa (B11). Sin plan B, se queda como «No se ha podido»
+    y se avisa al tutor.
+    """
+    try:
+        t = servicios.tarea_del_dia(request.estudiante, pk)
+    except Asignacion.DoesNotExist:
+        raise Http404 from None
+    if request.method == "GET":
+        if not t.puede_decir_no_puedo:
+            return redirect("agenda:detalle", pk=pk)
+        return _confirmar(request, t, "¿No puedes hacerla?", reverse("agenda:no_puedo", args=[pk]))
+    try:
+        t = servicios.no_puedo(request.estudiante, pk, por=request.user)
+    except servicios.ErrorDeAgenda as error:
+        messages.error(request, str(error))
+        return redirect("agenda:detalle", pk=pk)
+    if t.debe_elegir_plan_b:
+        return redirect("agenda:plan_b", pk=pk)
+    avisar_al_tutor(t)
+    return redirect("agenda:detalle", pk=pk)
+
+
+@estudiante_requerido
+@require_http_methods(["GET", "POST"])
+def plan_b(request, pk):
+    """HU-07-04 · B11 «Puedes hacer esto»: las actividades del plan B, por su orden. La
+    que elige sustituye a la tarea en la agenda y se avisa al tutor."""
+    try:
+        t = servicios.tarea_del_dia(request.estudiante, pk)
+    except Asignacion.DoesNotExist:
+        raise Http404 from None
+    if request.method == "POST":
+        try:
+            alternativa = int(request.POST.get("alternativa", ""))
+            t = servicios.elegir_plan_b(request.estudiante, pk, alternativa)
+        except (ValueError, Tarea.DoesNotExist):
+            raise Http404 from None
+        except servicios.ErrorDeAgenda as error:
+            messages.error(request, str(error))
+            return redirect("agenda:detalle", pk=pk)
+        avisar_al_tutor(t)
+        return redirect("agenda:dia")
+    if not t.debe_elegir_plan_b:
+        return redirect("agenda:detalle", pk=pk)
+    return render(
+        request,
+        "agenda/plan_b.html",
+        {"t": t, "estudiante": request.estudiante},
+    )
 
 
 @estudiante_requerido

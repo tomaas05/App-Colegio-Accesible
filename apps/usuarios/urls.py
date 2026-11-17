@@ -10,6 +10,7 @@ urlpatterns = [
     # Django solo deja salir con POST: un enlace no puede cerrar la sesión de nadie.
     path("salir/", LogoutView.as_view(), name="salir"),
     path("panel/", views.panel, name="panel"),
+    path("panel/aviso/<int:pk>/visto/", views.aviso_visto, name="aviso_visto"),
     # HU-01-08: el profesional elige los estudiantes que atiende (B26).
     path("panel/mis-estudiantes/", views.mis_estudiantes, name="mis_estudiantes"),
     # HU-01-09: agenda de uno de ellos, solo consulta (B27).

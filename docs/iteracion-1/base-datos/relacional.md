@@ -67,7 +67,7 @@ Notas:
 
 ## Objetivo 2 · Ejecución — app `agenda` (Tomás)
 
-- **ejecucion** (**id**, asignacion_id → asignacion, fecha, inicio_real, fin_real, estado)
+- **ejecucion** (**id**, asignacion_id → asignacion, fecha, inicio_real, fin_real, estado, no_realizable_el, no_realizable_por_id → usuario, motivo, plan_b_id → tarea)
   - *UK* (asignacion_id, fecha)
 - **ejecucion_paso** (**id**, ejecucion_id → ejecucion, paso_id → paso, estado)
   - *UK* (ejecucion_id, paso_id)

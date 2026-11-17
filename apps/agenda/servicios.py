@@ -1,4 +1,4 @@
-"""Lógica de la agenda del estudiante: HU-02-01, HU-02-02, HU-02-03, HU-02-04 y HU-02-05.
+"""Lógica de la agenda del estudiante: HU-02-01 a HU-02-05 y HU-07-04 (plan B).
 
 Dueño: Tomás (HU-02-05, seguir los pasos: Javi). Las vistas (views.py) solo piden datos y
 llaman a estas funciones.
@@ -9,6 +9,12 @@ Los estados «vencida» y «tiempo agotado» NO se guardan: se calculan a partir
 horas cada vez que se consulta (no hay tareas programadas en segundo plano). Tampoco
 «cancelada»: sale de la planificación (apps/tareas/planificacion.py, HU-03-04 y HU-03-05),
 que también da las horas de cada día si se han cambiado solo para ese día.
+
+Plan B (HU-07-04, RF2.15.1 y RF2.15.2): una tarea escolar pendiente o en marcha se puede
+marcar como «no realizable». Si tiene plan B, el estudiante elige una alternativa, que la
+sustituye ese día: la ejecución vuelve a «pendiente», ahora de la alternativa (con sus
+pasos), y guarda cuál eligió (`Ejecucion.plan_b`). `TareaDelDia.tarea` es siempre la que
+toca hacer; `tarea_original`, la que estaba planificada.
 """
 
 from dataclasses import dataclass
@@ -20,7 +26,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.tareas import planificacion
-from apps.tareas.models import Asignacion
+from apps.tareas.models import Ambito, Asignacion, Tarea
 
 from .models import Ejecucion, EjecucionPaso, EstadoEjecucion, EstadoPaso
 
@@ -95,8 +101,44 @@ class TareaDelDia:
         return bool(self.ocurrencia and self.ocurrencia.cambiada)
 
     @property
-    def tarea(self):
+    def tarea_original(self):
+        """La tarea planificada, aunque ese día se haya cambiado por una del plan B."""
         return self.asignacion.tarea
+
+    @property
+    def es_plan_b(self):
+        return bool(self.ejecucion and self.ejecucion.plan_b_id)
+
+    @property
+    def tarea(self):
+        """La que toca hacer: la del plan B elegida o, si no, la planificada."""
+        return self.ejecucion.plan_b if self.es_plan_b else self.asignacion.tarea
+
+    @cached_property
+    def alternativas(self):
+        """El plan B de la tarea planificada, por orden de prioridad (HU-03-06)."""
+        return self.tarea_original.alternativas
+
+    @property
+    def puede_decir_no_puedo(self):
+        """RF2.15.1: solo las del horario escolar, pendientes o en marcha. Las de casa y
+        las de ocio no tienen «No puedo hacerla» (boceto B07)."""
+        return self.tarea_original.ambito == Ambito.ESCOLAR and self.estado in (
+            EstadoEjecucion.PENDIENTE,
+            EstadoEjecucion.EN_CURSO,
+            EstadoEjecucion.TIEMPO_AGOTADO,
+        )
+
+    @property
+    def debe_elegir_plan_b(self):
+        """No se ha podido hacer, aún no ha elegido otra cosa, tiene plan B y todavía
+        queda tiempo de hacerla (B11)."""
+        return (
+            self.estado == EstadoEjecucion.NO_REALIZABLE
+            and not self.es_plan_b
+            and self.ahora < self.fin
+            and bool(self.alternativas)
+        )
 
     @cached_property
     def inicio(self):
@@ -246,7 +288,7 @@ def tareas_del_dia(estudiante, fecha, ahora_):
         e.asignacion_id: e
         for e in Ejecucion.objects.filter(
             asignacion__in=[o.asignacion for o in ocurrencias], fecha=fecha
-        )
+        ).select_related("plan_b")
     }
     return [
         TareaDelDia(o.asignacion, ejecuciones.get(o.asignacion.pk), fecha, ahora_, ocurrencia=o)
@@ -341,12 +383,17 @@ def tarea_del_dia(estudiante, asignacion_id, ahora_=None):
     raise Asignacion.DoesNotExist
 
 
+def _tarea_de(ejecucion):
+    """La que toca hacer en esa ejecución: la del plan B, si eligió una (HU-07-04)."""
+    return ejecucion.plan_b if ejecucion.plan_b_id else ejecucion.asignacion.tarea
+
+
 def _asegurar_pasos(ejecucion):
     """Crea el avance de cada paso de la tarea que aún no tenga fila."""
     existentes = set(ejecucion.pasos.values_list("paso_id", flat=True))
     EjecucionPaso.objects.bulk_create(
         EjecucionPaso(ejecucion=ejecucion, paso=paso)
-        for paso in ejecucion.asignacion.tarea.pasos.all()
+        for paso in _tarea_de(ejecucion).pasos.all()
         if paso.pk not in existentes
     )
 
@@ -437,7 +484,10 @@ def marcar_paso_hecho(estudiante, asignacion_id, paso_id, ahora_=None):
     asignacion = estudiante.asignaciones.select_related("tarea").get(pk=asignacion_id)
     if not asignacion.aplica_el(hoy):
         raise Asignacion.DoesNotExist  # como en tarea_del_dia: la pantalla daría 404
-    paso = asignacion.tarea.pasos.get(pk=paso_id)
+    # Los pasos son los de la tarea que toca: la del plan B, si ha elegido una.
+    previa = Ejecucion.objects.filter(asignacion=asignacion, fecha=hoy).first()
+    tarea = _tarea_de(previa) if previa else asignacion.tarea
+    paso = tarea.pasos.get(pk=paso_id)
     with transaction.atomic():
         try:
             ejecucion = Ejecucion.objects.select_for_update().get(asignacion=asignacion, fecha=hoy)
@@ -462,8 +512,71 @@ def marcar_paso_hecho(estudiante, asignacion_id, paso_id, ahora_=None):
             .first()
         )
         if toca.pk != avance.pk:
-            numero = asignacion.tarea.pasos.filter(orden__lt=toca.paso.orden).count() + 1
+            numero = tarea.pasos.filter(orden__lt=toca.paso.orden).count() + 1
             raise ErrorDeAgenda(f"Primero haz el paso {numero}.")
         avance.estado = EstadoPaso.HECHO
         avance.save(update_fields=["estado"])
     return avance
+
+
+# --- HU-07-04 · Cuando una tarea no se puede hacer ------------------------------------
+
+
+def no_puedo(estudiante, asignacion_id, *, por, motivo="", ahora_=None):
+    """Marca la tarea de hoy como «no realizable» (RF2.15.1). La marca el estudiante
+    («No puedo hacerla») o un adulto, que dice el motivo.
+
+    Si era ya una del plan B, se queda así: no se ofrece otra. Devuelve la tarea del día
+    tal y como queda. Lanza Asignacion.DoesNotExist si no toca hoy.
+    """
+    ahora_ = ahora_ or ahora()
+    t = tarea_del_dia(estudiante, asignacion_id, ahora_)
+    if not t.puede_decir_no_puedo:
+        raise ErrorDeAgenda("Esta tarea ya no se puede marcar.")
+    with transaction.atomic():
+        ejecucion, _ = Ejecucion.objects.select_for_update().get_or_create(
+            asignacion=t.asignacion, fecha=t.fecha
+        )
+        ejecucion.estado = EstadoEjecucion.NO_REALIZABLE
+        ejecucion.no_realizable_el = ahora_
+        ejecucion.no_realizable_por = por
+        ejecucion.motivo = motivo.strip()
+        ejecucion.save(update_fields=["estado", "no_realizable_el", "no_realizable_por", "motivo"])
+    return tarea_del_dia(estudiante, asignacion_id, ahora_)
+
+
+def elegir_plan_b(estudiante, asignacion_id, alternativa_id, ahora_=None):
+    """B11 · El estudiante elige una actividad del plan B, que sustituye a la tarea en su
+    agenda ese día (RF2.15.2). Empieza de cero: pendiente y sin pasos hechos.
+
+    Lanza Asignacion.DoesNotExist si la tarea no toca hoy y Tarea.DoesNotExist si la
+    alternativa no es de su plan B.
+    """
+    ahora_ = ahora_ or ahora()
+    t = tarea_del_dia(estudiante, asignacion_id, ahora_)
+    alternativa = next((a for a in t.alternativas if a.pk == alternativa_id), None)
+    if alternativa is None:
+        raise Tarea.DoesNotExist
+    if not t.debe_elegir_plan_b:
+        raise ErrorDeAgenda("Ahora no puedes elegir otra cosa para esta tarea.")
+    with transaction.atomic():
+        ejecucion = Ejecucion.objects.select_for_update().get(pk=t.ejecucion.pk)
+        ejecucion.pasos.all().delete()  # eran de la tarea que no se ha podido hacer
+        ejecucion.plan_b = alternativa
+        ejecucion.estado = EstadoEjecucion.PENDIENTE
+        ejecucion.inicio_real = None
+        ejecucion.fin_real = None
+        ejecucion.save(update_fields=["plan_b", "estado", "inicio_real", "fin_real"])
+    return tarea_del_dia(estudiante, asignacion_id, ahora_)
+
+
+def texto_para_el_tutor(t):
+    """El aviso al tutor cuando su estudiante no ha podido hacer una tarea (HU-07-04):
+    qué tarea y qué ha elegido en su lugar."""
+    nombre = t.asignacion.estudiante.usuario.first_name
+    original = t.tarea_original.nombre
+    if t.es_plan_b and t.estado == EstadoEjecucion.NO_REALIZABLE:
+        return f"{nombre} tampoco ha podido hacer «{t.tarea.nombre}», del plan B de «{original}»."
+    if t.es_plan_b:
+        return f"{nombre} no ha podido hacer «{original}» y ha elegido «{t.tarea.nombre}»."
+    return f"{nombre} no ha podido hacer «{original}» y no tiene plan B."

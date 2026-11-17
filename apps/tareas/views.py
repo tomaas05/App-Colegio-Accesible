@@ -30,6 +30,7 @@ from .forms import (
     EditarAsignacionForm,
     FiltroPlanificadasForm,
     HorasForm,
+    NoSePuedeForm,
     PasoFormSet,
     TareaForm,
 )
@@ -252,6 +253,7 @@ def tareas_planificadas(request):
         asignaciones = asignaciones.filter(estudiante=estudiante)
 
     filas = []
+    marcables = set()
     if fecha:
         excepciones = {
             e.asignacion_id: e
@@ -262,6 +264,8 @@ def tareas_planificadas(request):
                 continue
             filas.append(planificacion.ocurrencia(a, fecha, excepciones.get(a.pk)))
         filas.sort(key=lambda o: (o.asignacion.estudiante.usuario.first_name, o.hora_inicio))
+        if fecha == hoy:
+            marcables = {o.asignacion.pk for o in filas if _hoy_se_puede_marcar(o.asignacion)}
     else:
         filas = [planificacion.ocurrencia(a, hoy) for a in asignaciones]
 
@@ -275,6 +279,81 @@ def tareas_planificadas(request):
             "fecha_texto": planificacion.fecha_en_texto(fecha) if fecha else "",
             "estudiante": estudiante,
             "filtros_url": request.GET.urlencode(),
+            "marcables": marcables,
+        },
+    )
+
+
+def _hoy(asignacion):
+    """Cómo está hoy la tarea en la agenda del estudiante, o None si hoy no toca."""
+    from apps.agenda import servicios
+
+    try:
+        return servicios.tarea_del_dia(asignacion.estudiante, asignacion.pk)
+    except Asignacion.DoesNotExist:
+        return None
+
+
+def _hoy_se_puede_marcar(asignacion):
+    """HU-07-04: la tarea de hoy es del horario escolar y está pendiente o en marcha."""
+    t = _hoy(asignacion)
+    return bool(t and t.puede_decir_no_puedo)
+
+
+@gestiona_tareas
+@require_http_methods(["GET", "POST"])
+def no_se_puede(request, asignacion_id):
+    """HU-07-04 (RF2.15.1) · Un adulto marca que hoy no se puede hacer una tarea del
+    horario escolar y dice por qué. El estudiante recibe un aviso y, si la tarea tiene
+    plan B, elige otra cosa. Solo hoy: es lo que pasa en el momento (llueve, falta el
+    material…); para otro día se cancela ese día (HU-03-05).
+    """
+    from apps.agenda import servicios
+
+    asignacion = _asignacion_que_puede_cambiar(request, asignacion_id)
+    volver = _volver_a_planificadas(request)
+    estudiante, tarea = asignacion.estudiante, asignacion.tarea
+    hoy = _hoy(asignacion)
+    if not (hoy and hoy.puede_decir_no_puedo):
+        messages.error(request, f"«{tarea.nombre}» ya no se puede marcar hoy.")
+        return redirect(volver)
+    form = NoSePuedeForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        motivo = form.cleaned_data["motivo"].strip().rstrip(".")
+        # La que estaba haciendo: la del plan B, si ya la había cambiado.
+        la_de_hoy = hoy.tarea
+        t = servicios.no_puedo(estudiante, asignacion.pk, por=request.user, motivo=motivo)
+        texto = f"Hoy no se puede hacer «{la_de_hoy.nombre}»: {motivo}."
+        if t.debe_elegir_plan_b:
+            texto += " Elige otra cosa."
+        avisar(estudiante.usuario, texto, tipo=TipoAviso.NO_SE_PUEDE, tarea=la_de_hoy)
+        if estudiante.tutor_id and estudiante.tutor_id != request.user.pk:
+            avisar(
+                estudiante.tutor,
+                f"{request.user.get_full_name()} ha marcado que {estudiante.usuario.first_name} "
+                f"no puede hacer «{la_de_hoy.nombre}» hoy: {motivo}.",
+                tipo=TipoAviso.PLAN_B,
+                tarea=la_de_hoy,
+            )
+        messages.success(
+            request,
+            f"Hecho. {estudiante.usuario.first_name} recibe un aviso"
+            + (" y elige otra cosa de su plan B." if t.debe_elegir_plan_b else "."),
+        )
+        return redirect(volver)
+    return render(
+        request,
+        "tareas/no_se_puede.html",
+        {
+            "form": form,
+            "tarea": tarea,
+            "estudiante": estudiante,
+            "asignacion": asignacion,
+            # Si ya la había cambiado por una del plan B, no se le ofrece otra.
+            "hoy": hoy,
+            "tiene_plan_b": bool(hoy.alternativas) and not hoy.es_plan_b,
+            "volver": volver,
+            "filtros": _filtros_de(request),
         },
     )
 
