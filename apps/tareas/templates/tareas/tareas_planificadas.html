@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Tareas planificadas · Despega{% endblock %}
+{% block estilos %}
+<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
+<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
+{% endblock %}
+
+{% block volver %}
+{% url 'usuarios:panel' as atras %}
+{% include "_volver.html" with url=atras texto="Volver" etiqueta="Volver al panel" only %}
+{% endblock %}
+
+{% block h1 %}Tareas planificadas{% endblock %}
+
+{% block contenido %}
+{% include "usuarios/_mensajes.html" %}
+
+<div class="encaja">
+  <!-- Filtros superiores (Estudiante y Día) -->
+  <form method="get" id="form-filtros-planificadas" class="admin__dos filtros-planificadas">
+    <div class="campo">
+      <label for="filtro-estudiante" class="campo__etiqueta">Estudiante</label>
+      <select name="estudiante" id="filtro-estudiante" class="campo__control" onchange="this.form.submit()">
+        <option value="">Todos los estudiantes</option>
+        {% for est in estudiantes %}
+        <option value="{{ est.pk }}" {% if estudiante_seleccionado == est.pk|slugify %}selected{% endif %}>
+          {{ est.usuario.get_full_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="filtro-dia" class="campo__etiqueta">Día</label>
+      <select name="dia" id="filtro-dia" class="campo__control" onchange="this.form.submit()">
+        <option value="">Todos los días</option>
+        <option value="1"{% if dia_seleccionado == "1" %} selected{% endif %}>Lunes</option>
+        <option value="2"{% if dia_seleccionado == "2" %} selected{% endif %}>Martes</option>
+        <option value="3"{% if dia_seleccionado == "3" %} selected{% endif %}>Miércoles</option>
+        <option value="4"{% if dia_seleccionado == "4" %} selected{% endif %}>Jueves</option>
+        <option value="5"{% if dia_seleccionado == "5" %} selected{% endif %}>Viernes</option>
+        <option value="6"{% if dia_seleccionado == "6" %} selected{% endif %}>Sábado</option>
+        <option value="7"{% if dia_seleccionado == "7" %} selected{% endif %}>Domingo</option>
+      </select>
+    </div>
+  </form>
+
+  {% if asignaciones %}
+  <div class="lista-planificadas" style="margin-top: 2rem;">
+    {% for asignacion in asignaciones %}
+    <!-- Cada tarjeta de tarea planificada actúa como un formulario que envía el alcance y el día seleccionado -->
+    <form method="get" action="{% url 'tareas:confirmar_cancelacion' asignacion.id %}" class="bloque parte--caja" style="margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid #ccc; border-radius: 8px;">
+      {% if dia_seleccionado %}
+      <input type="hidden" name="dia" value="{{ dia_seleccionado }}">
+      {% endif %}
+
+      <div style="display: flex; gap: 1rem; align-items: flex-start;">
+        {% if asignacion.tarea.imagen %}
+        <img src="{{ asignacion.tarea.imagen.url }}" alt="" width="64" height="64" style="border-radius: 4px; object-fit: cover;">
+        {% endif %}
+        <div style="flex: 1;">
+          <h2 style="margin: 0; font-size: 1.25rem;">{{ asignacion.tarea.nombre }}</h2>
+          <p style="margin: 0.25rem 0; color: #555;">
+            {{ asignacion.estudiante.usuario.get_full_name }} ·
+            {{ asignacion.hora_inicio|time:"H:i" }} – {{ asignacion.hora_fin|time:"H:i" }}
+          </p>
+          <p style="margin: 0; font-size: 0.875rem; color: #777;">Se repite según planificación</p>
+        </div>
+      </div>
+
+      <!-- Opciones de aplicar cambio (Solo este día / Toda la serie) -->
+      <fieldset style="border: none; padding: 0; margin: 1rem 0;">
+        <legend style="font-weight: bold; margin-bottom: 0.5rem; font-size: 0.9rem;">Aplicar el cambio a</legend>
+        <div style="display: flex; gap: 1.5rem;">
+          <label class="casilla">
+            <input type="radio" name="alcance" value="dia" checked> Solo este día
+          </label>
+          <label class="casilla">
+            <input type="radio" name="alcance" value="serie"> Toda la serie
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- Botones de Modificar y Cancelar -->
+      <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <a href="{% url 'tareas:editar_asignacion' asignacion.id %}" class="boton boton--principal boton--mediano" style="text-decoration: none; text-align: center;">Modificar</a>
+        <button type="submit" class="boton boton--peligro boton--mediano" style="cursor: pointer;">Cancelar</button>
+      </div>
+    </form>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="aviso-vacio" style="margin-top: 2rem; text-align: center;">No hay tareas planificadas con los filtros seleccionados.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

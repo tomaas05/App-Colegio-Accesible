@@ -183,7 +183,10 @@ class AsignacionForm(forms.ModelForm):
 
             for estudiante in estudiantes:
                 solapes = Asignacion.objects.filter(
-                    estudiante=estudiante, hora_inicio__lt=hora_fin, hora_fin__gt=hora_inicio
+                    estudiante=estudiante,
+                    cancelada=False,
+                    hora_inicio__lt=hora_fin,
+                    hora_fin__gt=hora_inicio,
                 )
 
                 if self.instance.pk:
@@ -210,3 +213,28 @@ class AsignacionForm(forms.ModelForm):
                     )
 
         return cleaned_data
+
+
+class EditarAsignacionForm(forms.ModelForm):
+    """Formulario específico para modificar exclusivamente
+    la planificación de una asignación concreta."""
+
+    dias_semana = forms.MultipleChoiceField(
+        choices=DiaSemana.choices,
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "casilla"}),
+        label="Días de la semana",
+    )
+
+    class Meta:
+        model = Asignacion
+        fields = ["hora_inicio", "hora_fin", "dias_semana", "vigencia_desde", "vigencia_hasta"]
+        widgets = {
+            "hora_inicio": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
+            "hora_fin": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
+            "vigencia_desde": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+            "vigencia_hasta": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        }
+
+    def clean_dias_semana(self):
+        dias = self.cleaned_data.get("dias_semana", [])
+        return [int(dia) for dia in dias]

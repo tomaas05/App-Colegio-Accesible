@@ -113,6 +113,7 @@ class Asignacion(models.Model):
     )
     vigencia_desde = models.DateField()
     vigencia_hasta = models.DateField(null=True, blank=True, help_text="Vacío = sin fecha de fin")
+    cancelada = models.BooleanField(default=False, verbose_name="cancelada")
 
     class Meta:
         verbose_name = "asignación"
