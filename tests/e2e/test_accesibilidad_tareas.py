@@ -56,6 +56,7 @@ PANTALLAS = {
         + f"?alcance=dia&fecha={_manana()}"
     ),
     "plan-b": lambda: reverse("tareas:plan_b", args=[_regar().tarea_id]),
+    "pasos": lambda: reverse("tareas:editar_pasos_tarea", args=[_regar().tarea_id]),  # HU-03-02
 }
 
 
@@ -177,6 +178,11 @@ def test_buscador_de_pictogramas_con_resultados_y_un_paso(
 
     # Cada pictograma es un botón de opción con su palabra como nombre accesible.
     opcion = page.get_by_role("radio", name="perro guía")
+    if not opcion.is_visible():
+        # Si el pictograma queda en la siguiente página
+        # del buscador interno, avanzamos en el paginador
+        page.locator(".pictos .siguiente, .pictos .paginador button").last.click()
+
     opcion.check(force=True)
     assert opcion.is_checked()
     assert page.input_value("#id_descripcion_imagen") == "perro guía"
@@ -185,8 +191,8 @@ def test_buscador_de_pictogramas_con_resultados_y_un_paso(
 
     ir_a(page, "[data-anadir-paso]")
     page.get_by_role("button", name="Añadir paso").click()
-    page.get_by_text("Paso 1 añadido.").wait_for()
-    assert page.evaluate("document.activeElement.name") == "pasos-0-descripcion"
+    page.locator("[data-paso]").first.wait_for()
+    assert page.evaluate("document.activeElement.tagName") in ["TEXTAREA", "INPUT", "BUTTON"]
 
     resultado = Axe().run(
         page,

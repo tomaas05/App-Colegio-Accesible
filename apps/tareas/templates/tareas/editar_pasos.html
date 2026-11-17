@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Gestionar pasos · Despega{% endblock %}
+{% block estilos %}
+<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
+<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
+{% endblock %}
+
+{% block pantalla %}pantalla--estrecha{% endblock %}
+{% block volver %}
+{% url 'tareas:catalogo' as atras %}
+{% include "_volver.html" with url=atras texto="Catálogo" etiqueta="Volver al catálogo de tareas" only %}
+{% endblock %}
+
+{% block h1 %}Pasos de la tarea «{{ tarea.nombre }}»{% endblock %}
+
+{% block contenido %}
+{% include "usuarios/_mensajes.html" %}
+
+<form class="formulario encaja" method="post" enctype="multipart/form-data" novalidate data-form-tarea>
+  {% csrf_token %}
+  <div class="encaja">
+    <div class="bloques" id="bloques" data-paginar data-pag-variable data-items=".bloque" data-estado="Parte {n} de {total}">
+
+      {% if formset.total_error_count or formset.non_form_errors %}
+      <div class="bloque" data-pag-inicio>
+        <div class="aviso-error" role="alert">
+          <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
+          <div>
+            {% for error in formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}
+            {% if formset.total_error_count %}<p>A algún paso le falta un dato. Los pasos con error están marcados.</p>{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {{ formset.management_form }}
+
+      {# Cada paso y sus bloques se paginan de forma nativa sin generar scroll general #}
+      <ol class="pasos-form" id="contenedor-pasos" role="list" aria-label="Pasos">
+        {% for paso_form in formset %}
+        {% include "tareas/_paso.html" with numero=forloop.counter %}
+        {% endfor %}
+      </ol>
+
+      <div class="bloque bloque--anadir">
+        <p class="campo__ayuda">Añade los pasos necesarios para completar la tarea.</p>
+        <button class="boton--aux" type="button" data-anadir-paso
+                hx-get="{% url 'tareas:anadir_paso' %}" hx-target="#contenedor-pasos" hx-swap="beforeend">
+          <span aria-hidden="true">+</span> Añadir paso
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  {# Estado para los avisos de accesibilidad de los pasos #}
+  <p class="pie__estado" role="status" data-pasos-estado></p>
+
+  {# Pie con el paginador horizontal de partes y el botón final de guardado #}
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Partes del formulario" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-solo-ultima="bloques">Guardar pasos</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/usuarios.js' %}" defer></script>
+<script src="{% static 'js/tarea.js' %}" defer></script>
+{% endblock %}
