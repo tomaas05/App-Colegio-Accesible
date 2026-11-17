@@ -32,7 +32,8 @@ from apps.perfil.models import (
     Tema,
     TipoTemporizador,
 )
-from apps.tareas.models import Ambito, Asignacion, Paso, Tarea
+from apps.tareas import planificacion
+from apps.tareas.models import Ambito, Asignacion, Paso, PlanB, Tarea
 from apps.usuarios.acceso import establecer_contrasena_imagenes
 from apps.usuarios.models import Atencion, Clase, Estudiante, ImagenAcceso, Rol, Usuario
 
@@ -326,6 +327,19 @@ class Command(BaseCommand):
             4,
             ["Poner el mantel", "Poner los platos", "Poner los cubiertos"],
         )
+        musica = self.tarea(
+            "Escuchar música",
+            "Escuchar una canción en el rincón de la música.",
+            "Mú",
+            Ambito.ESCOLAR,
+            tutora,
+            5,
+            [],
+            picto="musica",
+        )
+        # Plan B (HU-03-06): si no se puede regar (llueve, no hay agua…), por este orden.
+        for orden, alternativa in enumerate([musica, cuento], start=1):
+            PlanB.objects.create(tarea=regar, alternativa=alternativa, orden=orden)
 
         # --- Asignaciones --------------------------------------------------
         desde = hoy - timedelta(days=7)
@@ -405,7 +419,7 @@ class Command(BaseCommand):
         estudiante.save()
         return estudiante
 
-    def tarea(self, nombre, descripcion, sigla, ambito, creador, color, pasos):
+    def tarea(self, nombre, descripcion, sigla, ambito, creador, color, pasos, picto=None):
         tarea = Tarea(
             nombre=nombre,
             descripcion=descripcion,
@@ -415,7 +429,7 @@ class Command(BaseCommand):
         )
         tarea.imagen.save(
             f"t{color}.png",
-            imagen(sigla, COLORES[color % len(COLORES)], f"t{color}", picto=nombre),
+            imagen(sigla, COLORES[color % len(COLORES)], f"t{color}", picto=picto or nombre),
             save=False,
         )
         tarea.save()
@@ -457,17 +471,9 @@ class Command(BaseCommand):
         if fin.date() != inicio.date():
             self.stdout.write(self.style.WARNING("Es casi medianoche: no se añade la tarea."))
             return
-        solapa = [
-            a
-            for a in lucia.asignaciones.all()
-            if a.aplica_el(inicio.date())
-            and a.hora_inicio < fin.time()
-            and a.hora_fin > inicio.time()
-        ]
-        if solapa:
-            self.stdout.write(
-                self.style.WARNING(f"No se añade: se solaparía con «{solapa[0].tarea}».")
-            )
+        choque = planificacion.choque_en_fecha(lucia, inicio.date(), inicio.time(), fin.time())
+        if choque:
+            self.stdout.write(self.style.WARNING(f"No se añade: se solaparía con {choque.texto}."))
             return
         tarea = Tarea.objects.get(nombre="Lavarse las manos")
         Asignacion.objects.create(

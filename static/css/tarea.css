@@ -380,3 +380,214 @@
   background: #ffffff;
   border-radius: 0.75rem;
 }
+
+/* --- Catálogo: dos botones por tarea (Plan B y Asignar) --- */
+.catalogo__botones {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+@media (max-width: 30rem) {
+  .catalogo__tarea {
+    flex-wrap: wrap;
+  }
+  .catalogo__botones {
+    flex: 1 1 100%;
+  }
+}
+
+/* Cancelar y quitar: rojo en el borde y el texto, no en el fondo (no es la acción principal). */
+.boton--peligro-suave {
+  color: var(--error);
+  border-color: var(--error);
+}
+.boton[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --- B44 · Tareas planificadas (HU-03-04 y HU-03-05) --- */
+.planificadas__filtros {
+  flex: none;
+}
+.planificadas__filtros .admin__filtros {
+  margin-top: 0.5rem;
+}
+.planificadas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+  align-content: start;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.planificada {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid var(--menta-hover);
+  border-radius: 1rem;
+}
+.planificada--cancelada {
+  border-style: dashed;
+}
+.planificada--cancelada .planificada__nombre {
+  text-decoration: line-through;
+}
+.planificada__cab {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.planificada__cab img {
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.6rem;
+}
+.planificada__cab p,
+.planificada__nombre {
+  margin: 0;
+}
+.planificada__nombre {
+  font-family: var(--fuente-titulos);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--petroleo);
+  overflow-wrap: anywhere;
+}
+.planificada__datos {
+  font-size: 1rem;
+}
+.planificada__estado {
+  margin: 0;
+  font-weight: 700;
+  color: var(--error);
+}
+.planificada__acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.planificada__alcance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.planificada__alcance legend {
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.planificada__alcance .casilla {
+  flex: 1 1 10rem;
+}
+.planificada__botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.planificada__botones .boton {
+  flex: 1 1 8rem;
+}
+.planificadas__nota {
+  flex: none;
+  margin: 0;
+}
+
+/* Los días de una serie: la forma y la letra de cada uno (boceto B30). */
+.dias-serie {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.dias-serie .dia-forma {
+  width: 1.8rem;
+  height: 1.8rem;
+  font-size: 1rem;
+}
+
+/* Confirmar «Cancelar tarea»: el pictograma de la tarea junto a la pregunta. */
+.cancelar__cab {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cancelar__cab img {
+  flex: none;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 0.75rem;
+}
+
+/* --- B42 · Plan B de una tarea (HU-03-06) --- */
+.plan-b {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-b__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--menta-hover);
+  border-radius: 1rem;
+}
+.plan-b__fila > img {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.6rem;
+}
+.plan-b__texto {
+  display: flex;
+  flex: 1 1 8rem;
+  flex-direction: column;
+  min-width: 0;
+}
+.plan-b__orden {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--petroleo);
+}
+.plan-b__nombre {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.plan-b__botones {
+  display: flex;
+  flex: 1 1 100%;
+  gap: 0.5rem;
+}
+.plan-b__botones .boton {
+  flex: 1 1 0;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+}
+
+/* «Qué cambia» (Modificar, B44) no es un grupo de campos, así que es un <section> y no un
+   <fieldset>; su título se pone sobre el borde, como la <legend> de las cajas de al lado. */
+@media (min-width: 30.01rem) {
+  .parte--titulo-borde {
+    margin-top: 0.75rem; /* el borde a media altura del título, como el de un fieldset */
+  }
+  .parte--titulo-borde > h2:first-child {
+    width: fit-content;
+    margin: -1.6rem 0 0 -0.35rem;
+    padding: 0 0.35rem;
+    background: var(--blanco);
+  }
+}

@@ -2,99 +2,74 @@
 {% load static %}
 
 {% block titulo %}Tareas planificadas · Despega{% endblock %}
-{% block estilos %}
-<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">
-<link rel="stylesheet" href="{% static 'css/tarea.css' %}">
-{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
 
-{% block volver %}
-{% url 'usuarios:panel' as atras %}
-{% include "_volver.html" with url=atras texto="Volver" etiqueta="Volver al panel" only %}
-{% endblock %}
-
+{# Boceto B44 · Tareas planificadas. HU-03-04 (modificar) y HU-03-05 (cancelar).          #}
+{# Solo salen las tareas que quien entra puede cambiar (planificacion.que_puede_cambiar). #}
+{# Con un día elegido se puede cambiar solo ese día o toda la serie; sin día, la serie.   #}
+{# Sin desplazamiento (decisión 0005): las tarjetas que no caben pasan de página.        #}
+{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
 {% block h1 %}Tareas planificadas{% endblock %}
 
 {% block contenido %}
 {% include "usuarios/_mensajes.html" %}
 
-<div class="encaja">
-  <!-- Filtros superiores (Estudiante y Día) -->
-  <form method="get" id="form-filtros-planificadas" class="admin__dos filtros-planificadas">
-    <div class="campo">
-      <label for="filtro-estudiante" class="campo__etiqueta">Estudiante</label>
-      <select name="estudiante" id="filtro-estudiante" class="campo__control" onchange="this.form.submit()">
-        <option value="">Todos los estudiantes</option>
-        {% for est in estudiantes %}
-        <option value="{{ est.pk }}" {% if estudiante_seleccionado == est.pk|slugify %}selected{% endif %}>
-          {{ est.usuario.get_full_name }}
-        </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="campo">
-      <label for="filtro-dia" class="campo__etiqueta">Día</label>
-      <select name="dia" id="filtro-dia" class="campo__control" onchange="this.form.submit()">
-        <option value="">Todos los días</option>
-        <option value="1"{% if dia_seleccionado == "1" %} selected{% endif %}>Lunes</option>
-        <option value="2"{% if dia_seleccionado == "2" %} selected{% endif %}>Martes</option>
-        <option value="3"{% if dia_seleccionado == "3" %} selected{% endif %}>Miércoles</option>
-        <option value="4"{% if dia_seleccionado == "4" %} selected{% endif %}>Jueves</option>
-        <option value="5"{% if dia_seleccionado == "5" %} selected{% endif %}>Viernes</option>
-        <option value="6"{% if dia_seleccionado == "6" %} selected{% endif %}>Sábado</option>
-        <option value="7"{% if dia_seleccionado == "7" %} selected{% endif %}>Domingo</option>
-      </select>
-    </div>
+{# Filtros: se aplican al pulsar «Ver» (nada cambia solo al elegir, WCAG 3.2.2). #}
+{# En el móvil van plegados; al abrirlos ocupan el sitio de la lista.             #}
+<details class="plegable plegable--solo planificadas__filtros" data-abrir-ancho>
+  <summary>{% if estudiante %}{{ estudiante.usuario.get_full_name }}{% else %}Todos los estudiantes{% endif %} · {% if fecha %}{{ fecha_texto|capfirst }}{% else %}Todos los días{% endif %}</summary>
+  <form method="get" class="admin__filtros" role="search" aria-label="Filtrar las tareas planificadas">
+    <div class="campo">{{ filtro.estudiante.label_tag }}{{ filtro.estudiante }}</div>
+    <div class="campo">{{ filtro.fecha.label_tag }}{{ filtro.fecha }}</div>
+    <button class="boton boton--aux" type="submit">Ver</button>
   </form>
+</details>
 
-  {% if asignaciones %}
-  <div class="lista-planificadas" style="margin-top: 2rem;">
-    {% for asignacion in asignaciones %}
-    <!-- Cada tarjeta de tarea planificada actúa como un formulario que envía el alcance y el día seleccionado -->
-    <form method="get" action="{% url 'tareas:confirmar_cancelacion' asignacion.id %}" class="bloque parte--caja" style="margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid #ccc; border-radius: 8px;">
-      {% if dia_seleccionado %}
-      <input type="hidden" name="dia" value="{{ dia_seleccionado }}">
-      {% endif %}
-
-      <div style="display: flex; gap: 1rem; align-items: flex-start;">
-        {% if asignacion.tarea.imagen %}
-        <img src="{{ asignacion.tarea.imagen.url }}" alt="" width="64" height="64" style="border-radius: 4px; object-fit: cover;">
+<div class="encaja">
+  {% if filas %}
+  <ul class="planificadas" id="planificadas" aria-label="Tareas planificadas" data-paginar data-estado="{desde} a {hasta} de {de}">
+    {% for o in filas %}
+    {% with a=o.asignacion %}
+    <li class="planificada{% if o.cancelada %} planificada--cancelada{% endif %}">
+      <div class="planificada__cab">
+        <img src="{{ a.tarea.imagen.url }}" alt="" width="64" height="64" loading="lazy">
+        <div>
+          <h2 class="planificada__nombre">{{ a.tarea.nombre }}</h2>
+          <p class="planificada__datos">{{ a.estudiante.usuario.get_full_name }} · De {{ o.hora_inicio|time:"H:i" }} a {{ o.hora_fin|time:"H:i" }}{% if o.cambiada %} · <b>cambiada ese día</b>{% endif %}</p>
+          <p class="planificada__serie">{% include "tareas/_dias.html" with dias=a.dias_semana only %}</p>
+        </div>
+      </div>
+      {% if o.cancelada %}
+      <p class="planificada__estado"><span aria-hidden="true">✕</span> Cancelada ese día</p>
+      {% else %}
+      {# Un formulario por tarjeta: el alcance elegido va a «Modificar» y a «Cancelar». #}
+      <form class="planificada__acciones" method="get">
+        <input type="hidden" name="f_estudiante" value="{{ estudiante.pk|default:'' }}">
+        <input type="hidden" name="f_fecha" value="{{ fecha|date:'Y-m-d' }}">
+        {% if fecha %}
+        <input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">
+        <fieldset class="planificada__alcance">
+          <legend>Aplicar el cambio a</legend>
+          <label class="casilla"><input type="radio" name="alcance" value="dia" checked> <span>Solo este día<span class="visualmente-oculto"> ({{ fecha_texto }})</span></span></label>
+          <label class="casilla"><input type="radio" name="alcance" value="serie"> <span>Toda la serie</span></label>
+        </fieldset>
+        {% else %}
+        <input type="hidden" name="alcance" value="serie">
         {% endif %}
-        <div style="flex: 1;">
-          <h2 style="margin: 0; font-size: 1.25rem;">{{ asignacion.tarea.nombre }}</h2>
-          <p style="margin: 0.25rem 0; color: #555;">
-            {{ asignacion.estudiante.usuario.get_full_name }} ·
-            {{ asignacion.hora_inicio|time:"H:i" }} – {{ asignacion.hora_fin|time:"H:i" }}
-          </p>
-          <p style="margin: 0; font-size: 0.875rem; color: #777;">Se repite según planificación</p>
+        <div class="planificada__botones">
+          <button class="boton boton--aux" type="submit" formaction="{% url 'tareas:editar_asignacion' a.pk %}">Modificar<span class="visualmente-oculto"> «{{ a.tarea.nombre }}» de {{ a.estudiante.usuario.get_full_name }}</span></button>
+          <button class="boton boton--aux boton--peligro-suave" type="submit" formaction="{% url 'tareas:confirmar_cancelacion' a.pk %}">Cancelar<span class="visualmente-oculto"> «{{ a.tarea.nombre }}» de {{ a.estudiante.usuario.get_full_name }}</span></button>
         </div>
-      </div>
-
-      <!-- Opciones de aplicar cambio (Solo este día / Toda la serie) -->
-      <fieldset style="border: none; padding: 0; margin: 1rem 0;">
-        <legend style="font-weight: bold; margin-bottom: 0.5rem; font-size: 0.9rem;">Aplicar el cambio a</legend>
-        <div style="display: flex; gap: 1.5rem;">
-          <label class="casilla">
-            <input type="radio" name="alcance" value="dia" checked> Solo este día
-          </label>
-          <label class="casilla">
-            <input type="radio" name="alcance" value="serie"> Toda la serie
-          </label>
-        </div>
-      </fieldset>
-
-      <!-- Botones de Modificar y Cancelar -->
-      <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-        <a href="{% url 'tareas:editar_asignacion' asignacion.id %}" class="boton boton--principal boton--mediano" style="text-decoration: none; text-align: center;">Modificar</a>
-        <button type="submit" class="boton boton--peligro boton--mediano" style="cursor: pointer;">Cancelar</button>
-      </div>
-    </form>
+      </form>
+      {% endif %}
+    </li>
+    {% endwith %}
     {% endfor %}
-  </div>
+  </ul>
   {% else %}
-  <p class="aviso-vacio" style="margin-top: 2rem; text-align: center;">No hay tareas planificadas con los filtros seleccionados.</p>
+  <p class="aviso-vacio">No hay tareas planificadas con estos filtros.</p>
   {% endif %}
 </div>
+{% if filas %}{% if not fecha %}<p class="admin__nota planificadas__nota">Para cambiar un solo día, elige el día en «Día».</p>{% endif %}{% endif %}
+{% include "_paginador.html" with de="planificadas" que="Más tareas planificadas" only %}
 {% endblock %}
-
-{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

@@ -6,11 +6,11 @@ B07 (Tarea, también los pasos) y B08 (¿Has terminado?).
 
 from django.contrib import messages
 from django.http import Http404, HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from apps.comun.models import Notificacion
+from apps.comun.models import Notificacion, pendientes
 from apps.tareas.models import Asignacion, Paso
 
 from . import servicios
@@ -25,18 +25,23 @@ def _usa_lector(estudiante):
 @estudiante_requerido
 @require_GET
 def dia(request):
-    """HU-02-01. Ver mi agenda del día (B06)."""
-    ahora = servicios.ahora()
-    aviso_reciente = (
-        Notificacion.objects.filter(destinatario=request.user, leida=False)
-        .order_by("-fecha_creacion")
-        .first()
-    )
+    """HU-02-01. Ver mi agenda del día (B06).
 
-    # Si existe, lo marcamos como leído inmediatamente para que no vuelva a salir
-    if aviso_reciente:
-        aviso_reciente.leida = True
-        aviso_reciente.save()
+    Si le han cambiado o cancelado una tarea (HU-03-04 y HU-03-05), antes ve el aviso: uno
+    por pantalla, con el pictograma de la tarea y «Entendido» (ver `aviso_visto`).
+    """
+    ahora = servicios.ahora()
+    aviso_pendiente = pendientes(request.user).first()
+    if aviso_pendiente:
+        return render(
+            request,
+            "agenda/aviso_cambio.html",
+            {
+                "aviso": aviso_pendiente,
+                "quedan": pendientes(request.user).count() - 1,
+                "estudiante": request.estudiante,
+            },
+        )
     return render(
         request,
         "agenda/dia.html",
@@ -45,9 +50,18 @@ def dia(request):
             "agenda": servicios.agenda_del_dia(request.estudiante, ahora),
             "ahora": ahora,
             "titulo": servicios.titulo_de_hoy(ahora),
-            "aviso_reciente": aviso_reciente,
         },
     )
+
+
+@estudiante_requerido
+@require_POST
+def aviso_visto(request, pk):
+    """«Entendido» en un aviso de cambio: queda registrado que lo ha visto y vuelve a la
+    agenda (que enseña el siguiente aviso, si hay más)."""
+    aviso = get_object_or_404(Notificacion, pk=pk, destinatario=request.user)
+    aviso.marcar_vista()
+    return redirect("agenda:dia")
 
 
 @estudiante_requerido
@@ -84,7 +98,14 @@ def aviso(request):
 
     `mostrado` es la asignación que ya se ve (0 = ninguna). Si no ha cambiado responde
     204 y HTMX no toca nada: así el lector de pantalla no repite el aviso.
+
+    Si mientras tanto un adulto le ha cambiado o cancelado una tarea (HU-03-04, HU-03-05),
+    se vuelve a cargar la agenda, que enseña primero ese aviso.
     """
+    if pendientes(request.user).exists():
+        respuesta = HttpResponse(status=200)
+        respuesta["HX-Redirect"] = reverse("agenda:dia")
+        return respuesta
     agenda = servicios.agenda_del_dia(request.estudiante)
     actual = agenda.aviso.asignacion.pk if agenda.aviso else 0
     if request.GET.get("mostrado") == str(actual):
