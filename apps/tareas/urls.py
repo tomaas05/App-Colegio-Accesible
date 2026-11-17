@@ -18,6 +18,11 @@ urlpatterns = [
         name="editar_asignacion",
     ),
     path(
+        "asignaciones/<int:asignacion_id>/no-se-puede/",
+        views.no_se_puede,
+        name="no_se_puede",
+    ),
+    path(
         "asignaciones/<int:asignacion_id>/cancelar/",
         views.cancelar_asignacion,
         name="confirmar_cancelacion",

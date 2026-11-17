@@ -59,6 +59,8 @@
         <div class="planificada__botones">
           <button class="boton boton--aux" type="submit" formaction="{% url 'tareas:editar_asignacion' a.pk %}">Modificar<span class="visualmente-oculto"> «{{ a.tarea.nombre }}» de {{ a.estudiante.usuario.get_full_name }}</span></button>
           <button class="boton boton--aux boton--peligro-suave" type="submit" formaction="{% url 'tareas:confirmar_cancelacion' a.pk %}">Cancelar<span class="visualmente-oculto"> «{{ a.tarea.nombre }}» de {{ a.estudiante.usuario.get_full_name }}</span></button>
+          {# HU-07-04: hoy, en el momento, no se puede hacer (RF2.15.1). #}
+          {% if a.pk in marcables %}<button class="boton boton--aux planificada__no-se-puede" type="submit" formaction="{% url 'tareas:no_se_puede' a.pk %}">Hoy no se puede<span class="visualmente-oculto"> hacer «{{ a.tarea.nombre }}» ({{ a.estudiante.usuario.get_full_name }})</span></button>{% endif %}
         </div>
       </form>
       {% endif %}

@@ -1,20 +1,22 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block titulo %}¿Has terminado? · Despega{% endblock %}
+{% block titulo %}{{ pregunta }} · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
 
-{# B08 en una página: solo se usa si el navegador no abre el <dialog> de tarea.html. #}
+{# HU-02-07 · Confirmar una acción importante: B08 «¿Has terminado?» y «¿No puedes      #}
+{# hacerla?» en una página. Solo se usa si el navegador no abre el <dialog> de tarea.html #}
+{# (agenda/_confirmar.html). Pictograma, una frase corta, «Sí» y «No» (RF2.5.1).         #}
 {% block pantalla %}pantalla--estrecha agenda{% endblock %}
-{% block volver %}{% url 'agenda:detalle' t.asignacion.pk as atras %}{% include "_volver.html" with url=atras texto="Tarea" etiqueta="Volver a la tarea" only %}{% endblock %}
-{% block h1 %}¿Has terminado?{% endblock %}
+{% block volver %}{% url 'agenda:detalle' t.asignacion.pk as atras %}{% include "_volver.html" with url=atras texto="Tarea" etiqueta="Volver a la tarea sin cambiar nada" only %}{% endblock %}
+{% block h1 %}{{ pregunta }}{% endblock %}
 
 {% block contenido %}
 <div class="confirmar confirmar--pagina encaja encaja--centro encaja--fija">
   <img src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
   <p class="confirmar__nombre">{{ t.tarea.nombre }}</p>
   <div class="fila-botones">
-    <form method="post" action="{% url 'agenda:terminar' t.asignacion.pk %}">
+    <form method="post" action="{{ accion }}">
       {% csrf_token %}
       <button type="submit" class="boton boton--principal">Sí</button>
     </form>

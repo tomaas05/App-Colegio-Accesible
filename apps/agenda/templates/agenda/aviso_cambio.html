@@ -10,7 +10,7 @@
 {# «Entendido» deja registrado que lo ha visto; si hay más avisos, sale el siguiente.     #}
 {% block pantalla %}pantalla--estrecha agenda{% endblock %}
 {% block volver %}{% include "_salir_estudiante.html" %}{% endblock %}
-{% block h1 %}{% if aviso.tipo == "cancelacion" %}Tarea cancelada{% else %}Tarea cambiada{% endif %}{% endblock %}
+{% block h1 %}{% if aviso.tipo == "cancelacion" %}Tarea cancelada{% elif aviso.tipo == "no_se_puede" %}Hoy no se puede{% else %}Tarea cambiada{% endif %}{% endblock %}
 
 {% block contenido %}
 <div class="confirmar confirmar--pagina encaja encaja--centro encaja--fija">

@@ -8,10 +8,11 @@ La tarea y el estudiante se obtienen a través de la asignación
 Las transiciones de estado de RF2.3.1 se implementan en las HU, no aquí.
 """
 
+from django.conf import settings
 from django.db import models
 from django.db.models import F, Q
 
-from apps.tareas.models import Asignacion, Paso
+from apps.tareas.models import Asignacion, Paso, Tarea
 
 
 class EstadoEjecucion(models.TextChoices):
@@ -39,6 +40,27 @@ class Ejecucion(models.Model):
     estado = models.CharField(
         max_length=20, choices=EstadoEjecucion.choices, default=EstadoEjecucion.PENDIENTE
     )
+    # HU-07-04 (RF2.15.1, RF2.15.2): la tarea no se pudo hacer. Quién y cuándo lo dijo, por
+    # qué (solo si lo marca un adulto) y, si eligió una, la actividad del plan B que la
+    # sustituye ese día. Con plan B la ejecución vuelve a «pendiente», ahora de la otra.
+    no_realizable_el = models.DateTimeField("no se pudo hacer desde", null=True, blank=True)
+    no_realizable_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="lo marcó",
+    )
+    motivo = models.CharField(max_length=200, blank=True)
+    plan_b = models.ForeignKey(
+        Tarea,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="actividad del plan B",
+    )
 
     class Meta:
         verbose_name = "ejecución"
@@ -54,6 +76,10 @@ class Ejecucion(models.Model):
             ),
             models.CheckConstraint(
                 condition=Q(estado__in=EstadoEjecucion.values), name="ejecucion_estado_valido"
+            ),
+            models.CheckConstraint(
+                condition=Q(plan_b__isnull=True) | Q(no_realizable_el__isnull=False),
+                name="ejecucion_plan_b_tras_no_realizable",
             ),
         ]
 

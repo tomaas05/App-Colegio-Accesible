@@ -81,7 +81,9 @@ def tareas_del_dia(estudiante, fecha: date, usuario):
     prefetch_related_objects(asignaciones, "tarea__pasos")
     ejecuciones = {
         e.asignacion_id: e
-        for e in Ejecucion.objects.filter(asignacion__in=asignaciones, fecha=fecha)
+        for e in Ejecucion.objects.filter(asignacion__in=asignaciones, fecha=fecha).select_related(
+            "plan_b"
+        )
     }
     ahora = servicios.ahora()
     hoy, hora = ahora.date(), ahora.time()

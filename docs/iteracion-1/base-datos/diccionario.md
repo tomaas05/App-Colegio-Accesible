@@ -27,7 +27,7 @@ No se guardan fotografías, documentos de identidad ni datos médicos (RNF1.1.3)
 | creación de tareas del estudiante | `ninguna`, `asistente` (paso a paso, boceto B31), `completa` (como los adultos, B32) | `ninguna` |
 | días de la semana | 1 = lunes … 7 = domingo | — |
 | tipo de excepción (RI3.2.3) | `modificada` (otras horas ese día), `cancelada` (ese día no se hace) | — |
-| tipo de aviso | `cambio`, `cancelacion`, `plan_b` | `cambio` |
+| tipo de aviso | `cambio`, `cancelacion`, `plan_b`, `no_se_puede` | `cambio` |
 
 ---
 
@@ -264,8 +264,12 @@ App `agenda` · Requisito: RI2.1.1 · La realización de una asignación en un d
 | inicio_real | timestamptz | sí | | Marca de inicio (hora del servidor) | RI2.1.1, RF2.3.3 |
 | fin_real | timestamptz | sí | igual o posterior a inicio_real | Marca de fin | RI2.1.1, RF2.3.6 |
 | estado | varchar(20) | no | lista «estado de ejecución» | Estado actual | RF2.3.1 |
+| no_realizable_el | timestamptz | sí | | Cuándo se dijo que no se podía hacer | RF2.15.1 |
+| no_realizable_por_id | bigint | sí | → usuario, se pone a nulo | Quién lo dijo: el estudiante o un adulto | RF2.15.1 |
+| motivo | varchar(200) | no | puede estar vacío | Por qué no se puede; lo escribe el adulto | RF2.15.1 |
+| plan_b_id | bigint | sí | → tarea, se pone a nulo; solo con no_realizable_el | La actividad del plan B que la sustituye ese día | RF2.15.2 |
 
-*UK* (asignacion_id, fecha). En el E/R y en RI2.1.1 aparecen también la tarea y el estudiante; aquí se obtienen a través de la asignación, para no guardar el mismo dato dos veces.
+*UK* (asignacion_id, fecha). Al elegir un plan B, la ejecución vuelve a `pendiente` y lo que se hace (empezar, pasos, terminar) es de `plan_b`; si tampoco se puede, vuelve a `no_realizable` y `plan_b` se queda como estaba. En el E/R y en RI2.1.1 aparecen también la tarea y el estudiante; aquí se obtienen a través de la asignación, para no guardar el mismo dato dos veces.
 
 ## ejecucion_paso
 

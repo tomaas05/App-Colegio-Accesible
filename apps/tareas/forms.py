@@ -359,3 +359,18 @@ class CrearAlternativaForm(ConPictograma, forms.Form):
         if not valor:
             raise ValidationError("Busca y elige un pictograma para la actividad.")
         return valor
+
+
+# --- HU-07-04 · Un adulto marca que hoy no se puede hacer (RF2.15.1) ---
+
+
+class NoSePuedeForm(forms.Form):
+    """El adulto dice por qué (RF2.15.1: «si lo marca un adulto, indica el motivo»).
+    El estudiante lo lee en su aviso: una frase corta."""
+
+    motivo = forms.CharField(
+        label="Por qué no se puede",
+        max_length=120,
+        help_text="Una frase corta. Por ejemplo: llueve y el huerto está cerrado.",
+        error_messages={"required": "Escribe por qué no se puede."},
+    )
