@@ -24,17 +24,18 @@
       {% if dia.terminada %}
       <div class="loseta comedor__companero">
         <img class="loseta__imagen loseta__imagen--avatar" src="{{ c.estudiante.avatar.url }}" alt="" width="96" height="96">
-        <span class="loseta__nombre">{{ c.estudiante.usuario.first_name }}</span>
+        <span class="loseta__nombre">{{ c.nombre }}</span>
         {% include "centro/_marca.html" %}
       </div>
       {% else %}
       <form class="comedor__form" method="post" action="{{ url_marcar }}"
             hx-post="{{ url_marcar }}" hx-target="#{{ id }}" hx-select="#{{ id }}" hx-swap="outerHTML"
-            hx-select-oob="#comedor-cuenta:innerHTML,#comedor-acciones,#mensajes" hx-sync="this:drop" data-marcar>
+            hx-select-oob="#comedor-cuenta:innerHTML,#comedor-acciones,#mensajes,#{{ id }}-siguiente" hx-sync="this:drop" data-marcar>
         {% csrf_token %}
+        <input type="hidden" name="come" id="{{ id }}-siguiente" value="{{ c.siguiente|yesno:'1,0' }}">
         <button type="submit" class="loseta comedor__companero">
           <img class="loseta__imagen loseta__imagen--avatar" src="{{ c.estudiante.avatar.url }}" alt="" width="96" height="96">
-          <span class="loseta__nombre">{{ c.estudiante.usuario.first_name }}</span>
+          <span class="loseta__nombre">{{ c.nombre }}</span>
           {% include "centro/_marca.html" %}
         </button>
       </form>

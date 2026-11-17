@@ -12,7 +12,7 @@ from functools import wraps
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -236,28 +236,42 @@ def comedor_hoy(request):
 
 
 def _clase(pk):
-    clase = get_object_or_404(Clase, pk=pk)
-    if clase not in quien_come.clases_del_centro():
-        raise Http404
-    return clase
+    """La clase, si es del centro (tiene algún estudiante activo). Si no, 404."""
+    return get_object_or_404(
+        Clase.objects.filter(estudiantes__usuario__is_active=True).distinct(), pk=pk
+    )
 
 
 def _es_htmx(request):
     return request.headers.get("HX-Request") == "true"
 
 
-def _pantalla_clase(request, clase, estado=200, anuncio=""):
+def _url_clase(clase, ultimo=""):
+    url = reverse("centro:comedor_clase", args=[clase.pk])
+    return f"{url}?ultimo={ultimo}" if ultimo else url
+
+
+def _pantalla_clase(request, clase, tocado=None):
+    """B61. `tocado`: el compañero que se acaba de marcar, para anunciarlo al lector."""
     hoy = servicios.hoy()
+    dia = quien_come.clase_del_dia(clase, hoy)
+    anuncio = next(
+        (
+            f"{c.nombre}: {'come' if c.come else 'no come'}."
+            for c in dia.companeros
+            if c.estudiante.pk == tocado and c.marcado
+        ),
+        "",
+    )
     return render(
         request,
         "centro/comedor_clase.html",
         {
-            "dia": quien_come.clase_del_dia(clase, hoy),
-            "comen_hoy": quien_come.resumen(hoy).comen,
+            "dia": dia,
+            "comen_hoy": quien_come.comen_hoy(hoy),
             "anuncio": anuncio,
             "ultimo": request.GET.get("ultimo", ""),
         },
-        status=estado,
     )
 
 
@@ -271,8 +285,12 @@ def comedor_clase(request, pk):
 @_encargado
 @require_POST
 def comedor_marcar(request, pk, codigo):
-    """PA2 y PA3: un toque en el compañero cambia su marca (come / no come). Con HTMX solo
-    cambia su marca, el recuento y los mensajes; sin JavaScript, vuelve a la clase."""
+    """PA2 y PA3: un toque en el compañero cambia su marca (come / no come).
+
+    El formulario envía la marca que tiene que quedar (`come=1` o `0`), así que si el mismo
+    toque llega dos veces (doble pulsación sin JavaScript, reintento) no se deshace. Con HTMX
+    solo cambia su marca, el recuento y los mensajes; sin JavaScript, vuelve a la clase.
+    """
     clase = _clase(pk)
     companero = get_object_or_404(
         Estudiante.objects.select_related("usuario", "clase"),
@@ -281,16 +299,24 @@ def comedor_marcar(request, pk, codigo):
         usuario__is_active=True,
     )
     htmx = _es_htmx(request)
+    come = request.POST.get("come")
     try:
-        marca = quien_come.cambiar(request.estudiante, companero)
+        if come in ("0", "1"):
+            quien_come.marcar(request.estudiante, companero, come == "1")
+        else:
+            quien_come.cambiar(request.estudiante, companero)
     except servicios.ErrorDeCentro as e:
         messages.error(request, str(e))
-        # HTMX solo cambia la pantalla con un 200; el mensaje dice lo que ha pasado.
-        return _pantalla_clase(request, clase, estado=200 if htmx else 400)
+        if htmx:
+            # La pantalla ya no vale (p. ej. la clase se ha terminado en otra pestaña):
+            # se carga entera, con el mensaje.
+            respuesta = HttpResponse(status=204)
+            respuesta["HX-Redirect"] = _url_clase(clase, codigo)
+            return respuesta
+        return redirect(_url_clase(clase, codigo))
     if htmx:
-        anuncio = f"{companero.usuario.first_name}: {'come' if marca.come else 'no come'}."
-        return _pantalla_clase(request, clase, anuncio=anuncio)
-    return redirect(f"{reverse('centro:comedor_clase', args=[clase.pk])}?ultimo={codigo}")
+        return _pantalla_clase(request, clase, tocado=companero.pk)
+    return redirect(_url_clase(clase, codigo))
 
 
 @_encargado
@@ -302,7 +328,7 @@ def comedor_terminar(request, pk):
         quien_come.terminar_clase(request.estudiante, clase)
     except servicios.ErrorDeCentro as e:
         messages.error(request, str(e))
-        return _pantalla_clase(request, clase, estado=400)
+        return redirect(_url_clase(clase))
     faltan = quien_come.resumen(servicios.hoy()).texto_faltan
     messages.success(request, f"{clase.nombre} terminada. {faltan}")
     return redirect("centro:comedor_hoy")

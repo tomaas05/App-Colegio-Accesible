@@ -6,13 +6,15 @@
  *  2. Intro mantenido se repite solo: la repetición no cuenta como otro toque (si no,
  *     «Come» pasaría a «No come» sin querer). Un toque cada medio segundo como mucho.
  *  3. Si la respuesta no es la pantalla de la clase (sesión caducada, ya no es el
- *     encargado…), se recarga: lo mismo que pasaría sin JavaScript.
+ *     encargado…), se recarga: lo mismo que pasaría sin JavaScript. Si la clase se ha
+ *     terminado en otra pestaña, el servidor pide cargarla de nuevo (HX-Redirect).
  */
 (function () {
   "use strict";
 
   var ESPERA_MS = 500;
-  var ultimo = 0;
+  // Hora del último toque de cada compañero: un toque en otro compañero nunca se descarta.
+  var ultimos = new WeakMap();
 
   function esMarcar(evento) {
     var config = evento.detail && evento.detail.requestConfig;
@@ -34,12 +36,12 @@
     function (evento) {
       if (!evento.target.matches("[data-marcar]")) return;
       var ahora = Date.now();
-      if (ahora - ultimo < ESPERA_MS) {
+      if (ahora - (ultimos.get(evento.target) || 0) < ESPERA_MS) {
         evento.preventDefault();
         evento.stopImmediatePropagation();
         return;
       }
-      ultimo = ahora;
+      ultimos.set(evento.target, ahora);
     },
     true
   );
@@ -47,6 +49,7 @@
   document.addEventListener("htmx:beforeSwap", function (evento) {
     if (!esMarcar(evento)) return;
     var xhr = evento.detail.xhr;
+    if (xhr.status === 204) return; // HX-Redirect: htmx carga la pantalla de la clase
     if (xhr.status !== 200 || xhr.responseText.indexOf('id="companeros"') === -1) {
       evento.detail.shouldSwap = false;
       evento.detail.isError = false;

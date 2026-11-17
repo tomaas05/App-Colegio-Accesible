@@ -59,9 +59,10 @@ def url_clase(clase):
     return reverse("centro:comedor_clase", args=[clase.pk])
 
 
-def tocar(client, codigo, clase=None, **extra):
+def tocar(client, codigo, clase=None, data=None, **extra):
     clase = clase or est(codigo).clase
-    return client.post(reverse("centro:comedor_marcar", args=[clase.pk, codigo]), **extra)
+    url = reverse("centro:comedor_marcar", args=[clase.pk, codigo])
+    return client.post(url, data or {}, **extra)
 
 
 def terminar(client, clase):
@@ -140,6 +141,8 @@ def test_pa2_con_htmx_solo_cambia_la_marca_y_el_recuento(entra):
 
     assert respuesta.status_code == 200
     pagina = html(respuesta)
+    for destino in ("comedor-cuenta", "comedor-acciones", "mensajes", "marca-A02-siguiente"):
+        assert f'id="{destino}"' in pagina  # lo que cambia hx-select-oob
     assert 'id="marca-A02"' in pagina and 'comedor__marca--come" id="marca-A02"' in pagina
     assert "Mateo: come." in pagina  # lo que oye el lector de pantalla
     assert 'Marcados 1 de 6<span class="comedor__solo-ancho"> · Comen hoy: 1' in pagina
@@ -157,6 +160,36 @@ def test_pa2_el_total_del_centro_cuenta_los_que_comen(entra, hugo):
 # --- PA3: puedo corregir una marca mientras la clase no esté terminada -------------------
 
 
+def test_pa2_los_toques_recorren_el_ciclo(entra):
+    """Sin marcar → Come → No come → Come, con lo que envía cada vez la pantalla."""
+    vistos = []
+    for _ in range(3):
+        pagina = html(entra.get(url_clase(ptval(1))))
+        valor = pagina.split('id="marca-A05-siguiente" value="')[1][0]
+        tocar(entra, "A05", data={"come": valor})
+        vistos.append(AsistenciaComedor.objects.get(fecha=HOY, estudiante=est("A05")).come)
+    assert vistos == [True, False, True]
+
+
+def test_pa2_el_mismo_toque_dos_veces_no_lo_deshace(entra):
+    """Doble pulsación sin JavaScript o un reintento: llegan dos POST iguales."""
+    tocar(entra, "A05", data={"come": "1"})
+    tocar(entra, "A05", data={"come": "1"})
+
+    assert AsistenciaComedor.objects.get(fecha=HOY, estudiante=est("A05")).come is True
+
+
+def test_pa2_si_hay_dos_con_el_mismo_nombre_se_distinguen(entra):
+    Usuario.objects.filter(estudiante__codigo_estudiante="A06").update(
+        first_name="Lucía", last_name="Ruiz"
+    )
+    pagina = html(entra.get(url_clase(ptval(1))))
+    assert "Lucía F." in pagina and "Lucía R." in pagina
+
+    respuesta = tocar(entra, "A06", data={"come": "0"}, HTTP_HX_REQUEST="true")
+    assert "Lucía R.: no come." in html(respuesta)
+
+
 def test_pa3_corrijo_una_marca(entra, hugo):
     comedor.marcar(hugo, est("A03"), False)
     tocar(entra, "A03")
@@ -168,8 +201,7 @@ def test_pa3_con_la_clase_terminada_no_se_puede_cambiar(entra, hugo):
     marcar_todos(hugo, ptval(2))
     comedor.terminar_clase(hugo, ptval(2))
 
-    respuesta = tocar(entra, "B01")
-    assert respuesta.status_code == 400
+    respuesta = tocar(entra, "B01", follow=True)
     assert "ya está terminada" in html(respuesta)
     assert AsistenciaComedor.objects.get(fecha=HOY, estudiante=est("B01")).come is True
     # Y la pantalla ya no ofrece tocar a nadie.
@@ -215,8 +247,8 @@ def test_pa5_no_termino_con_companeros_sin_marcar(entra, hugo):
     comedor.marcar(hugo, est("B01"), True)
 
     respuesta = terminar(entra, ptval(2))
-    assert respuesta.status_code == 400
-    assert "Te faltan 2 compañeros por marcar." in html(respuesta)
+    assert respuesta.status_code == 302 and respuesta.url == url_clase(ptval(2))
+    assert "Te faltan 2 compañeros por marcar." in html(entra.get(respuesta.url))
     assert not ClaseComedorTerminada.objects.exists()
 
 
@@ -227,6 +259,16 @@ def test_pa5_el_boton_se_ve_apagado_mientras_falta_alguien(entra, hugo):
 
     marcar_todos(hugo, ptval(2))
     assert 'aria-disabled="true"' not in html(entra.get(url_clase(ptval(2))))
+
+
+def test_pa3_con_htmx_y_la_clase_ya_terminada_se_recarga_la_pantalla(entra, hugo):
+    marcar_todos(hugo, ptval(2))
+    comedor.terminar_clase(hugo, ptval(2))
+
+    respuesta = tocar(entra, "B01", data={"come": "0"}, HTTP_HX_REQUEST="true")
+    assert respuesta.status_code == 204
+    assert respuesta["HX-Redirect"] == f"{url_clase(ptval(2))}?ultimo=B01"
+    assert "ya está terminada" in html(entra.get(respuesta["HX-Redirect"]))
 
 
 def test_pa5_con_uno_solo_lo_dice_en_singular(hugo):
@@ -265,6 +307,48 @@ def test_un_adulto_no_entra(client, hugo, usuario):
 
 def test_sin_sesion_va_a_entrar(client, hugo):
     assert client.get(URL).status_code == 302
+
+
+def test_si_el_admin_cambia_el_encargado_el_anterior_ya_no_puede(entra, hugo):
+    admin = Usuario.objects.get(username="admin")
+    servicios.asignar_comedor(HOY, est("A01"), time(13), time(14), admin)
+
+    assert tocar(entra, "A02").status_code == 403
+    assert terminar(entra, ptval(2)).status_code == 403
+    assert not AsistenciaComedor.objects.exists()
+
+
+def test_terminar_solo_con_post(entra):
+    assert entra.get(reverse("centro:comedor_terminar", args=[ptval(2).pk])).status_code == 405
+
+
+def test_un_companero_dado_de_baja_no_se_marca(entra):
+    Usuario.objects.filter(estudiante__codigo_estudiante="A06").update(is_active=False)
+    assert tocar(entra, "A06").status_code == 404
+
+
+def test_una_clase_sin_estudiantes_no_se_abre(entra):
+    vacia = Clase.objects.create(nombre="Vacía", curso_escolar=ptval(1).curso_escolar)
+    assert entra.get(url_clase(vacia)).status_code == 404
+
+
+def test_sin_csrf_no_se_marca(hugo):
+    from django.test import Client
+
+    cliente = Client(enforce_csrf_checks=True)
+    cliente.force_login(hugo.usuario)
+    assert tocar(cliente, "A01").status_code == 403
+    assert not AsistenciaComedor.objects.exists()
+
+
+def test_un_toque_hace_las_mismas_consultas_aunque_el_centro_crezca(
+    entra, django_assert_max_num_queries
+):
+    """Sesión, permiso, la marca y la clase: no se recorre el centro entero en cada toque."""
+    url = reverse("centro:comedor_marcar", args=[ptval(1).pk, "A02"])
+    tocar(entra, "A01", data={"come": "1"})  # la primera vez crea cosas de la sesión
+    with django_assert_max_num_queries(23):
+        entra.post(url, {"come": "1"}, HTTP_HX_REQUEST="true")
 
 
 def test_el_codigo_tiene_que_ser_de_esa_clase(entra):

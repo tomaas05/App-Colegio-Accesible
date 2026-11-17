@@ -276,3 +276,13 @@ button.comedor__companero {
     display: none;
   }
 }
+
+/* «Clase terminada» mientras falta alguien: se sigue pudiendo pulsar (dice cuántos faltan),
+   así que no se apaga con transparencia (contraste 1.4.3): blanco con borde discontinuo. */
+.comedor__pie .boton[aria-disabled="true"] {
+  color: var(--petroleo);
+  background: var(--blanco);
+  border-style: dashed;
+  border-color: var(--petroleo);
+  opacity: 1;
+}

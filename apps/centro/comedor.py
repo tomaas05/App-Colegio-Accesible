@@ -12,6 +12,10 @@ El estudiante encargado del comedor de hoy (HU-05-03) recorre las clases:
 Además, el total del centro que come hoy (RF5.2.7) y `comedor_de(estudiante, fecha)` para
 que el familiar vea si ha ido al comedor (HU-06-03, Manu).
 
+Se entra desde la tarea «Comedor» ya empezada (el enlace solo sale entonces), pero el
+servidor deja entrar al encargado todo el día: si se le olvida pulsar «Empezar» o ya la ha
+terminado, puede seguir anotando. Lo que importa es que hoy el comedor es suyo.
+
 Lo que se guarda (cada día, cada estudiante y quién lo anota; cada clase terminada y quién)
 es lo que lleva hoy la hoja «Registro semanal de comedor» del colegio, por aula y de lunes a
 viernes: el listado en PDF (HU-05-05) puede sacarla de aquí.
@@ -20,6 +24,7 @@ viernes: el listado en PDF (HU-05-05) puede sacarla de aquí.
 from dataclasses import dataclass, field
 
 from django.db import IntegrityError, transaction
+from django.db.models import Exists
 
 from apps.usuarios.models import Clase, Estudiante
 
@@ -57,6 +62,13 @@ def clases_del_centro():
 class Companero:
     estudiante: Estudiante
     marca: AsistenciaComedor | None
+    nombre: str = ""  # el nombre de pila y, si se repite en la clase, la inicial del apellido
+
+    @property
+    def siguiente(self):
+        """Lo que dejará marcado el próximo toque (lo envía el formulario: si el mismo toque
+        llega dos veces, la segunda no cambia nada)."""
+        return siguiente_marca(self.marca)
 
     @property
     def marcado(self):
@@ -103,7 +115,30 @@ def clase_del_dia(clase, fecha):
         for m in AsistenciaComedor.objects.filter(fecha=fecha, estudiante__in=companeros)
     }
     terminada = ClaseComedorTerminada.objects.filter(fecha=fecha, clase=clase).exists()
-    return ClaseDelDia(clase, [Companero(e, marcas.get(e.pk)) for e in companeros], terminada)
+    return ClaseDelDia(
+        clase,
+        [Companero(e, marcas.get(e.pk), nombre) for e, nombre in _con_nombres(companeros)],
+        terminada,
+    )
+
+
+def _con_nombres(companeros):
+    """Cada compañero con el nombre que se enseña: «Ana» o, si hay dos, «Ana M.» y «Ana R.»."""
+    veces = {}
+    for e in companeros:
+        veces[e.usuario.first_name] = veces.get(e.usuario.first_name, 0) + 1
+    for e in companeros:
+        nombre = e.usuario.first_name
+        if veces[nombre] > 1 and e.usuario.last_name:
+            nombre = f"{nombre} {e.usuario.last_name[:1]}."
+        yield e, nombre
+
+
+def comen_hoy(fecha):
+    """RF5.2.7 en una consulta: cuántos comen ese día en todo el centro."""
+    return AsistenciaComedor.objects.filter(
+        fecha=fecha, come=True, estudiante__usuario__is_active=True
+    ).count()
 
 
 @dataclass
@@ -183,6 +218,8 @@ def marcar(encargado, companero, come):
     if not companero.usuario.is_active:
         raise ErrorDeCentro("Ese compañero ya no está en el centro.")
     with transaction.atomic():
+        # Bloquea la clase: «Clase terminada» no puede colarse entre la comprobación y la marca.
+        Clase.objects.select_for_update().filter(pk=companero.clase_id).exists()
         if ClaseComedorTerminada.objects.filter(fecha=fecha, clase=companero.clase_id).exists():
             raise ErrorDeCentro(f"{companero.clase.nombre} ya está terminada: no se puede cambiar.")
         marca, _ = AsistenciaComedor.objects.update_or_create(
@@ -198,22 +235,24 @@ def terminar_clase(encargado, clase):
     fecha = servicios.hoy()
     if not encargo_de_hoy(encargado):
         raise ErrorDeCentro("Hoy no te toca el comedor.")
-    dia = clase_del_dia(clase, fecha)
-    if dia.terminada:
-        return dia
-    if dia.sin_marcar:
-        raise ErrorDeCentro(
-            "Te falta 1 compañero por marcar."
-            if dia.sin_marcar == 1
-            else f"Te faltan {dia.sin_marcar} compañeros por marcar."
-        )
     try:
         with transaction.atomic():
+            # Bloquea la clase: ninguna marca cambia mientras se comprueba y se cierra.
+            Clase.objects.select_for_update().filter(pk=clase.pk).exists()
+            dia = clase_del_dia(clase, fecha)
+            if dia.terminada:
+                return dia
+            if dia.sin_marcar:
+                raise ErrorDeCentro(
+                    "Te falta 1 compañero por marcar."
+                    if dia.sin_marcar == 1
+                    else f"Te faltan {dia.sin_marcar} compañeros por marcar."
+                )
             ClaseComedorTerminada.objects.create(
                 fecha=fecha, clase=clase, terminada_por=encargado.usuario
             )
     except IntegrityError:
-        pass  # doble toque: ya estaba terminada
+        dia = clase_del_dia(clase, fecha)  # doble toque a la vez: ya estaba terminada
     dia.terminada = True
     return dia
 
@@ -228,9 +267,14 @@ def comedor_de(estudiante, fecha):
     """Si el estudiante ha ido al comedor ese día: COME, NO_COME o None («todavía no se
     sabe»). Solo cuenta cuando el encargado ha terminado su clase: hasta entonces la marca
     se puede cambiar."""
-    if not ClaseComedorTerminada.objects.filter(fecha=fecha, clase=estudiante.clase_id).exists():
+    come = (
+        AsistenciaComedor.objects.filter(fecha=fecha, estudiante=estudiante)
+        .filter(
+            Exists(ClaseComedorTerminada.objects.filter(fecha=fecha, clase=estudiante.clase_id))
+        )
+        .values_list("come", flat=True)
+        .first()
+    )
+    if come is None:
         return None
-    marca = AsistenciaComedor.objects.filter(fecha=fecha, estudiante=estudiante).first()
-    if marca is None:
-        return None
-    return COME if marca.come else NO_COME
+    return COME if come else NO_COME
