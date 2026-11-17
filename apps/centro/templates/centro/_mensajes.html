@@ -1,0 +1,9 @@
+{# Mensajes de la pantalla (estilos de usuarios.css). #mensajes siempre está, aunque vacío, #}
+{# para que HTMX lo cambie al marcar a un compañero (hx-select-oob).                        #}
+<div id="mensajes" class="mensajes-zona">{% for mensaje in messages %}
+{% if mensaje.level_tag == "error" %}
+<div class="aviso-error aviso-error--estudiante" role="alert"><span class="aviso-error__ico" aria-hidden="true">⚠️</span><p>{{ mensaje }}</p></div>
+{% else %}
+<p class="aviso-ok" role="status"><span aria-hidden="true">✓</span> {{ mensaje }}</p>
+{% endif %}
+{% endfor %}</div>

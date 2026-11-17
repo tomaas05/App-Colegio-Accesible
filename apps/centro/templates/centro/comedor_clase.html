@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Comedor · {{ dia.clase.nombre }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/centro.css' %}">{% endblock %}
+
+{# Boceto B61 · HU-05-04. Los compañeros de la clase con su avatar y su nombre (PA1). Cada   #}
+{# toque cambia la marca: «○ Sin marcar» → «✓ Come» → «✕ No come» → «✓ Come»… (PA2, PA3),   #}
+{# con símbolo y texto, nunca solo color. Con la clase terminada ya no se puede cambiar.    #}
+{# Con HTMX solo cambia la marca del compañero (el botón no se sustituye: el foco se queda  #}
+{# en él), el pie y los mensajes. Sin JavaScript, cada toque recarga la pantalla.           #}
+{% block volver %}{% url 'centro:comedor_hoy' as atras %}{% include "_volver.html" with url=atras texto="Clases" etiqueta="Volver a las clases" only %}{% endblock %}
+{% block h1 %}{{ dia.clase.nombre }}{% endblock %}
+{% block sub %}<span class="barra__sub">¿Quién come hoy?</span>{% endblock %}
+
+{% block contenido %}
+{% include "centro/_mensajes.html" %}
+<div class="encaja encaja--centro">
+  <ul class="losetas comedor__companeros" id="companeros" aria-labelledby="titulo" data-paginar>
+    {% for c in dia.companeros %}
+    {% url 'centro:comedor_marcar' dia.clase.pk c.estudiante.codigo_estudiante as url_marcar %}
+    {% with id="marca-"|add:c.estudiante.codigo_estudiante %}
+    <li{% if ultimo == c.estudiante.codigo_estudiante %} data-pag-inicio{% endif %}>
+      {% if dia.terminada %}
+      <div class="loseta comedor__companero">
+        <img class="loseta__imagen loseta__imagen--avatar" src="{{ c.estudiante.avatar.url }}" alt="" width="96" height="96">
+        <span class="loseta__nombre">{{ c.estudiante.usuario.first_name }}</span>
+        {% include "centro/_marca.html" %}
+      </div>
+      {% else %}
+      <form class="comedor__form" method="post" action="{{ url_marcar }}"
+            hx-post="{{ url_marcar }}" hx-target="#{{ id }}" hx-select="#{{ id }}" hx-swap="outerHTML"
+            hx-select-oob="#comedor-cuenta:innerHTML,#comedor-acciones,#mensajes" hx-sync="this:drop" data-marcar>
+        {% csrf_token %}
+        <button type="submit" class="loseta comedor__companero">
+          <img class="loseta__imagen loseta__imagen--avatar" src="{{ c.estudiante.avatar.url }}" alt="" width="96" height="96">
+          <span class="loseta__nombre">{{ c.estudiante.usuario.first_name }}</span>
+          {% include "centro/_marca.html" %}
+        </button>
+      </form>
+      {% endif %}
+    </li>
+    {% endwith %}
+    {% empty %}
+    <li><p class="aviso-vacio">En esta clase no hay nadie.</p></li>
+    {% endfor %}
+  </ul>
+</div>
+<div class="pie comedor__pie">
+  {% include "_paginador.html" with de="companeros" que="Más compañeros" only %}
+  {# Lo que acaba de cambiar y el recuento, para el lector de pantalla y para todos. #}
+  <p class="comedor__cuenta" id="comedor-cuenta" role="status">{% if anuncio %}<span class="visualmente-oculto">{{ anuncio }} </span>{% endif %}Marcados {{ dia.marcados }} de {{ dia.total }}<span class="comedor__solo-ancho"> · Comen hoy: {{ comen_hoy }}</span></p>
+  <p class="pie__acciones" id="comedor-acciones">
+    {% if dia.terminada %}
+    <span class="comedor__estado comedor__estado--terminada"><span aria-hidden="true">✓</span> Clase terminada</span>
+    {% else %}
+    {# PA5: mientras falte alguien, el botón se ve apagado; si se pulsa, dice cuántos faltan. #}
+    <button type="submit" form="terminar" class="boton boton--principal"{% if dia.sin_marcar %} aria-disabled="true" aria-describedby="comedor-faltan"{% endif %}>Clase terminada</button>
+    {% if dia.sin_marcar %}<span class="visualmente-oculto" id="comedor-faltan">{% if dia.sin_marcar == 1 %}Falta 1 compañero por marcar.{% else %}Faltan {{ dia.sin_marcar }} compañeros por marcar.{% endif %}</span>{% endif %}
+    {% endif %}
+  </p>
+</div>
+{% if not dia.terminada %}
+<form id="terminar" method="post" action="{% url 'centro:comedor_terminar' dia.clase.pk %}" hidden>{% csrf_token %}</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/centro.js' %}" defer></script>{% endblock %}
