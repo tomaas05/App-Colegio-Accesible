@@ -698,7 +698,7 @@ dialog.confirmar::backdrop {
 .semana__dias {
   display: grid;
   grid-auto-rows: minmax(var(--toque), auto);
-  gap: 0.4rem;
+  gap: 0.6rem; /* ≥ 8 px entre días: no se pulsa el de al lado (WCAG 2.5.8) */
   margin: 0;
   padding: 0;
   list-style: none;
@@ -734,6 +734,10 @@ dialog.confirmar::backdrop {
 .semana__grupo--fin .semana-dia {
   background: color-mix(in srgb, var(--dia-f) 35%, var(--blanco));
 }
+/* En el tema oscuro, un gris más tenue: con el 35 % el texto claro no llega a 4,5:1. */
+[data-tema="oscuro"] .semana__grupo--fin .semana-dia {
+  background: color-mix(in srgb, var(--dia-f) 12%, var(--blanco));
+}
 .semana-dia--hoy,
 .semana__grupo--fin .semana-dia--hoy {
   border-width: 5px;
@@ -760,6 +764,11 @@ dialog.confirmar::backdrop {
 .semana-dia__fecha {
   color: var(--verde-oscuro);
 }
+/* Sobre el color de miércoles y viernes el verde no llega a 4,5:1: el día de hoy, petróleo. */
+.semana-dia--hoy .semana-dia__fecha,
+.semana-dia--hoy .semana-dia__hora {
+  color: var(--petroleo);
+}
 .semana-dia__meta {
   display: flex;
   flex-wrap: wrap;
@@ -768,7 +777,7 @@ dialog.confirmar::backdrop {
 }
 .semana-dia__cuenta,
 .semana-dia__hoy {
-  font-size: 0.9rem;
+  font-size: 1rem;
   white-space: nowrap;
 }
 .semana-dia__cuenta {
@@ -796,7 +805,7 @@ dialog.confirmar::backdrop {
 .semana-dia__hora {
   display: none;
   font-family: var(--fuente-titulos);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 800;
   color: var(--verde-oscuro);
 }
@@ -806,7 +815,7 @@ dialog.confirmar::backdrop {
 }
 .semana-dia__mas {
   padding: 0 0.5rem;
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 800;
   line-height: 1.5;
   color: var(--petroleo);
@@ -838,9 +847,9 @@ dialog.confirmar::backdrop {
     display: none;
   }
   .semana-dia .dia-forma {
-    width: 2rem;
-    height: 2rem;
-    font-size: 0.9rem;
+    width: 2.1rem;
+    height: 2.1rem;
+    font-size: 1rem;
   }
   .semana-dia__nombre {
     font-size: 1rem;
