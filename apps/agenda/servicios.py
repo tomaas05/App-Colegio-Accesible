@@ -580,3 +580,51 @@ def texto_para_el_tutor(t):
     if t.es_plan_b:
         return f"{nombre} no ha podido hacer «{original}» y ha elegido «{t.tarea.nombre}»."
     return f"{nombre} no ha podido hacer «{original}» y no tiene plan B."
+
+
+# --- HU-02-06 · Ver mi semana (boceto B30) ------------------------------------------
+
+
+@dataclass
+class DiaDeLaSemana:
+    """Un día de la semana del estudiante: sus tareas, por hora, sin las canceladas."""
+
+    fecha: object
+    es_hoy: bool
+    tareas: list
+
+    @property
+    def numero(self):
+        """1 = lunes … 7 = domingo, como `dias_semana` y `_dia_forma.html`."""
+        return self.fecha.isoweekday()
+
+    @property
+    def nombre(self):
+        return DIAS[self.fecha.weekday()].capitalize()
+
+    @property
+    def es_lectivo(self):
+        return self.numero <= 5
+
+
+def lunes_de(fecha):
+    return fecha - timedelta(days=fecha.weekday())
+
+
+def semana(estudiante, ahora_=None):
+    """Los 7 días de esta semana, de lunes a domingo (RF2.1.3). Las tareas de cada día son
+    las de su agenda (con los cambios de un día y el plan B elegido); las canceladas no se
+    cuentan, pero se ven tachadas al abrir el día."""
+    ahora_ = ahora_ or ahora()
+    hoy = ahora_.date()
+    lunes = lunes_de(hoy)
+    dias = []
+    for n in range(7):
+        fecha = lunes + timedelta(days=n)
+        tareas = [
+            t
+            for t in tareas_del_dia(estudiante, fecha, ahora_)
+            if t.estado != EstadoEjecucion.CANCELADA
+        ]
+        dias.append(DiaDeLaSemana(fecha, fecha == hoy, tareas))
+    return dias

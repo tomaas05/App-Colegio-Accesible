@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Mi semana · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
+
+{# Boceto B30 · Semana del estudiante. HU-02-06: cada día con su nombre completo y su   #}
+{# inicial (en su forma y su color, nunca solo el color), y en cada uno la hora y el     #}
+{# pictograma de sus tareas. Al tocar un día se abre entero. Dos partes: de lunes a      #}
+{# viernes y fin de semana; en pantallas anchas, una al lado de la otra. Sin            #}
+{# desplazamiento: si no caben, los días pasan a otra pantalla con «Anterior /           #}
+{# Siguiente», empezando por la de hoy.                                                 #}
+{% block pantalla %}pantalla--ancha agenda{% endblock %}
+{% block volver %}{% url 'agenda:dia' as atras %}{% include "_volver.html" with url=atras texto="Tareas" etiqueta="Volver a las tareas de hoy" only %}{% endblock %}
+{% block h1 %}Mi semana{% endblock %}
+
+{% block contenido %}
+<p class="semana-hoy semana-hoy--{{ hoy.numero }}">{% include "_dia_forma.html" with numero=hoy.numero only %}<span>Hoy es <b>{{ hoy.nombre|lower }}</b>, {{ hoy_fecha }}</span></p>
+<div class="encaja">
+  <div class="semana" id="semana" data-paginar data-pag-variable data-items=".semana__dias > li" data-estado="{n} de {total}">
+    <section class="semana__grupo semana__grupo--lab" aria-labelledby="semana-lab">
+      <h2 id="semana-lab">De lunes a viernes</h2>
+      <ol class="semana__dias">
+        {% for d in laborables %}{% include "agenda/_semana_dia.html" %}{% endfor %}
+      </ol>
+    </section>
+    <section class="semana__grupo semana__grupo--fin" aria-labelledby="semana-fin">
+      <h2 id="semana-fin">Fin de semana</h2>
+      <ol class="semana__dias">
+        {% for d in fin_de_semana %}{% include "agenda/_semana_dia.html" %}{% endfor %}
+      </ol>
+    </section>
+  </div>
+</div>
+<div class="pie">
+  {% include "_paginador.html" with de="semana" que="Más días de la semana" only %}
+  <div class="pie__acciones">
+    {# PA4 y PA5: el horario de la clase, de hoy y de la semana, solo para ver (HU-03-11, Javi). #}
+    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}">Mi horario de clase</a>
+  </div>
+</div>
+{% endblock %}
