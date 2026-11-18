@@ -7,7 +7,44 @@
   data-restante-seg="{{ temp.segundos_restantes }}"
   data-duracion-seg="{{ temp.duracion_total }}"
   data-tipo="{{ temp.tipo }}"
+  data-aviso-5="{% if temp.aviso_5_min %}true{% else %}false{% endif %}"
+  data-aviso-1="{% if temp.aviso_1_min %}true{% else %}false{% endif %}"
+  data-sonido-activo="{% if temp.sonido_activo %}true{% else %}false{% endif %}"
+  data-baja-sobrecarga="{% if temp.baja_sobrecarga %}true{% else %}false{% endif %}"
+  data-aviso-activo="{% if temp.mostrar_aviso %}true{% else %}false{% endif %}"
 >
+  <div
+    class="tiempo__aviso"
+    data-temporizador-aviso
+    role="status"
+    {% if not temp.mostrar_aviso %}hidden{% endif %}
+  >
+    <p class="tiempo__aviso-titulo">
+      <span aria-hidden="true">⏳</span>
+      <span data-temporizador-aviso-texto>{{ temp.texto_aviso }}</span>
+    </p>
+    <div class="tiempo__siguiente" data-temporizador-siguiente>
+      {% if temp.siguiente_tarea %}
+      <img
+        class="tiempo__siguiente-img"
+        src="{{ temp.siguiente_tarea.tarea.imagen.url }}"
+        alt="{{ temp.siguiente_tarea.tarea.descripcion_imagen }}"
+        width="44"
+        height="44"
+      >
+      <span class="tiempo__siguiente-texto">
+        Siguiente tarea: <b>{{ temp.siguiente_tarea.tarea.nombre }}</b> ({{ temp.siguiente_tarea.inicio|time:"H:i" }})
+      </span>
+      {% else %}
+      {% include "agenda/_imagen_vacia.html" %}
+      <span class="tiempo__siguiente-texto">No hay más tareas hoy</span>
+      {% endif %}
+    </div>
+    {% if temp.sonido_activo %}
+    <audio data-temporizador-audio preload="auto" src="{{ temp.sonido_data_uri }}"></audio>
+    {% endif %}
+  </div>
+
   <div id="temporizador-cuerpo" class="tiempo__cuerpo" data-temporizador-cuerpo{% if not temp.visible %} hidden{% endif %}>
     <span class="resto" data-temporizador-texto>{{ temp.texto_restante }}</span>
 

@@ -27,6 +27,10 @@ class PerfilVisualForm(forms.ModelForm):
             "tipo_temporizador",
             "temporizador_visible",
             "puede_ocultar_temporizador",
+            "aviso_5_min",
+            "aviso_1_min",
+            "sonidos_activos",
+            "baja_sobrecarga_sensorial",
             "creacion_tareas",
             "usa_lector_pantalla",
         ]
@@ -104,3 +108,19 @@ class PerfilVisualForm(forms.ModelForm):
                 return self.instance.temporizador_visible
             return True
         return bool(self.cleaned_data.get("temporizador_visible"))
+
+    def _limpiar_booleano_por_defecto_true(self, nombre_campo):
+        if self.data and "tipo_temporizador" not in self.data and nombre_campo not in self.data:
+            if self.instance and self.instance.pk:
+                return getattr(self.instance, nombre_campo)
+            return True
+        return bool(self.cleaned_data.get(nombre_campo))
+
+    def clean_aviso_5_min(self):
+        return self._limpiar_booleano_por_defecto_true("aviso_5_min")
+
+    def clean_aviso_1_min(self):
+        return self._limpiar_booleano_por_defecto_true("aviso_1_min")
+
+    def clean_sonidos_activos(self):
+        return self._limpiar_booleano_por_defecto_true("sonidos_activos")

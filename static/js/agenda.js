@@ -247,7 +247,32 @@
     var nodoArco = cajaTiempo.querySelector("[data-temporizador-arco]");
     var botonOcultar = cajaTiempo.querySelector("[data-ocultar-temporizador]");
     var cuerpoTiempo = cajaTiempo.querySelector("[data-temporizador-cuerpo]");
+    var nodoAviso = cajaTiempo.querySelector("[data-temporizador-aviso]");
+    var nodoAvisoTexto = cajaTiempo.querySelector("[data-temporizador-aviso-texto]");
+    var nodoAudio = cajaTiempo.querySelector("[data-temporizador-audio]");
+    var aviso5 = cajaTiempo.dataset.aviso5 !== "false";
+    var aviso1 = cajaTiempo.dataset.aviso1 !== "false";
+    var sonidoActivo = cajaTiempo.dataset.sonidoActivo === "true";
+    var ultimoUmbralSonado = 0;
     var circunferencia = 226.19;
+
+    var reproducirSonidoAviso = function () {
+      if (!sonidoActivo) {
+        cajaTiempo.dataset.sonidoReproducido = "false";
+        return;
+      }
+      cajaTiempo.dataset.sonidoReproducido = "true";
+      if (nodoAudio && typeof nodoAudio.play === "function") {
+        try {
+          var p = nodoAudio.play();
+          if (p && p.catch) {
+            p.catch(function () {});
+          }
+        } catch (error) {
+          // Navegador sin reproducción automática permitida.
+        }
+      }
+    };
 
     var actualizarTemporizador = function () {
       var transcurridos = Math.floor((Date.now() - instanteCarga) / 1000);
@@ -278,6 +303,35 @@
       if (nodoArco) {
         var offset = ((circunferencia * (100 - pct)) / 100).toFixed(2);
         nodoArco.setAttribute("stroke-dashoffset", String(offset));
+      }
+
+      if (nodoAviso) {
+        var umbral = 0;
+        var textoUmbral = "";
+        if (quedan > 0 && quedan <= 60 && (aviso1 || aviso5)) {
+          umbral = 1;
+          textoUmbral = "¡Queda 1 minuto!";
+        } else if (quedan > 0 && quedan <= 300 && aviso5) {
+          umbral = 5;
+          textoUmbral =
+            minRestantes > 1 ? "¡Quedan " + minRestantes + " minutos!" : "¡Queda 1 minuto!";
+        }
+        var mostrar = umbral > 0;
+        var cambioVisibilidad = nodoAviso.hidden === mostrar;
+        nodoAviso.hidden = !mostrar;
+        cajaTiempo.dataset.avisoActivo = mostrar ? "true" : "false";
+        if (mostrar && nodoAvisoTexto) {
+          nodoAvisoTexto.textContent = textoUmbral;
+        }
+        if (mostrar && umbral !== ultimoUmbralSonado) {
+          ultimoUmbralSonado = umbral;
+          reproducirSonidoAviso();
+        } else if (!mostrar) {
+          cajaTiempo.dataset.sonidoReproducido = "false";
+        }
+        if (cambioVisibilidad && window.Despega && window.Despega.paginar) {
+          window.Despega.paginar.reajustar();
+        }
       }
     };
 

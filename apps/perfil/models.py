@@ -138,6 +138,12 @@ class Perfil(models.Model):
     )
     temporizador_visible = models.BooleanField(default=True)
     puede_ocultar_temporizador = models.BooleanField(default=False)
+    aviso_5_min = models.BooleanField("aviso cuando quedan 5 minutos", default=True)
+    aviso_1_min = models.BooleanField("aviso cuando queda 1 minuto", default=True)
+    sonidos_activos = models.BooleanField("activar sonidos suaves de aviso", default=True)
+    baja_sobrecarga_sensorial = models.BooleanField(
+        "modo de baja sobrecarga sensorial", default=False
+    )
     metodo_acceso = models.CharField(
         "método de acceso",
         max_length=10,
