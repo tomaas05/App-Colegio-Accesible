@@ -137,3 +137,18 @@ def test_anotar_quien_come_companeros(live_server, page, encargado, nombre):
         page.get_by_role("button", name="Clase terminada").click(force=True)
     assert page.locator("[role=alert]").first.is_visible()
     revisar(page, nombre)
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_anotar_quien_come_todas_terminadas(live_server, page, encargado, nombre):
+    """B60 al acabar: «Volver a la tarea» pasa a ser el botón grande del pie."""
+    from apps.centro import comedor
+
+    for clase in comedor.clases_del_centro():
+        for e in Estudiante.objects.filter(clase=clase, usuario__is_active=True):
+            comedor.marcar(encargado, e, True)
+        comedor.terminar_clase(encargado, clase)
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(f"{live_server.url}{reverse('centro:comedor_hoy')}")
+    assert page.get_by_role("link", name="Volver a la tarea", exact=True).is_visible()
+    revisar(page, nombre)

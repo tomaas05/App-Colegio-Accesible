@@ -232,6 +232,20 @@ def test_pa4_con_todas_terminadas_lo_dice(entra, hugo):
     assert comedor.resumen(HOY).texto_faltan == "Has terminado todas las clases."
 
 
+def test_volver_a_la_tarea_se_ve_abajo_y_es_el_boton_grande_al_acabar(entra, hugo):
+    """Revisión con Javi: además de «‹ Tarea» arriba, un botón bien visible al pie."""
+    tarea = reverse("agenda:detalle", args=[ComedorDelDia.objects.get(fecha=HOY).asignacion_id])
+    pie = html(entra.get(URL)).split('class="pie comedor__pie"')[1]
+    assert f'class="boton boton--mediano comedor__volver" href="{tarea}"' in pie
+    assert "Volver a la tarea" in pie
+
+    for clase in comedor.clases_del_centro():
+        marcar_todos(hugo, clase)
+        comedor.terminar_clase(hugo, clase)
+    pie = html(entra.get(URL)).split('class="pie comedor__pie"')[1]
+    assert f'class="boton boton--principal comedor__volver" href="{tarea}"' in pie
+
+
 def test_pa4_terminar_dos_veces_no_falla(entra, hugo):
     marcar_todos(hugo, ptval(2))
     terminar(entra, ptval(2))

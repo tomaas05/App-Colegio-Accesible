@@ -239,13 +239,22 @@ button.comedor__companero {
   font-weight: 700;
 }
 .comedor__total {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 1rem;
+}
+/* «Volver a la tarea» (B60): con la flecha y el texto, nunca solo un icono. */
+.comedor__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
 }
 .comedor__faltan {
   font-weight: 400;
 }
-.comedor__marca {
+.comedor__marca,
+.comedor__estado {
   white-space: nowrap;
 }
 
@@ -274,6 +283,19 @@ button.comedor__companero {
   }
   .comedor__solo-ancho {
     display: none;
+  }
+  /* «✓ Terminada» cabe en la loseta de 2 columnas. */
+  .comedor__estado {
+    gap: 0.15rem;
+    padding: 0 0.3rem;
+  }
+  /* B60 con todas las clases terminadas: «Volver a la tarea» ocupa todo el ancho. */
+  .pie__acciones:has(> .comedor__volver.boton--principal) {
+    flex: 1 1 100%;
+  }
+  .comedor__volver.boton--principal {
+    flex: 1;
+    justify-content: center;
   }
 }
 
