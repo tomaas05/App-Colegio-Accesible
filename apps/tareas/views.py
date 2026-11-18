@@ -1,4 +1,4 @@
-"""Crear tareas, verlas y asignarlas (Úrsula): HU-03-01 y HU-03-03.
+"""Crear tareas, verlas y asignarlas (Úrsula): HU-03-01, HU-03-03 y HU-03-08.
 
 Permisos: solo tutor, profesional o familiar (permisos.py). Los estudiantes a los que
 se puede asignar salen de `estudiantes_de(request.user)`, la única regla de visibilidad.
@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from urllib.parse import urlencode
 
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import Http404, HttpResponseBadRequest
@@ -34,7 +35,7 @@ from .forms import (
     PasoFormSet,
     TareaForm,
 )
-from .models import Asignacion, ExcepcionAsignacion, PlanB, Tarea, TipoExcepcion
+from .models import Ambito, Asignacion, ExcepcionAsignacion, PlanB, Tarea, TipoExcepcion
 from .permisos import gestiona_tareas
 
 MAX_PASOS = 30
@@ -87,6 +88,13 @@ def crear_tarea(request):
     """B40 y B41 · Crear tarea con su imagen y sus pasos."""
     if request.method == "POST":
         form = TareaForm(request.POST, request.FILES)
+        # RESTRICCIÓN PROFESIONAL (HU-03-08): solo tareas de ámbito escolar
+        if form.is_valid() and request.user.rol == Rol.PROFESIONAL:
+            ambito = form.cleaned_data.get("ambito")
+            if ambito != Ambito.ESCOLAR:
+                form.add_error(
+                    "ambito", "Los profesionales solo pueden crear tareas de ámbito escolar."
+                )
         formset = PasoFormSet(request.POST, request.FILES, prefix="pasos")
         if form.is_valid() and formset.is_valid():
             try:
@@ -99,6 +107,8 @@ def crear_tarea(request):
                 return redirect("tareas:catalogo")
     else:
         form = TareaForm()
+        if request.user.rol == Rol.PROFESIONAL:
+            form.initial["ambito"] = Ambito.ESCOLAR
         formset = PasoFormSet(prefix="pasos")
     return render(request, "tareas/crear_tarea.html", {"form": form, "formset": formset})
 
@@ -122,12 +132,13 @@ def anadir_paso(request):
 @gestiona_tareas
 @require_http_methods(["GET", "POST"])
 def asignar_tarea(request, tarea_id=None):
-    """B43 · Asignar una tarea a uno o varios de mis estudiantes, sin solapes de horario."""
+    """B43 · Asignar una tarea a uno o varios de mis estudiantes, con solapes y restricciones."""
     tarea_inicial = get_object_or_404(Tarea, id=tarea_id) if tarea_id else None
 
     if request.method == "POST":
         form = AsignacionForm(request.POST, usuario=request.user)
-        # HU-03-11, PA5 (Javi): el familiar solo pone tareas para casa fuera del horario escolar.
+
+        # Restricción de familiar: tareas para casa fuera del horario escolar
         if (
             form.is_valid()
             and request.user.rol == Rol.FAMILIAR
@@ -142,6 +153,23 @@ def asignar_tarea(request, tarea_id=None):
                 "Esas horas son de horario escolar. Las tareas para casa se ponen fuera "
                 "de las horas de clase.",
             )
+
+        # Restricción de profesional (HU-03-08): estrictamente dentro del horario escolar
+        if (
+            form.is_valid()
+            and request.user.rol == Rol.PROFESIONAL
+            and not choca_con_horario_escolar(
+                form.cleaned_data["dias_semana"],
+                form.cleaned_data["hora_inicio"],
+                form.cleaned_data["hora_fin"],
+            )
+        ):
+            form.add_error(
+                None,
+                "Las actividades de los profesionales "
+                "deben programarse estrictamente dentro del horario escolar.",
+            )
+
         if form.is_valid():
             datos = form.cleaned_data
             with transaction.atomic():
@@ -169,7 +197,6 @@ def asignar_tarea(request, tarea_id=None):
 
 
 def _fecha_de(request):
-    """La fecha de «Solo este día» (?fecha=AAAA-MM-DD), o None si no hay o no es válida."""
     try:
         return date.fromisoformat(request.GET.get("fecha") or request.POST.get("fecha") or "")
     except ValueError:
@@ -182,8 +209,6 @@ def _alcance_de(request):
 
 
 def _filtros_de(request):
-    """Los filtros con los que se salió de la lista (f_estudiante y f_fecha): se guardan en
-    campos ocultos para volver a ella igual después de guardar o cancelar."""
     return {
         clave: request.GET.get(clave) or request.POST.get(clave) or ""
         for clave in ("f_estudiante", "f_fecha")
@@ -191,25 +216,25 @@ def _filtros_de(request):
 
 
 def _volver_a_planificadas(request):
-    """La lista con los mismos filtros con los que se salió de ella."""
     filtros = {clave[2:]: valor for clave, valor in _filtros_de(request).items() if valor}
     url = reverse("tareas:tareas_planificadas")
     return f"{url}?{urlencode(filtros)}" if filtros else url
 
 
 def _asignacion_que_puede_cambiar(request, asignacion_id):
-    """La asignación, si quien entra la puede cambiar. Si no, 404: ni se dice que existe."""
     asignacion = get_object_or_404(
         Asignacion.objects.select_related("tarea", "estudiante__usuario", "asignado_por"),
         id=asignacion_id,
     )
+    # RESTRICCIÓN PROFESIONAL (HU-03-08): No puede modificar/cancelar tareas creadas por otros
+    if request.user.rol == Rol.PROFESIONAL and asignacion.asignado_por != request.user:
+        raise Http404
     if not planificacion.puede_cambiar(request.user, asignacion):
         raise Http404
     return asignacion
 
 
 def _empezada(asignacion, fecha):
-    """Si el estudiante ya ha empezado (o hecho) la tarea ese día: entonces no se toca."""
     from apps.agenda.models import Ejecucion
 
     return Ejecucion.objects.filter(
@@ -218,8 +243,6 @@ def _empezada(asignacion, fecha):
 
 
 def _dia_valido(asignacion, fecha, hoy):
-    """«Solo este día»: una fecha de hoy en adelante en la que la tarea toca y no está
-    cancelada."""
     if fecha is None or fecha < hoy or not asignacion.aplica_el(fecha):
         return False
     excepcion = asignacion.excepciones.filter(fecha=fecha).first()
@@ -229,11 +252,6 @@ def _dia_valido(asignacion, fecha, hoy):
 @gestiona_tareas
 @require_GET
 def tareas_planificadas(request):
-    """B44 · Las tareas que puedo cambiar, por estudiante y por día.
-
-    Con un día elegido, las que tocan ese día (con sus horas de ese día) y se puede
-    cambiar solo ese día o toda la serie. Sin día, todas las series vigentes.
-    """
     hoy = timezone.localdate()
     filtro = FiltroPlanificadasForm(request.GET or None, usuario=request.user, hoy=hoy)
     estudiante = fecha = None
@@ -241,7 +259,6 @@ def tareas_planificadas(request):
         estudiante = filtro.cleaned_data["estudiante"]
         fecha = filtro.cleaned_data["fecha"]
 
-    # Una serie cancelada ya no se planifica (sigue tachada en la agenda unos días).
     asignaciones = (
         planificacion.que_puede_cambiar(request.user)
         .select_related("tarea", "estudiante__usuario")
@@ -249,6 +266,10 @@ def tareas_planificadas(request):
         .filter(Q(vigencia_hasta__isnull=True) | Q(vigencia_hasta__gte=fecha or hoy))
         .order_by("estudiante__usuario__first_name", "hora_inicio", "pk")
     )
+    # RESTRICCIÓN PROFESIONAL: filtrar solo las suyas en la lista de planificadas si procede
+    if request.user.rol == Rol.PROFESIONAL:
+        asignaciones = asignaciones.filter(asignado_por=request.user)
+
     if estudiante:
         asignaciones = asignaciones.filter(estudiante=estudiante)
 
@@ -285,7 +306,6 @@ def tareas_planificadas(request):
 
 
 def _hoy(asignacion):
-    """Cómo está hoy la tarea en la agenda del estudiante, o None si hoy no toca."""
     from apps.agenda import servicios
 
     try:
@@ -295,7 +315,6 @@ def _hoy(asignacion):
 
 
 def _hoy_se_puede_marcar(asignacion):
-    """HU-07-04: la tarea de hoy es del horario escolar y está pendiente o en marcha."""
     t = _hoy(asignacion)
     return bool(t and t.puede_decir_no_puedo)
 
@@ -303,11 +322,6 @@ def _hoy_se_puede_marcar(asignacion):
 @gestiona_tareas
 @require_http_methods(["GET", "POST"])
 def no_se_puede(request, asignacion_id):
-    """HU-07-04 (RF2.15.1) · Un adulto marca que hoy no se puede hacer una tarea del
-    horario escolar y dice por qué. El estudiante recibe un aviso y, si la tarea tiene
-    plan B, elige otra cosa. Solo hoy: es lo que pasa en el momento (llueve, falta el
-    material…); para otro día se cancela ese día (HU-03-05).
-    """
     from apps.agenda import servicios
 
     asignacion = _asignacion_que_puede_cambiar(request, asignacion_id)
@@ -320,7 +334,6 @@ def no_se_puede(request, asignacion_id):
     form = NoSePuedeForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         motivo = form.cleaned_data["motivo"].strip().rstrip(".")
-        # La que estaba haciendo: la del plan B, si ya la había cambiado.
         la_de_hoy = hoy.tarea
         t = servicios.no_puedo(estudiante, asignacion.pk, por=request.user, motivo=motivo)
         texto = f"Hoy no se puede hacer «{la_de_hoy.nombre}»: {motivo}."
@@ -349,7 +362,6 @@ def no_se_puede(request, asignacion_id):
             "tarea": tarea,
             "estudiante": estudiante,
             "asignacion": asignacion,
-            # Si ya la había cambiado por una del plan B, no se le ofrece otra.
             "hoy": hoy,
             "tiene_plan_b": bool(hoy.alternativas) and not hoy.es_plan_b,
             "volver": volver,
@@ -361,11 +373,7 @@ def no_se_puede(request, asignacion_id):
 @gestiona_tareas
 @require_http_methods(["GET", "POST"])
 def editar_asignacion(request, asignacion_id):
-    """HU-03-04 · Cambiar las horas de un solo día, o las horas y los días de toda la serie.
-
-    Un cambio que se solapa con otra tarea no se guarda y se dice con cuál (PA3). El
-    estudiante recibe un aviso con una frase y el pictograma de la tarea (PA4).
-    """
+    """HU-03-04 · Cambiar las horas de un solo día, o las horas y los días de toda la serie."""
     asignacion = _asignacion_que_puede_cambiar(request, asignacion_id)
     hoy = timezone.localdate()
     alcance, fecha = _alcance_de(request), _fecha_de(request)
@@ -378,8 +386,6 @@ def editar_asignacion(request, asignacion_id):
     if alcance == "dia" and not _dia_valido(asignacion, fecha, hoy):
         messages.error(request, "Ese día no se puede cambiar. Elige otro día en la lista.")
         return redirect(volver)
-    # Lo que el estudiante ya ha empezado no se cambia: ese día, si es solo un día; hoy,
-    # si es la serie y la está haciendo ahora (si ya la ha terminado, sí se puede).
     if (alcance == "dia" and _empezada(asignacion, fecha)) or (
         alcance == "serie" and _en_marcha(asignacion, hoy)
     ):
@@ -405,9 +411,20 @@ def editar_asignacion(request, asignacion_id):
         datos = form.cleaned_data
         inicio, fin = datos["hora_inicio"], datos["hora_fin"]
         dias = [fecha.isoweekday()] if alcance == "dia" else datos["dias_semana"]
+
         choque = None
         if request.user.rol == Rol.FAMILIAR and choca_con_horario_escolar(dias, inicio, fin):
             form.add_error(None, HORARIO_ESCOLAR_FAMILIAR)
+        # RESTRICCIÓN PROFESIONAL (HU-03-08):
+        # las actividades modificadas deben estar en horario escolar
+        elif request.user.rol == Rol.PROFESIONAL and not choca_con_horario_escolar(
+            dias, inicio, fin
+        ):
+            form.add_error(
+                None,
+                "Las actividades de los profesionales "
+                "deben programarse estrictamente dentro del horario escolar.",
+            )
         elif alcance == "dia":
             choque = planificacion.choque_en_fecha(
                 estudiante, fecha, inicio, fin, excluir=asignacion
@@ -423,6 +440,7 @@ def editar_asignacion(request, asignacion_id):
                 excluir=asignacion,
                 hoy=hoy,
             )
+
         if not form.errors and choque:
             form.add_error(None, f"Se solapa con {choque.texto}. Elige otras horas.")
         if not form.errors:
@@ -476,7 +494,6 @@ HORARIO_ESCOLAR_FAMILIAR = (
 
 
 def _en_marcha(asignacion, fecha):
-    """La está haciendo ahora: empezada y sin terminar."""
     from apps.agenda.models import Ejecucion, EstadoEjecucion
 
     return Ejecucion.objects.filter(
@@ -485,8 +502,6 @@ def _en_marcha(asignacion, fecha):
 
 
 def _guardar_dia(asignacion, fecha, inicio, fin, usuario):
-    """Otras horas solo ese día. Si vuelven a ser las de siempre, se quita la excepción.
-    Devuelve si algo ha cambiado."""
     actual = asignacion.excepciones.filter(fecha=fecha).first()
     antes = (
         (actual.hora_inicio, actual.hora_fin)
@@ -517,11 +532,7 @@ def _guardar_dia(asignacion, fecha, inicio, fin, usuario):
 @gestiona_tareas
 @require_http_methods(["GET", "POST"])
 def cancelar_asignacion(request, asignacion_id):
-    """HU-03-05 · Cancelar un solo día o toda la serie, después de confirmar (PA3).
-
-    No se cancela lo que el estudiante ya ha empezado (PA2). La tarea sale como
-    «Cancelada» en su agenda (PA1) y recibe un aviso (PA4).
-    """
+    """HU-03-05 · Cancelar un solo día o toda la serie."""
     asignacion = _asignacion_que_puede_cambiar(request, asignacion_id)
     hoy = timezone.localdate()
     alcance, fecha = _alcance_de(request), _fecha_de(request)
@@ -560,7 +571,6 @@ def cancelar_asignacion(request, asignacion_id):
                     f"«{tarea.nombre}» del {planificacion.fecha_en_texto(fecha)} se ha cancelado."
                 )
             else:
-                # Si hoy ya la ha empezado, lo de hoy sigue: se cancela desde mañana.
                 desde = hoy + timedelta(days=1) if _empezada(asignacion, hoy) else hoy
                 asignacion.cancelada = True
                 asignacion.cancelada_el = desde
@@ -600,8 +610,6 @@ def cancelar_asignacion(request, asignacion_id):
 
 
 def puede_editar_plan_b(usuario, tarea):
-    """El tutor y el profesional, en cualquier tarea del catálogo del centro; el familiar,
-    solo en las suyas."""
     if usuario.rol in (Rol.TUTOR, Rol.PROFESIONAL):
         return True
     return usuario.rol == Rol.FAMILIAR and tarea.creador_id == usuario.pk
@@ -610,11 +618,6 @@ def puede_editar_plan_b(usuario, tarea):
 @gestiona_tareas
 @require_http_methods(["GET", "POST"])
 def plan_b(request, tarea_id):
-    """B42 · Las alternativas de una tarea, en el orden en que se ofrecen al estudiante.
-
-    Se añaden del catálogo o se crean nuevas (nombre y pictograma), se suben, se bajan y
-    se quitan. Todo funciona sin JavaScript: cada botón es un formulario.
-    """
     tarea = get_object_or_404(Tarea, id=tarea_id)
     if not puede_editar_plan_b(request.user, tarea):
         raise Http404
@@ -692,7 +695,6 @@ def plan_b(request, tarea_id):
 
 
 def _foco(valor):
-    """«subir-12» → el botón que tenía el foco antes de recargar (para devolvérselo)."""
     accion, _, numero = valor.partition("-")
     if accion in ("subir", "bajar") and numero.isdigit():
         return {"foco_accion": accion, "foco_id": int(numero)}
@@ -700,7 +702,6 @@ def _foco(valor):
 
 
 def _renumerar(lista):
-    """Prioridades 1, 2, 3… en el orden de la lista."""
     for orden, plan in enumerate(lista, start=1):
         if plan.orden != orden:
             plan.orden = orden
@@ -708,7 +709,6 @@ def _renumerar(lista):
 
 
 def _anadir_al_plan_b(tarea, alternativa):
-    """La alternativa nueva va la última (la menos preferida); se sube si hace falta."""
     ultimo = tarea.planes_b.order_by("-orden").values_list("orden", flat=True).first() or 0
     PlanB.objects.get_or_create(
         tarea=tarea, alternativa=alternativa, defaults={"orden": ultimo + 1}
@@ -721,23 +721,24 @@ def editar_pasos_tarea(request, tarea_id):
     """HU-03-02 · Añadir, ordenar y modificar los pasos de una tarea existente."""
     tarea = get_object_or_404(Tarea, id=tarea_id)
 
+    # RESTRICCIÓN PROFESIONAL (HU-03-08): El profesional solo puede editar los pasos de sus tareas
+    if request.user.rol == Rol.PROFESIONAL and tarea.creador != request.user:
+        raise PermissionDenied("No puedes modificar tareas creadas por otros usuarios.")
+
     if request.method == "POST":
         formset = PasoFormSet(request.POST, request.FILES, prefix="pasos", instance=tarea)
         if formset.is_valid():
             try:
                 with transaction.atomic():
-                    # Eliminamos primero los marcados para borrado
                     for p_form in formset.deleted_forms:
                         if p_form.instance.pk:
                             p_form.instance.delete()
 
-                    # Obtenemos los formularios válidos que no están marcados para borrar
                     validos = [
                         p_form
                         for p_form in formset.forms
                         if p_form.cleaned_data and not p_form.cleaned_data.get("DELETE")
                     ]
-                    # Ordenamos según el campo orden indicado
                     validos.sort(key=lambda pf: pf.cleaned_data.get("orden") or 0)
 
                     for orden, p_form in enumerate(validos, start=1):
