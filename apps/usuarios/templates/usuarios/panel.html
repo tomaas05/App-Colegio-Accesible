@@ -51,9 +51,12 @@
   {% if estudiantes %}
   <ul class="panel__estudiantes">
     {% for estudiante in estudiantes %}
-    <li class="panel__estudiante">
-      <img src="{{ estudiante.avatar.url }}" alt="" width="56" height="56">
-      <span><b>{{ estudiante.usuario.get_full_name }}</b><span>{{ estudiante.clase.nombre }}</span></span>
+    {# HU-06-03: cada estudiante lleva a su día en el colegio (tareas, comedor y menú). #}
+    <li>
+      <a class="panel__estudiante panel__estudiante--enlace" href="{% url 'seguimiento:dia' estudiante.codigo_estudiante %}">
+        <img src="{{ estudiante.avatar.url }}" alt="" width="56" height="56">
+        <span><b>{{ estudiante.usuario.get_full_name }}</b><span>{{ estudiante.clase.nombre }}<span class="visualmente-oculto">. Ver su día en el colegio</span></span></span>
+      </a>
     </li>
     {% endfor %}
   </ul>

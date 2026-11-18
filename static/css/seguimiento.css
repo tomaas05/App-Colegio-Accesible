@@ -183,3 +183,53 @@
     font-size: 0.85rem;
   }
 }
+
+/* --- HU-06-03 · Día del estudiante (familiar), bocetos B34 y B35 --- */
+.dia-comedor {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+}
+.dia-comedor h2,
+.dia-comedor h3,
+.dia-comedor p {
+  margin: 0;
+}
+.dia-comedor__estado {
+  padding: 0.6rem 0.8rem;
+  background: var(--menta);
+  border-left: 5px solid var(--petroleo);
+  border-radius: 0.6rem;
+}
+.dia-comedor__estado--come {
+  border-left-color: var(--verde-oscuro);
+}
+.dia-comedor__estado--no_come {
+  background: var(--aviso-fondo);
+  border-left-color: var(--error);
+}
+.dia-menu__titulo {
+  font-size: 1.1rem;
+}
+/* La imagen del menú, entera y sin desplazarse: tan alta como deje la parte. */
+.dia-menu__imagen {
+  display: block;
+  min-height: 0;
+}
+.dia-menu__imagen img {
+  display: block;
+  width: 100%;
+  max-height: 14rem;
+  object-fit: contain;
+  background: var(--blanco);
+  border: 2px solid var(--menta-hover);
+  border-radius: 0.6rem;
+}
+/* En pantallas bajas (móvil pequeño, 360×640) la imagen se encoge para que el
+   botón «Ver el menú en grande» y el paginador quepan sin desplazarse (0005).
+   El menú se lee entero al pulsar el botón. */
+@media (max-height: 44rem) {
+  .dia-menu__imagen img {
+    max-height: 7.5rem;
+  }
+}

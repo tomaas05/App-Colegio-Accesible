@@ -70,6 +70,11 @@ OPCIONES_POR_ROL = {
         ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
     ],
     Rol.FAMILIAR: [
+        (
+            "Día en el colegio",
+            "Sus tareas, si ha ido al comedor y el menú del mes.",
+            "seguimiento:familiar",
+        ),
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
         ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
     ],

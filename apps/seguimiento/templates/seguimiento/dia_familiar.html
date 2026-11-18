@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Día de {{ estudiante.usuario.first_name }} · {{ fecha_texto }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/seguimiento.css' %}">{% endblock %}
+
+{# Bocetos B34 (Día del estudiante) y B35 (Comedor) · Familiar. HU-06-03 (AGENDA-69).       #}
+{# Reutiliza la agenda en modo consulta de B27 (HU-01-09): el mismo cambio de día y la      #}
+{# misma lista de tareas, sin botones de cambiar nada (PA1 y PA2). Al lado, el comedor y   #}
+{# el menú (PA3 y PA4). Sin desplazamiento (0005): dos partes, una al lado de la otra si   #}
+{# caben y, si no, una cada vez. Las emociones de B35 no son de esta historia.             #}
+{% block volver %}{% if varios %}{% url 'seguimiento:familiar' as atras %}{% include "_volver.html" with url=atras texto="Estudiantes" etiqueta="Volver a elegir estudiante" only %}{% else %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endif %}{% endblock %}
+{% block h1 %}Día de {{ estudiante.usuario.first_name }}{% endblock %}
+{% block sub %}<span class="barra__sub barra__persona"><img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40"> {{ estudiante.clase.nombre }} · Solo consulta</span>{% endblock %}
+
+{% block contenido %}
+{% include "usuarios/_consulta_dias.html" %}
+
+<div class="encaja">
+  <div class="partes" id="partes" data-paginar data-estado="Parte {n} de {total}">
+    {% include "usuarios/_consulta_tareas.html" %}
+
+    <section class="parte parte--caja dia-comedor" aria-labelledby="dia-comedor-t" data-titulo="Comedor y menú">
+      <h2 id="dia-comedor-t">Comedor y menú</h2>
+      {# PA3: con su texto y su símbolo; el color no es la única señal. #}
+      <p class="dia-comedor__estado dia-comedor__estado--{{ comedor.estado }}"><span aria-hidden="true">{{ comedor.simbolo }}</span> <strong>{{ comedor.texto }}</strong></p>
+
+      {# PA4: el menú del mes que ha subido el colegio (HU-05-03), en PDF o en imagen. #}
+      <h3 class="dia-menu__titulo">Menú de {{ menu.mes }}</h3>
+      {% if menu.archivo %}
+        {% if menu.es_imagen %}
+        <a class="dia-menu__imagen" href="{{ menu.archivo.url }}"><img src="{{ menu.archivo.url }}" alt="Menú del comedor de {{ menu.mes }}"></a>
+        {% endif %}
+        <a class="boton boton--aux boton--mediano" href="{{ menu.archivo.url }}">{% if menu.es_imagen %}Ver el menú en grande{% else %}Ver el menú (PDF){% endif %}</a>
+      {% else %}
+      <p>El colegio todavía no ha subido el menú de {{ menu.mes }}.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% include "_paginador.html" with de="partes" que="Partes del día" anterior="Tareas" siguiente="Comedor y menú" sin_estado=True only %}
+{% endblock %}

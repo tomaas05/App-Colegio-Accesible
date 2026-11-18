@@ -1,0 +1,9 @@
+{# Cambiar de día en una agenda en modo consulta (B27). La usan la agenda del profesional #}
+{# y del tutor (HU-01-09) y el día del estudiante del familiar (HU-06-03).               #}
+{# Recibe: fecha, fecha_texto, es_hoy, anterior y siguiente.                             #}
+<nav class="consulta__dias" aria-label="Cambiar de día">
+  <a class="boton boton--aux" href="?dia={{ anterior|date:'Y-m-d' }}"><span aria-hidden="true">‹</span> <span class="consulta__dia-texto">Día anterior</span></a>
+  <h2 class="consulta__fecha" aria-live="polite">{% include "_dia_forma.html" with numero=fecha.isoweekday only %} <span>{{ fecha_texto }}{% if es_hoy %} (hoy){% endif %}</span></h2>
+  {% if not es_hoy %}<a class="boton boton--aux" href="?">Hoy</a>{% endif %}
+  <a class="boton boton--aux" href="?dia={{ siguiente|date:'Y-m-d' }}"><span class="consulta__dia-texto">Día siguiente</span> <span aria-hidden="true">›</span></a>
+</nav>
