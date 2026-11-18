@@ -49,6 +49,8 @@ class TareaConsultada:
         if pendiente and self.vencida:
             return EstadoEjecucion.VENCIDA.label
         if self.ejecucion:
+            if self.ejecucion.estado == EstadoEjecucion.EN_CURSO and self.vencida:
+                return EstadoEjecucion.TIEMPO_AGOTADO.label
             return self.ejecucion.get_estado_display()
         return EstadoEjecucion.PENDIENTE.label
 

@@ -250,10 +250,13 @@
     var nodoAviso = cajaTiempo.querySelector("[data-temporizador-aviso]");
     var nodoAvisoTexto = cajaTiempo.querySelector("[data-temporizador-aviso-texto]");
     var nodoAudio = cajaTiempo.querySelector("[data-temporizador-audio]");
+    var nodoAgotado = cajaTiempo.querySelector("[data-temporizador-agotado]");
+    var botonSeguir = cajaTiempo.querySelector("[data-seguir-tarea]");
     var aviso5 = cajaTiempo.dataset.aviso5 !== "false";
     var aviso1 = cajaTiempo.dataset.aviso1 !== "false";
     var sonidoActivo = cajaTiempo.dataset.sonidoActivo === "true";
     var ultimoUmbralSonado = 0;
+    var enTiempoExtra = false;
     var circunferencia = 226.19;
 
     var reproducirSonidoAviso = function () {
@@ -285,8 +288,13 @@
       cajaTiempo.dataset.restanteActual = String(quedan);
 
       if (nodoTexto) {
-        nodoTexto.textContent =
-          quedan > 0 ? "Quedan " + minRestantes + " min" : "Se acabó el tiempo";
+        if (enTiempoExtra) {
+          var minExtra = Math.floor(Math.max(0, transcurridos - restanteInicial) / 60);
+          nodoTexto.textContent = "Tiempo extra: " + minExtra + " min";
+        } else {
+          nodoTexto.textContent =
+            quedan > 0 ? "Quedan " + minRestantes + " min" : "Se acabó el tiempo";
+        }
       }
       if (nodoCorto) {
         nodoCorto.textContent = minRestantes + " min";
@@ -333,7 +341,25 @@
           window.Despega.paginar.reajustar();
         }
       }
+
+      if (nodoAgotado) {
+        var mostrarAgotado = quedan === 0 && !enTiempoExtra;
+        var cambioAgotado = nodoAgotado.hidden === mostrarAgotado;
+        nodoAgotado.hidden = !mostrarAgotado;
+        cajaTiempo.dataset.tiempoAgotado = mostrarAgotado ? "true" : "false";
+        if (cambioAgotado && window.Despega && window.Despega.paginar) {
+          window.Despega.paginar.reajustar();
+        }
+      }
     };
+
+    if (botonSeguir) {
+      botonSeguir.addEventListener("click", function () {
+        enTiempoExtra = true;
+        cajaTiempo.dataset.tiempoExtra = "true";
+        actualizarTemporizador();
+      });
+    }
 
     actualizarTemporizador();
     window.setInterval(actualizarTemporizador, 1000);

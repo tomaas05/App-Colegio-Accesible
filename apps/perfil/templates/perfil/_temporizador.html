@@ -12,6 +12,7 @@
   data-sonido-activo="{% if temp.sonido_activo %}true{% else %}false{% endif %}"
   data-baja-sobrecarga="{% if temp.baja_sobrecarga %}true{% else %}false{% endif %}"
   data-aviso-activo="{% if temp.mostrar_aviso %}true{% else %}false{% endif %}"
+  data-tiempo-agotado="{% if temp.tiempo_agotado %}true{% else %}false{% endif %}"
 >
   <div
     class="tiempo__aviso"
@@ -43,6 +44,39 @@
     {% if temp.sonido_activo %}
     <audio data-temporizador-audio preload="auto" src="{{ temp.sonido_data_uri }}"></audio>
     {% endif %}
+  </div>
+
+  <div
+    class="tiempo__agotado"
+    data-temporizador-agotado
+    role="status"
+    {% if not temp.tiempo_agotado %}hidden{% endif %}
+  >
+    <div class="tiempo__agotado-cabecera">
+      {% if temp.tarea_actual %}
+      <img
+        class="tiempo__agotado-img"
+        src="{{ temp.tarea_actual.imagen.url }}"
+        alt="{{ temp.tarea_actual.descripcion_imagen }}"
+        width="48"
+        height="48"
+      >
+      {% endif %}
+      <p class="tiempo__agotado-texto">
+        <span aria-hidden="true">⏰</span>
+        <b>Se acabó el tiempo.</b> ¿Qué quieres hacer?
+      </p>
+    </div>
+    <div class="tiempo__agotado-opciones" data-temporizador-opciones>
+      <button type="button" class="boton boton--aux" data-seguir-tarea>Seguir con la tarea</button>
+      {% if temp.puede_no_puedo and temp.asignacion_pk and temp.tiene_plan_b %}
+      <a class="boton boton--aux" href="{% url 'agenda:no_puedo' temp.asignacion_pk %}" data-confirmar="confirmar-no-puedo">Elegir plan B</a>
+      {% endif %}
+      {% if temp.siguiente_tarea %}
+      <a class="boton boton--aux" href="{% url 'agenda:detalle' temp.siguiente_tarea.asignacion.pk %}">Ir a «{{ temp.siguiente_tarea.tarea.nombre }}»</a>
+      {% endif %}
+      <a class="boton boton--aux" href="{% url 'agenda:dia' %}">Volver a las tareas</a>
+    </div>
   </div>
 
   <div id="temporizador-cuerpo" class="tiempo__cuerpo" data-temporizador-cuerpo{% if not temp.visible %} hidden{% endif %}>

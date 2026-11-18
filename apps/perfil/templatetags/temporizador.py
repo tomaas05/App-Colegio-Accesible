@@ -115,6 +115,13 @@ def datos_temporizador(context, fin=None, perfil=None, inicio=None, ahora=None):
     siguiente_tarea = _resolver_siguiente_tarea(context, t)
     offset_radial = round(CIRCUNFERENCIA_RADIAL * (100 - porcentaje) / 100, 2)
 
+    tiempo_agotado = segundos_restantes == 0
+    tarea_actual = getattr(t, "tarea", None) if t is not None else None
+    asignacion_obj = getattr(t, "asignacion", None) if t is not None else None
+    asignacion_pk = getattr(asignacion_obj, "pk", None) if asignacion_obj is not None else None
+    puede_no_puedo = bool(getattr(t, "puede_decir_no_puedo", False)) if t is not None else False
+    tiene_plan_b = bool(getattr(t, "alternativas", None)) if t is not None else False
+
     return {
         "segundos_restantes": segundos_restantes,
         "duracion_total": duracion_total,
@@ -136,4 +143,9 @@ def datos_temporizador(context, fin=None, perfil=None, inicio=None, ahora=None):
         "mostrar_aviso": mostrar_aviso,
         "texto_aviso": texto_aviso,
         "siguiente_tarea": siguiente_tarea,
+        "tiempo_agotado": tiempo_agotado,
+        "tarea_actual": tarea_actual,
+        "asignacion_pk": asignacion_pk,
+        "puede_no_puedo": puede_no_puedo,
+        "tiene_plan_b": tiene_plan_b,
     }
