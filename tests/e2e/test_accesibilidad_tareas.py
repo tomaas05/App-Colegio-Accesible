@@ -265,3 +265,31 @@ def test_buscador_de_pictogramas_con_resultados_y_un_paso(
     assert resultado.violations_count == 0, resultado.generate_report()
     assert page.evaluate("document.documentElement.scrollWidth") <= ancho
     assert [u for u in pedidas if not u.startswith((live_server.url, "data:", "blob:"))] == []
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_catalogo_el_nombre_no_sale_letra_a_letra(live_server, page, tutor_logueado, nombre):
+    """Con tres botones al lado del texto, la columna del nombre se quedaba sin ancho y
+    salía una letra por línea. Ahora los botones van debajo y todo cabe en la tarjeta."""
+    ancho, alto = RESOLUCIONES[nombre]
+    page.set_viewport_size({"width": ancho, "height": alto})
+    page.goto(live_server.url + PANTALLAS["catalogo"]())
+    page.wait_for_timeout(200)
+    medidas = page.evaluate(
+        """[...document.querySelectorAll('.catalogo__tarea')]
+             .filter((t) => t.offsetParent)
+             .map((t) => {
+               const caja = t.getBoundingClientRect();
+               const nombre = t.querySelector('h2').getBoundingClientRect();
+               const botones = [...t.querySelectorAll('.catalogo__botones .boton')]
+                 .map((b) => b.getBoundingClientRect());
+               return {
+                 nombre: nombre.width,
+                 dentro: botones.every((b) => b.left >= caja.left && b.right <= caja.right),
+               };
+             })"""
+    )
+    assert medidas, "No se ve ninguna tarea"
+    for m in medidas:
+        assert m["nombre"] >= 120, f"Nombre de {m['nombre']}px de ancho a {nombre}"
+        assert m["dentro"], f"Un botón se sale de la tarjeta a {nombre}"

@@ -666,17 +666,19 @@ def _fecha_pedida(request):
 def agenda_estudiante(request, codigo):
     """B27 · Agenda de un estudiante, solo consulta (PA1, PA2 y PA3).
 
-    Solo para el profesional que lo atiende: si no lo atiende, 404 (no se dice si el
-    estudiante existe). Se pasa de un día a otro con ?dia=AAAA-MM-DD.
+    Para el profesional que lo atiende y, desde HU-06-02 («Ver su día» en el seguimiento),
+    para su tutor. Si no es suyo, 404 (no se dice si el estudiante existe). Se pasa de un
+    día a otro con ?dia=AAAA-MM-DD.
     """
-    _solo_profesional(request)
+    if request.user.rol not in (Rol.PROFESIONAL, Rol.TUTOR):
+        raise PermissionDenied("Solo el profesional y el tutor consultan la agenda.")
     estudiante = get_object_or_404(
         Estudiante.objects.select_related("usuario", "clase"),
         codigo_estudiante=codigo.upper(),
         usuario__is_active=True,
     )
-    if not atencion.atiende(request.user, estudiante):
-        raise Http404("No atiendes a este estudiante.")
+    if not estudiantes_de(request.user).filter(pk=estudiante.pk).exists():
+        raise Http404("No es uno de tus estudiantes.")
     fecha, hoy = _fecha_pedida(request)
     return render(
         request,
@@ -690,5 +692,7 @@ def agenda_estudiante(request, codigo):
             "siguiente": fecha + timedelta(days=1),
             "tareas": consulta.tareas_del_dia(estudiante, fecha, request.user),
             "horario": consulta.horario_del_dia(estudiante, fecha),
+            # «Volver»: el profesional, a Mis estudiantes; el tutor, al seguimiento.
+            "es_tutor": request.user.rol == Rol.TUTOR,
         },
     )

@@ -5,9 +5,10 @@
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
 
 {# Boceto B27 · Agenda de un estudiante (profesional). HU-01-09 (AGENDA-159), PA1 y PA2.   #}
+{# HU-06-02: también la abre el tutor de este estudiante, desde «Seguimiento de hoy».       #}
 {# Sin desplazamiento (decisión 0005): dos partes, «Tareas» y «Horario de clase»; si caben, #}
 {# una al lado de la otra y, si no, una cada vez. Cada lista pasa de página por su cuenta.  #}
-{% block volver %}{% url 'usuarios:mis_estudiantes' as atras %}{% include "_volver.html" with url=atras texto="Mis estudiantes" etiqueta="Volver a Mis estudiantes" only %}{% endblock %}
+{% block volver %}{% if es_tutor %}{% url 'seguimiento:hoy' as atras %}{% include "_volver.html" with url=atras texto="Seguimiento" etiqueta="Volver a Seguimiento de hoy" only %}{% else %}{% url 'usuarios:mis_estudiantes' as atras %}{% include "_volver.html" with url=atras texto="Mis estudiantes" etiqueta="Volver a Mis estudiantes" only %}{% endif %}{% endblock %}
 {% block h1 %}Agenda de {{ estudiante.usuario.get_full_name }}{% endblock %}
 {% block sub %}<span class="barra__sub barra__persona"><img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40"> {{ estudiante.clase.nombre }} · Solo consulta</span>{% endblock %}
 
