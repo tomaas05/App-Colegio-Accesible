@@ -305,9 +305,14 @@
   list-style: none;
   align-content: start;
 }
+/* Cada tarea: el pictograma y el texto arriba; debajo, a todo el ancho, sus tres botones
+   (Pasos, Plan B y Asignar). Si los botones fueran al lado del texto, en la columna no
+   quedaría sitio para él y el nombre saldría letra a letra. */
 .catalogo__tarea {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
+  align-content: start;
   gap: 0.5rem 0.75rem;
   padding: 0.6rem 0.75rem;
   background: var(--blanco);
@@ -322,8 +327,18 @@
   border-radius: 0.75rem;
 }
 .catalogo__texto {
-  flex: 1 1 10rem;
+  grid-column: 2; /* también si la tarea no tiene imagen */
   min-width: 0;
+  overflow-wrap: anywhere;
+}
+.catalogo__botones {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.catalogo__botones .boton {
+  flex: 1 1 auto;
 }
 .catalogo__texto h2,
 .catalogo__texto p {
@@ -340,9 +355,6 @@
 .catalogo__desc {
   font-size: 1rem;
   line-height: 1.35;
-}
-.catalogo__tarea > .boton {
-  flex: none;
 }
 
 /* --- Vista previa antes de guardar (B40, paso 5) --- */
@@ -378,23 +390,6 @@
   object-fit: contain;
   background: #ffffff;
   border-radius: 0.75rem;
-}
-
-/* --- Catálogo: dos botones por tarea (Plan B y Asignar) --- */
-.catalogo__botones {
-  display: flex;
-  flex: none;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-@media (max-width: 30rem) {
-  .catalogo__tarea {
-    flex-wrap: wrap;
-  }
-  .catalogo__botones {
-    flex: 1 1 100%;
-  }
 }
 
 /* Cancelar y quitar: rojo en el borde y el texto, no en el fondo (no es la acción principal). */
@@ -624,26 +619,4 @@
     width: 100% !important;
     text-align: center !important;
   }
-}
-
-/* --- Estilos para las acciones del catálogo de tareas --- */
-.catalogo__acciones-pasos {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-items: flex-end;
-  min-width: 110px;
-}
-
-.catalogo__boton-pasos {
-  text-decoration: none;
-  width: 100%;
-  text-align: center;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.9rem;
-}
-.catalogo__botones {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
 }

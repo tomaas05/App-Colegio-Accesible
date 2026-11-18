@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Seguimiento de hoy · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/seguimiento.css' %}">{% endblock %}
+
+{# Boceto B50 · Seguimiento de hoy (tutor y profesional). HU-06-02 (AGENDA-64).           #}
+{# Del boceto: los avisos arriba y la lista de estudiantes. Para no desplazarse (0005) es  #}
+{# una sola lista que pasa de página: primero quien tiene avisos, con el aviso en su       #}
+{# tarjeta (qué tarea y qué plan B), y luego los demás. Solo consulta (PA4): sin botones   #}
+{# de cambiar nada; «Ver su día» abre su agenda en modo consulta (B27, HU-01-09).         #}
+{# data-pag-variable: las tarjetas con avisos son más altas; cada pantalla lleva las que  #}
+{# caben, en vez de repetir en todas las que cabían en la primera.                        #}
+{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
+{% block h1 %}Seguimiento de hoy{% endblock %}
+{% block sub %}<span class="barra__sub">{{ fecha_texto }} · Solo consulta</span>{% endblock %}
+
+{% block contenido %}
+<div class="seg__cab">
+  {% if con_avisos %}
+  <p class="seg__resumen seg__resumen--aviso"><span aria-hidden="true">⚠</span> <strong>{% if con_avisos == 1 %}1 estudiante no ha podido hacer una tarea{% else %}{{ con_avisos }} estudiantes no han podido hacer alguna tarea{% endif %}</strong></p>
+  {% elif estados %}
+  <p class="seg__resumen"><span aria-hidden="true">✓</span> Hoy nadie ha tenido que dejar una tarea.</p>
+  {% endif %}
+  <p class="seg__hora"><span>A las {{ ahora|time:"H:i" }}</span> <a class="boton boton--aux" href="{% url 'seguimiento:hoy' %}">Actualizar<span class="visualmente-oculto"> el seguimiento</span></a></p>
+</div>
+
+<div class="encaja">
+  {% if estados %}
+  <ul class="seg__lista" id="estudiantes" aria-label="{% if es_tutor %}Tus estudiantes{% else %}Los estudiantes que atiendes{% endif %}" data-paginar data-pag-variable>
+    {% for e in estados %}
+    {% with est=e.estudiante %}
+    <li class="seg-est{% if e.avisos %} seg-est--aviso{% endif %}">
+      <img class="seg-est__avatar" src="{{ est.avatar.url }}" alt="" width="56" height="56">
+      <div class="seg-est__cuerpo">
+        <h2 class="seg-est__nombre">{{ est.usuario.get_full_name }} <span class="seg-est__clase">{{ est.clase.nombre }}</span></h2>
+        {% if e.total %}
+        <p class="seg-est__cuentas">
+          <span class="seg-cuenta seg-cuenta--hechas"><span aria-hidden="true">✓</span> {{ e.hechas }} hecha{{ e.hechas|pluralize }}</span>
+          <span class="seg-cuenta"><span aria-hidden="true">○</span> {{ e.por_hacer }} por hacer</span>
+          {% if e.sin_hacer %}<span class="seg-cuenta seg-cuenta--sin"><span aria-hidden="true">–</span> {{ e.sin_hacer }} sin hacer</span>{% endif %}
+          {% if e.con_plan_b %}<span class="seg-cuenta seg-cuenta--plan-b"><span aria-hidden="true">↺</span> {{ e.con_plan_b }} con plan B</span>{% endif %}
+          <span class="visualmente-oculto">, de {{ e.total }} tarea{{ e.total|pluralize }} hoy.</span>
+        </p>
+        {% else %}
+        <p class="seg-est__cuentas">Hoy no tiene tareas.</p>
+        {% endif %}
+        {# PA2: aviso visual con texto (no solo color): la tarea y el plan B. Solo el más   #}
+        {# reciente, para que la tarjeta quepa en un móvil; los demás, en «Ver su día».      #}
+        {% with a=e.avisos.0 %}{% if a %}
+        <p class="seg-aviso">
+          <span class="seg-aviso__icono" aria-hidden="true">⚠</span>
+          <span>
+            <strong>No ha podido hacer «{{ a.tarea.nombre }}»</strong>{% if a.cuando %} ({{ a.cuando|time:"H:i" }}){% endif %}.
+            {% if a.plan_b_tampoco %}Tampoco ha podido hacer la del plan B, «{{ a.plan_b_elegido.nombre }}».
+            {% elif a.plan_b_elegido %}Plan B elegido: «{{ a.plan_b_elegido.nombre }}».
+            {% elif a.plan_b_sugerido %}Plan B sugerido: «{{ a.plan_b_sugerido.nombre }}» (aún no ha elegido).
+            {% else %}No tiene plan B.{% endif %}
+            {% if a.motivo %}Motivo: {{ a.motivo }}.{% endif %}
+          </span>
+        </p>
+        {% endif %}{% endwith %}
+        {% if e.avisos|length > 1 %}{% with mas=e.avisos|length|add:"-1" %}<p class="seg-est__mas">Y {{ mas }} aviso{{ mas|pluralize }} más de hoy: en «Ver su día».</p>{% endwith %}{% endif %}
+        <a class="boton boton--aux boton--mediano seg-est__ver" href="{% url 'usuarios:agenda_estudiante' est.codigo_estudiante %}">Ver su día<span class="visualmente-oculto"> de {{ est.usuario.first_name }}</span></a>
+      </div>
+    </li>
+    {% endwith %}
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="seg__vacio">{% if es_tutor %}Todavía no tienes estudiantes. El administrador los vincula contigo en «Vínculos».{% else %}Todavía no atiendes a ningún estudiante. Elígelos en <a href="{% url 'usuarios:mis_estudiantes' %}">Mis estudiantes</a>.{% endif %}</p>
+  {% endif %}
+</div>
+{% include "_paginador.html" with de="estudiantes" que="Más estudiantes" only %}
+{% endblock %}

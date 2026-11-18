@@ -37,6 +37,11 @@ OPCIONES_POR_ROL = {
         ),
     ],
     Rol.TUTOR: [
+        (
+            "Seguimiento de hoy",
+            "Cómo van hoy tus estudiantes y quién no ha podido hacer una tarea.",
+            "seguimiento:hoy",
+        ),
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
         ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
         (
@@ -55,6 +60,11 @@ OPCIONES_POR_ROL = {
             "Mis estudiantes",
             "Elige a qué estudiantes atiendes y consulta su agenda.",
             "usuarios:mis_estudiantes",
+        ),
+        (
+            "Seguimiento de hoy",
+            "Cómo van hoy los estudiantes que atiendes.",
+            "seguimiento:hoy",
         ),
         (
             "Tareas planificadas",
