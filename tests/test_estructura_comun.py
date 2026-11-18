@@ -179,4 +179,4 @@ def test_la_navegacion_no_consulta_la_base_de_datos(datos, rf, django_assert_num
     with django_assert_num_queries(0):
         contexto = navegacion(peticion)
     assert contexto["inicio_url"] == reverse("usuarios:panel")
-    assert len(contexto["nav_principal"]) == 6  # Inicio y las 5 opciones del administrador
+    assert len(contexto["nav_principal"]) == 7  # Inicio y las 6 opciones del administrador

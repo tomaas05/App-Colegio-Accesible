@@ -30,7 +30,7 @@ from PIL import Image, ImageDraw
 
 from apps.comun import pictos_interfaz
 from apps.comun.fuentes import fuente_titulos
-from apps.tareas.models import Ambito, Asignacion, Tarea
+from apps.tareas.models import Ambito, Asignacion, Paso, Tarea
 from apps.usuarios.models import Estudiante
 
 from .models import ComedorDelDia, RepartoMenu, TareaDelCentro, TipoTareaCentro
@@ -58,6 +58,23 @@ DATOS_TAREA = {
         "menú",
         "Me",
     ),
+    TipoTareaCentro.REPROGRAFIA: (
+        "Reprografía",
+        "Recoge el material en el aula, haz el trabajo en el taller y llévalo al aula.",
+        "fotocopiadora",
+        "Re",
+    ),
+}
+
+# Los pasos con los que se crea cada tarea del catálogo: (texto, palabra del pictograma,
+# letras). Después el tutor los puede cambiar como los de cualquier tarea (RF3.1.4).
+PASOS_TAREA = {
+    # RF5.1.6 (HU-05-01, PA3): las tres fases de la reprografía.
+    TipoTareaCentro.REPROGRAFIA: [
+        ("Recoger el material en el aula", "recoger", "1"),
+        ("Imprimir, fotocopiar o plastificar en el taller", "fotocopiadora", "2"),
+        ("Repartir el original y las copias en el aula", "repartir", "3"),
+    ],
 }
 
 
@@ -123,11 +140,15 @@ def texto_dias(dias):
 
 
 def _imagen_de(tipo):
-    """El pictograma de la interfaz si ya está descargado; si no, un dibujo con dos letras."""
     _, _, palabra, letras = DATOS_TAREA[tipo]
+    return _imagen(palabra, letras, f"centro-{tipo}.png")
+
+
+def _imagen(palabra, letras, nombre):
+    """El pictograma de la interfaz si ya está descargado; si no, un dibujo con letras."""
     descargado = pictos_interfaz.archivo(palabra)
     if descargado:
-        return ContentFile(descargado.read_bytes(), name=f"centro-{tipo}.png")
+        return ContentFile(descargado.read_bytes(), name=nombre)
     lado = 256
     lienzo = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
     dibujo = ImageDraw.Draw(lienzo)
@@ -139,11 +160,12 @@ def _imagen_de(tipo):
     dibujo.text((x, y), letras, font=fuente, fill="white")
     salida = io.BytesIO()
     lienzo.save(salida, format="PNG")
-    return ContentFile(salida.getvalue(), name=f"centro-{tipo}.png")
+    return ContentFile(salida.getvalue(), name=nombre)
 
 
 def tarea_de(tipo, creador):
-    """La tarea «Comedor» o «Reparto del menú» del catálogo. La crea la primera vez."""
+    """La tarea «Comedor», «Reparto del menú» o «Reprografía» del catálogo. La crea (con sus
+    pasos, si los tiene) la primera vez."""
     existente = TareaDelCentro.objects.select_related("tarea").filter(tipo=tipo).first()
     if existente:
         return existente.tarea
@@ -159,6 +181,19 @@ def tarea_de(tipo, creador):
             )
             tarea.imagen.save(f"centro-{tipo}.png", _imagen_de(tipo), save=False)
             tarea.save()
+            for orden, (texto, palabra, letras) in enumerate(PASOS_TAREA.get(tipo, []), 1):
+                paso = Paso(
+                    tarea=tarea,
+                    orden=orden,
+                    descripcion=texto,
+                    descripcion_imagen=palabra.capitalize(),
+                )
+                paso.imagen.save(
+                    f"centro-{tipo}-{orden}.png",
+                    _imagen(palabra, letras, f"centro-{tipo}-{orden}.png"),
+                    save=False,
+                )
+                paso.save()
             TareaDelCentro.objects.create(tipo=tipo, tarea=tarea)
             return tarea
     except IntegrityError:
