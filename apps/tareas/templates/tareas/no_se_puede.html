@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Hoy no se puede «{{ tarea.nombre }}» · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
+
+{# HU-07-04 (RF2.15.1) · Un adulto marca que hoy no se puede hacer una tarea del horario   #}
+{# escolar y dice por qué. Como «Cancelar tarea»: «No» a la izquierda y la acción a la     #}
+{# derecha. El estudiante recibe un aviso con el motivo y, si hay plan B, elige otra cosa. #}
+{% block pantalla %}pantalla--estrecha{% endblock %}
+{% block volver %}{% include "_volver.html" with url=volver texto="Planificadas" etiqueta="Volver a Tareas planificadas sin cambiar nada" only %}{% endblock %}
+{% block h1 %}Hoy no se puede{% endblock %}
+
+{% block contenido %}
+<form class="baja cancelar formulario" method="post" aria-labelledby="no-se-puede-titulo" novalidate>
+  {% csrf_token %}
+  {% for clave, valor in filtros.items %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
+  <div class="cancelar__cab">
+    <img src="{{ tarea.imagen.url }}" alt="" width="80" height="80">
+    <h2 id="no-se-puede-titulo">¿{{ estudiante.usuario.first_name }} no puede hacer hoy «{{ tarea.nombre }}»?</h2>
+  </div>
+  {% if hoy.es_plan_b %}<p>Ya la había cambiado por «{{ hoy.tarea.nombre }}», de su plan B.</p>{% endif %}
+  <p>{% if tiene_plan_b %}Le saldrá un aviso con el motivo y elegirá otra cosa de su plan B.{% elif hoy.es_plan_b %}Le saldrá un aviso con el motivo. No se le ofrecerá otra cosa.{% else %}Le saldrá un aviso con el motivo. Esta tarea no tiene plan B.{% endif %}</p>
+  {% include "usuarios/_errores.html" %}
+  {% include "tareas/_campo.html" with campo=form.motivo %}
+  <div class="baja__botones">
+    <a class="boton boton--aux" href="{{ volver }}">No</a>
+    <button class="boton boton--principal" type="submit">Sí, hoy no se puede</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

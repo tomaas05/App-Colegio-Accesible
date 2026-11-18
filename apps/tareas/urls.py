@@ -10,4 +10,22 @@ urlpatterns = [
     path("catalogo/", views.catalogo_tareas, name="catalogo"),
     path("asignar/", views.asignar_tarea, name="asignar_tarea"),
     path("asignar/<int:tarea_id>/", views.asignar_tarea, name="asignar_tarea_con_id"),
+    path("<int:tarea_id>/plan-b/", views.plan_b, name="plan_b"),
+    path("planificadas/", views.tareas_planificadas, name="tareas_planificadas"),
+    path(
+        "asignaciones/<int:asignacion_id>/editar/",
+        views.editar_asignacion,
+        name="editar_asignacion",
+    ),
+    path(
+        "asignaciones/<int:asignacion_id>/no-se-puede/",
+        views.no_se_puede,
+        name="no_se_puede",
+    ),
+    path(
+        "asignaciones/<int:asignacion_id>/cancelar/",
+        views.cancelar_asignacion,
+        name="confirmar_cancelacion",
+    ),
+    path("<int:tarea_id>/pasos/", views.editar_pasos_tarea, name="editar_pasos_tarea"),
 ]

@@ -1,6 +1,9 @@
+from datetime import date, timedelta
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory
+from django.utils import timezone
 
 from apps.comun import pictogramas
 from apps.usuarios.vinculos import estudiantes_de
@@ -40,13 +43,13 @@ class TareaForm(ConPictograma, forms.ModelForm):
 
     class Meta:
         model = Tarea
-        fields = ["nombre", "descripcion", "imagen", "descripcion_imagen", "ambito", "planes_b"]
+        # El plan B se define en su propia pantalla, con su orden (HU-03-06, boceto B42).
+        fields = ["nombre", "descripcion", "imagen", "descripcion_imagen", "ambito"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control"}),
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "descripcion_imagen": forms.TextInput(attrs={"class": "form-control"}),
             "ambito": forms.Select(attrs={"class": "form-select"}),
-            "planes_b": forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -54,9 +57,6 @@ class TareaForm(ConPictograma, forms.ModelForm):
         self.fields["descripcion_imagen"].required = True
         # La imagen puede ser un archivo o un pictograma de ARASAAC: lo comprueba clean().
         self.fields["imagen"].required = False
-        # Excluir la propia tarea del queryset para evitar auto-referencias circulares
-        if self.instance and self.instance.pk:
-            self.fields["planes_b"].queryset = Tarea.objects.exclude(pk=self.instance.pk)
 
     def clean_arasaac_id_tarea(self):
         return _id_de_pictograma(self.cleaned_data.get("arasaac_id_tarea"))
@@ -107,7 +107,7 @@ PasoFormSet = inlineformset_factory(
     Tarea,
     Paso,
     form=PasoForm,
-    extra=0,
+    extra=1,
     can_delete=True,
 )
 
@@ -183,7 +183,10 @@ class AsignacionForm(forms.ModelForm):
 
             for estudiante in estudiantes:
                 solapes = Asignacion.objects.filter(
-                    estudiante=estudiante, hora_inicio__lt=hora_fin, hora_fin__gt=hora_inicio
+                    estudiante=estudiante,
+                    cancelada=False,
+                    hora_inicio__lt=hora_fin,
+                    hora_fin__gt=hora_inicio,
                 )
 
                 if self.instance.pk:
@@ -210,3 +213,164 @@ class AsignacionForm(forms.ModelForm):
                     )
 
         return cleaned_data
+
+
+# --- Tareas planificadas: filtrar, modificar y cancelar (HU-03-04 y HU-03-05) ---
+
+DIAS_A_LA_VISTA = 14  # «Día»: hoy y los 13 siguientes (boceto B44)
+FIN_ANTES_QUE_INICIO = "La hora de fin tiene que ser después de la hora de inicio."
+
+
+class FiltroPlanificadasForm(forms.Form):
+    """Filtros de «Tareas planificadas»: qué estudiante y qué día (B44).
+
+    El día es una fecha, no un día de la semana: «Solo este día» cambia esa fecha y nada
+    más (RF3.5.2). Sin día se ven las series y solo se puede cambiar la serie entera.
+    """
+
+    estudiante = forms.ModelChoiceField(
+        queryset=Estudiante.objects.none(), required=False, empty_label="Todos los estudiantes"
+    )
+    fecha = forms.TypedChoiceField(
+        label="Día", required=False, coerce=date.fromisoformat, empty_value=None
+    )
+
+    def __init__(self, *args, usuario=None, hoy=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .planificacion import fecha_en_texto
+
+        self.fields["estudiante"].queryset = estudiantes_de(usuario).order_by(
+            "usuario__first_name", "usuario__last_name"
+        )
+        self.fields["estudiante"].label_from_instance = lambda e: e.usuario.get_full_name()
+        hoy = hoy or timezone.localdate()
+        opciones = [("", "Todos los días")]
+        for n in range(DIAS_A_LA_VISTA):
+            dia = hoy + timedelta(days=n)
+            texto = fecha_en_texto(dia)
+            opciones.append(
+                (dia.isoformat(), ("Hoy, " if n == 0 else "Mañana, " if n == 1 else "") + texto)
+            )
+        self.fields["fecha"].choices = opciones
+
+
+class HorasForm(forms.Form):
+    """«Solo este día»: las horas de ese día (HU-03-04)."""
+
+    hora_inicio = forms.TimeField(
+        label="Hora de inicio", widget=forms.TimeInput(format="%H:%M", attrs={"type": "time"})
+    )
+    hora_fin = forms.TimeField(
+        label="Hora de fin", widget=forms.TimeInput(format="%H:%M", attrs={"type": "time"})
+    )
+
+    def clean(self):
+        datos = super().clean()
+        inicio, fin = datos.get("hora_inicio"), datos.get("hora_fin")
+        if inicio and fin and fin <= inicio:
+            self.add_error("hora_fin", FIN_ANTES_QUE_INICIO)
+        return datos
+
+
+class EditarAsignacionForm(forms.ModelForm):
+    """«Toda la serie»: horas, días de la semana y fechas de la asignación (HU-03-04).
+
+    El aula no se cambia aquí: va con la clase del estudiante, no con la tarea (Úrsula,
+    17/11; se quita de la HU).
+    """
+
+    dias_semana = forms.MultipleChoiceField(
+        choices=DiaSemana.choices,
+        widget=forms.CheckboxSelectMultiple,
+        label="Días de la semana",
+        error_messages={"required": "Elige al menos un día."},
+    )
+
+    class Meta:
+        model = Asignacion
+        fields = ["hora_inicio", "hora_fin", "dias_semana", "vigencia_desde", "vigencia_hasta"]
+        labels = {
+            "hora_inicio": "Hora de inicio",
+            "hora_fin": "Hora de fin",
+            "vigencia_desde": "Primer día",
+            "vigencia_hasta": "Último día",
+        }
+        widgets = {
+            "hora_inicio": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
+            "hora_fin": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
+            "vigencia_desde": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+            "vigencia_hasta": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        }
+
+    def clean_dias_semana(self):
+        return sorted({int(dia) for dia in self.cleaned_data.get("dias_semana", [])})
+
+    def clean(self):
+        datos = super().clean()
+        inicio, fin = datos.get("hora_inicio"), datos.get("hora_fin")
+        if inicio and fin and fin <= inicio:
+            self.add_error("hora_fin", FIN_ANTES_QUE_INICIO)
+        desde, hasta = datos.get("vigencia_desde"), datos.get("vigencia_hasta")
+        if desde and hasta and hasta < desde:
+            self.add_error("vigencia_hasta", "El último día no puede ser antes del primero.")
+        return datos
+
+    def validate_constraints(self, exclude=None):
+        # Las reglas de horas y fechas ya dan su propio mensaje en clean().
+        if self.errors:
+            return
+        super().validate_constraints(exclude)
+
+
+# --- Plan B de una tarea (HU-03-06, boceto B42) ---
+
+
+class AnadirPlanBForm(forms.Form):
+    """Añadir al plan B una tarea del catálogo."""
+
+    alternativa = forms.ModelChoiceField(
+        queryset=Tarea.objects.none(),
+        label="Tarea del catálogo",
+        empty_label="Elige una",
+        error_messages={"required": "Elige una tarea del catálogo."},
+    )
+
+    def __init__(self, *args, tarea=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        ya = tarea.planes_b.values_list("alternativa_id", flat=True)
+        self.fields["alternativa"].queryset = (
+            Tarea.objects.exclude(pk=tarea.pk).exclude(pk__in=ya).order_by("nombre")
+        )
+
+
+class CrearAlternativaForm(ConPictograma, forms.Form):
+    """Crear una actividad nueva, solo con nombre y pictograma, y añadirla al plan B."""
+
+    campo_pictograma = "arasaac_id_alternativa"
+    nombre = forms.CharField(
+        label="Nombre de la actividad",
+        max_length=80,
+        error_messages={"required": "Escribe el nombre de la actividad."},
+    )
+    arasaac_id_alternativa = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    def clean_arasaac_id_alternativa(self):
+        valor = _id_de_pictograma(self.cleaned_data.get("arasaac_id_alternativa"))
+        if not valor:
+            raise ValidationError("Busca y elige un pictograma para la actividad.")
+        return valor
+
+
+# --- HU-07-04 · Un adulto marca que hoy no se puede hacer (RF2.15.1) ---
+
+
+class NoSePuedeForm(forms.Form):
+    """El adulto dice por qué (RF2.15.1: «si lo marca un adulto, indica el motivo»).
+    El estudiante lo lee en su aviso: una frase corta."""
+
+    motivo = forms.CharField(
+        label="Por qué no se puede",
+        max_length=120,
+        help_text="Una frase corta. Por ejemplo: llueve y el huerto está cerrado.",
+        error_messages={"required": "Escribe por qué no se puede."},
+    )

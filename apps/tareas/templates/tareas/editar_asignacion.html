@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Modificar «{{ tarea.nombre }}» · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
+
+{# Boceto B44 · Modificar la tarea. HU-03-04. Solo este día: sus horas. Toda la serie:   #}
+{# horas, días y fechas. Sin desplazamiento: los bloques que no caben pasan de pantalla. #}
+{% block volver %}{% include "_volver.html" with url=volver texto="Planificadas" etiqueta="Volver a Tareas planificadas sin cambiar nada" only %}{% endblock %}
+{% block h1 %}Modificar<span class="visualmente-oculto"> «{{ tarea.nombre }}»</span>{% endblock %}
+{% block sub %}<span class="barra__sub barra__persona"><img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40"> {{ estudiante.usuario.get_full_name }}</span>{% endblock %}
+
+{% block contenido %}
+<form class="formulario encaja" method="post" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="alcance" value="{{ alcance }}">
+  {% if fecha %}<input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">{% endif %}
+  {% for clave, valor in filtros.items %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
+  <div class="encaja">
+    <div class="partes" id="bloques" data-paginar data-pag-variable data-foco="titulo" data-estado="Parte {n} de {total}">
+      {% if form.errors %}<div class="parte" data-pag-inicio>{% include "usuarios/_errores.html" %}</div>{% endif %}
+
+      <section class="parte parte--caja parte--titulo-borde" aria-labelledby="que-t">
+        <h2 id="que-t">Qué cambia</h2>
+        <div class="planificada__cab">
+          <img src="{{ tarea.imagen.url }}" alt="" width="64" height="64">
+          <div>
+            <p class="planificada__nombre">{{ tarea.nombre }}</p>
+            <p class="planificada__datos">{% if alcance == "dia" %}Solo el {{ fecha_texto }}{% else %}Toda la serie{% endif %}</p>
+            {% if alcance == "serie" %}<p class="planificada__serie">{% include "tareas/_dias.html" with dias=asignacion.dias_semana only %}</p>{% endif %}
+          </div>
+        </div>
+        <p class="admin__nota">{{ estudiante.usuario.first_name }} recibirá un aviso con el cambio.</p>
+      </section>
+
+      <fieldset class="parte parte--caja">
+        <legend>A qué hora</legend>
+        <div class="admin__dos">
+          {% include "tareas/_campo.html" with campo=form.hora_inicio %}
+          {% include "tareas/_campo.html" with campo=form.hora_fin %}
+        </div>
+      </fieldset>
+
+      {% if alcance == "serie" %}
+      {% with campo=form.dias_semana %}
+      <fieldset class="parte parte--caja" id="{{ campo.auto_id }}"{% if campo.errors %} aria-describedby="{{ campo.auto_id }}_error"{% endif %}>
+        <legend>Qué días</legend>
+        {% for error in campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ error }}</p>{% endfor %}
+        <ul class="casillas casillas--dias">
+          {% for opcion in campo %}
+          <li><label class="casilla">{{ opcion.tag }} {% include "_dia_forma.html" with numero=opcion.data.value only %} <span class="casilla__dia">{{ opcion.choice_label }}</span></label></li>
+          {% endfor %}
+        </ul>
+      </fieldset>
+      {% endwith %}
+
+      <fieldset class="parte parte--caja">
+        <legend>Desde cuándo y hasta cuándo</legend>
+        <p class="admin__nota">Sin último día, sigue siempre.</p>
+        <div class="admin__dos">
+          {% include "tareas/_campo.html" with campo=form.vigencia_desde %}
+          {% include "tareas/_campo.html" with campo=form.vigencia_hasta %}
+        </div>
+      </fieldset>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Para dejarlo como estaba, «‹ Planificadas» de la barra de título. #}
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="bloques" que="Partes del formulario" final=True only %}
+    <div class="pie__acciones">
+      <button class="boton--principal boton--mediano" type="submit" data-solo-ultima="bloques">Guardar cambios</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script>{% endblock %}

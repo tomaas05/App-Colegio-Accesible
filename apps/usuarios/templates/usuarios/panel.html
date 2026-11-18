@@ -11,6 +11,19 @@
 {% block sub %}<span class="barra__sub" id="panel-que">¿Qué quieres hacer?</span>{% endblock %}
 
 {% block contenido %}
+{# HU-07-04 (PA5): «Lucía no ha podido hacer «Regar» y ha elegido «Escuchar música»».  #}
+{# Dentro de la pantalla, nunca en una ventana (RNF4.1.8); uno cada vez y «Visto».     #}
+{% if aviso %}
+<section class="panel__aviso" aria-labelledby="panel-aviso-t">
+  <h2 class="visualmente-oculto" id="panel-aviso-t">Aviso</h2>
+  {% if aviso.tarea %}<img src="{{ aviso.tarea.imagen.url }}" alt="" width="56" height="56">{% endif %}
+  <p class="panel__aviso-texto" id="panel-aviso-texto">{{ aviso.mensaje }}{% if avisos_mas %} <span class="panel__aviso-mas">({% if avisos_mas == 1 %}1 aviso más{% else %}{{ avisos_mas }} avisos más{% endif %})</span>{% endif %}</p>
+  <form method="post" action="{% url 'usuarios:aviso_visto' aviso.pk %}">
+    {% csrf_token %}
+    <button class="boton boton--aux" type="submit" aria-describedby="panel-aviso-texto">Visto</button>
+  </form>
+</section>
+{% endif %}
 <div class="encaja">
   {% if opciones %}
   <ul class="panel__opciones" id="opciones" aria-labelledby="panel-que" data-paginar>

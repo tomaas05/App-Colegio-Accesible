@@ -1,0 +1,3 @@
+{# Los días de una serie, con la letra y la forma de cada día (boceto B30) y su nombre     #}
+{# para el lector. Recibe: dias (1 = lunes … 7 = domingo).                               #}
+<span class="dias-serie"><span class="visualmente-oculto">Se repite: </span>{% for n in "1234567" %}{% with d=n|add:0 %}{% if d in dias %}<span class="dias-serie__dia">{% include "_dia_forma.html" with numero=d only %}<span class="visualmente-oculto">{% if d == 1 %}lunes{% elif d == 2 %}martes{% elif d == 3 %}miércoles{% elif d == 4 %}jueves{% elif d == 5 %}viernes{% elif d == 6 %}sábado{% else %}domingo{% endif %}{% if not forloop.last %}, {% endif %}</span></span>{% endif %}{% endwith %}{% endfor %}</span>

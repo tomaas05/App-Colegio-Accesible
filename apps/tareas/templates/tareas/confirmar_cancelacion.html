@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}¿Cancelar «{{ tarea.nombre }}»? · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
+
+{# HU-03-05 · Antes de cancelar se pide confirmación (PA3). Como «Eliminar cuenta» (B24):  #}
+{# «No» a la izquierda y «Sí, cancelar» a la derecha y separados: lo destructivo nunca es  #}
+{# lo primero que se pulsa.                                                                #}
+{% block pantalla %}pantalla--estrecha{% endblock %}
+{% block volver %}{% include "_volver.html" with url=volver texto="Planificadas" etiqueta="Volver a Tareas planificadas sin cancelar" only %}{% endblock %}
+{% block h1 %}Cancelar tarea{% endblock %}
+
+{% block contenido %}
+<section class="baja cancelar" aria-labelledby="cancelar-titulo" aria-describedby="cancelar-texto">
+  <div class="cancelar__cab">
+    <img src="{{ tarea.imagen.url }}" alt="" width="80" height="80">
+    <h2 id="cancelar-titulo">¿Cancelar «{{ tarea.nombre }}» de {{ estudiante.usuario.get_full_name }}{% if alcance == "dia" %} el {{ fecha_texto }}{% endif %}?</h2>
+  </div>
+  <div id="cancelar-texto">
+    {% if alcance == "dia" %}
+    <p>Solo ese día, {{ horas_texto }}. Los demás días sigue igual.</p>
+    {% else %}
+    <p>Toda la serie: {{ horas_texto }}, {{ dias_texto }}. Ya no se hará más.</p>
+    {% endif %}
+    <p>{{ estudiante.usuario.first_name }} la verá como «Cancelada» en su agenda y recibirá un aviso.</p>
+  </div>
+  <div class="baja__botones">
+    <a class="boton boton--aux" href="{{ volver }}">No</a>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="alcance" value="{{ alcance }}">
+      {% if fecha %}<input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">{% endif %}
+      {% for clave, valor in filtros.items %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
+      <button class="boton boton--peligro" type="submit">Sí, cancelar<span class="visualmente-oculto"> «{{ tarea.nombre }}»</span></button>
+    </form>
+  </div>
+</section>
+{% endblock %}

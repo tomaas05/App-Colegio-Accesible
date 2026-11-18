@@ -51,17 +51,23 @@ Cómo funciona:
 - **tarea** (**id**, nombre, descripcion, imagen, descripcion_imagen, ambito, creador_id → usuario)
 - **paso** (**id**, tarea_id → tarea, orden, imagen, descripcion_imagen, descripcion)
   - *UK* (tarea_id, orden)
-- **asignacion** (**id**, tarea_id → tarea, estudiante_id → estudiante, asignado_por_id → usuario, fecha_asignacion, hora_inicio, hora_fin, dias_semana, vigencia_desde, vigencia_hasta)
+- **asignacion** (**id**, tarea_id → tarea, estudiante_id → estudiante, asignado_por_id → usuario, fecha_asignacion, hora_inicio, hora_fin, dias_semana, vigencia_desde, vigencia_hasta, cancelada, cancelada_el)
+- **excepcion_asignacion** (**id**, asignacion_id → asignacion, fecha, tipo, hora_inicio, hora_fin, creada_por_id → usuario, creada_el)
+  - *UK* (asignacion_id, fecha)
+- **plan_b** (**id**, tarea_id → tarea, alternativa_id → tarea, orden)
+  - *UK* (tarea_id, alternativa_id)
 
 Notas:
 
 - PASO es entidad débil de TAREA, con clave parcial `orden`. En el E/R su clave es (tarea, orden); en la tabla se añade un `id` porque Django trabaja mejor con claves de una sola columna, y (tarea_id, orden) queda como *UK*. Es equivalente.
 - Los atributos de la antigua PROGRAMACIÓN están ahora en **asignacion**. `dias_semana` es multivaluado y se guarda como lista de enteros (1 = lunes … 7 = domingo), que PostgreSQL admite de forma nativa.
 - Los solapamientos entre asignaciones de un mismo estudiante dependen de varias filas (horas, días y vigencia), así que se comprueban en el código (HU-03-03), no con una restricción.
+- **excepcion_asignacion** guarda lo que cambia un solo día («Solo este día», HU-03-04 y HU-03-05): otras horas o cancelada. La serie no se toca (ver [decisión 0006](../../decisiones/0006-planificacion-por-dias-y-plan-b.md)).
+- **plan_b** es la relación N:M reflexiva de TAREA consigo misma, con su atributo `orden` (prioridad, RF3.4.3).
 
 ## Objetivo 2 · Ejecución — app `agenda` (Tomás)
 
-- **ejecucion** (**id**, asignacion_id → asignacion, fecha, inicio_real, fin_real, estado)
+- **ejecucion** (**id**, asignacion_id → asignacion, fecha, inicio_real, fin_real, estado, no_realizable_el, no_realizable_por_id → usuario, motivo, plan_b_id → tarea)
   - *UK* (asignacion_id, fecha)
 - **ejecucion_paso** (**id**, ejecucion_id → ejecucion, paso_id → paso, estado)
   - *UK* (ejecucion_id, paso_id)
@@ -70,6 +76,14 @@ Notas:
 
 - Una ejecución es la realización de una asignación en un día concreto. Se crea la primera vez que hace falta (al mostrar la agenda o al empezar la tarea), no por adelantado.
 - **ejecucion_paso** es la relación N:M *avanza*, con su atributo `estado_paso`.
+
+## Común — app `comun`
+
+- **notificacion** (**id**, destinatario_id → usuario, tipo, mensaje, tarea_id → tarea, leida, vista_el, fecha_creacion)
+
+Notas:
+
+- Un aviso a una persona: al estudiante cuando le cambian o cancelan una tarea (HU-03-04, HU-03-05) y al tutor cuando su estudiante elige un plan B (HU-07-04). `tarea_id` da el pictograma; si la tarea se borra, el aviso se queda sin él.
 
 ## Borrado en cascada (RNF1.1.5)
 
