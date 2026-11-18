@@ -29,6 +29,8 @@
       <div>
         <p class="chip chip--{{ t.estado }}"><span aria-hidden="true">{{ t.simbolo }}</span> {{ t.etiqueta }}</p>
         <p class="ficha__hora">De {{ t.inicio|time:"H:i" }} a {{ t.fin|time:"H:i" }}</p>
+        {# HU-07-04: la ha cambiado por una del plan B. #}
+        {% if t.es_plan_b %}<p class="ficha__plan-b">Plan B, en lugar de «{{ t.tarea_original.nombre }}»</p>{% endif %}
       </div>
     </div>
 
@@ -124,30 +126,36 @@
       <p class="estado-grande"><span aria-hidden="true">✓</span> ¡Hecha!</p>
       {% elif t.estado == "vencida" %}
       <p class="estado-grande">Ya ha pasado la hora.</p>
+      {% elif t.estado == "cancelada" %}
+      <p class="estado-grande">Se ha cancelado. No la tienes que hacer.</p>
+      {% elif t.debe_elegir_plan_b %}
+      {# HU-07-04: no se puede hacer y tiene plan B: elige otra cosa (B11). #}
+      {% if t.ejecucion.motivo %}<p class="estado-grande">Hoy no se puede: {{ t.ejecucion.motivo }}</p>{% endif %}
+      <a class="boton boton--principal" href="{% url 'agenda:plan_b' t.asignacion.pk %}">Elegir otra cosa</a>
+      {% elif t.estado == "no_realizable" %}
+      <p class="estado-grande">No se ha podido hacer.{% if t.ejecucion.motivo %} {{ t.ejecucion.motivo }}{% endif %}</p>
       {% endif %}
     </div>
+    {# HU-07-04 · «No puedo hacerla», secundario y debajo del principal (B07). Fuera de  #}
+    {# #botones-tarea, que HTMX cambia cada 30 s mientras espera: así no pierde el foco. #}
+    {% if t.puede_decir_no_puedo %}
+    <a class="boton boton--aux boton--no-puedo" href="{% url 'agenda:no_puedo' t.asignacion.pk %}" data-confirmar="confirmar-no-puedo">No puedo hacerla</a>
+    {% endif %}
     </div>
   </div>
 </div>
 </div>
 {% include "_paginador.html" with de="partes" que="Partes de la tarea" anterior="Qué es" siguiente="Hacerla" only %}
 
-{# #confirmar-zona siempre está: al hacer el último paso, HTMX mete aquí el <dialog>.   #}
+{# #confirmar-zona siempre está: al hacer el último paso, HTMX mete aquí el <dialog>. #}
 <div id="confirmar-zona" class="confirmar-zona">{% if t.puede_terminar %}
-{# B08 · ¿Has terminado? Ventana de confirmación permitida (RF2.5.1, RNF2.3.3).          #}
-{# Sin JavaScript, «Terminar» abre la misma pregunta en una página (confirmar_fin.html). #}
-<dialog class="confirmar" id="confirmar-fin" aria-labelledby="confirmar-titulo">
-  <img src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
-  <h2 id="confirmar-titulo">¿Has terminado?</h2>
-  <div class="fila-botones">
-    <form method="post" action="{% url 'agenda:terminar' t.asignacion.pk %}">
-      {% csrf_token %}
-      <button type="submit" class="boton boton--principal">Sí</button>
-    </form>
-    <form method="dialog"><button type="submit" class="boton">No</button></form>
-  </div>
-</dialog>
+{% url 'agenda:terminar' t.asignacion.pk as accion %}
+{% include "agenda/_confirmar.html" with id="confirmar-fin" pregunta="¿Has terminado?" %}
 {% endif %}</div>
+{% if t.puede_decir_no_puedo %}
+{% url 'agenda:no_puedo' t.asignacion.pk as accion %}
+{% include "agenda/_confirmar.html" with id="confirmar-no-puedo" pregunta="¿No puedes hacerla?" %}
+{% endif %}
 {% endblock %}
 
 {% block scripts %}<script src="{% static 'js/agenda.js' %}" defer></script>{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Un cambio en tus tareas · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
+
+{# HU-03-04 (PA3) y HU-03-05 (PA4): el estudiante recibe un aviso cuando un adulto cambia  #}
+{# o cancela una tarea suya. Uno por pantalla, antes de la agenda: el pictograma de la     #}
+{# tarea, una frase corta y un solo botón, como la confirmación de B08 (RNF2.3.3). Pulsar  #}
+{# «Entendido» deja registrado que lo ha visto; si hay más avisos, sale el siguiente.     #}
+{% block pantalla %}pantalla--estrecha agenda{% endblock %}
+{% block volver %}{% include "_salir_estudiante.html" %}{% endblock %}
+{% block h1 %}{% if aviso.tipo == "cancelacion" %}Tarea cancelada{% elif aviso.tipo == "no_se_puede" %}Hoy no se puede{% else %}Tarea cambiada{% endif %}{% endblock %}
+
+{% block contenido %}
+<div class="confirmar confirmar--pagina encaja encaja--centro encaja--fija">
+  {% if aviso.tarea %}<img src="{{ aviso.tarea.imagen.url }}" alt="{{ aviso.tarea.descripcion_imagen }}" width="96" height="96">{% endif %}
+  <p class="confirmar__nombre" id="aviso-texto">{{ aviso.mensaje }}</p>
+  {% if quedan %}<p class="aviso-cambio__quedan">{% if quedan == 1 %}Tienes otro aviso.{% else %}Tienes {{ quedan }} avisos más.{% endif %}</p>{% endif %}
+  <form method="post" action="{% url 'agenda:aviso_visto' aviso.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="boton boton--principal" aria-describedby="aviso-texto">Entendido</button>
+  </form>
+</div>
+{% endblock %}

@@ -35,9 +35,9 @@ def test_datos_de_prueba_cargan_y_no_se_duplican(datos):
 
     assert Usuario.objects.filter(rol=Rol.ESTUDIANTE).count() == 9
     assert ImagenAcceso.objects.count() == 12
-    assert Tarea.objects.count() == 5
+    assert Tarea.objects.count() == 6
     call_command("cargar_datos_prueba", verbosity=0)  # segunda vez: no hace nada
-    assert Tarea.objects.count() == 5
+    assert Tarea.objects.count() == 6
 
 
 def test_reiniciar_vuelve_a_cargar(datos):

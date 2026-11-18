@@ -5,7 +5,7 @@ Dueña: Úrsula.
 
 Los solapamientos entre asignaciones de un mismo estudiante dependen de varias
 filas, así que no son una restricción de la base de datos: se comprueban en
-el código de HU-03-03.
+planificacion.py (HU-03-03 y HU-03-04).
 """
 
 from django.contrib.postgres.fields import ArrayField
@@ -42,13 +42,6 @@ class Tarea(models.Model):
         "ámbito", max_length=10, choices=Ambito.choices, default=Ambito.ESCOLAR
     )
     creador = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name="tareas_creadas")
-    planes_b = models.ManyToManyField(
-        "self",
-        symmetrical=False,
-        blank=True,
-        verbose_name="planes B",
-        help_text="Actividades alternativas si esta no se puede realizar",
-    )
 
     class Meta:
         verbose_name = "tarea"
@@ -63,6 +56,39 @@ class Tarea(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def alternativas(self):
+        """Las actividades del plan B, en el orden en que se ofrecen (HU-03-06)."""
+        return [p.alternativa for p in self.planes_b.select_related("alternativa")]
+
+
+class PlanB(models.Model):
+    """Una actividad alternativa de una tarea, con su prioridad (RI3.3.1, RF3.4.3).
+
+    La primera (orden más bajo) es la que se ofrece antes al estudiante (HU-07-04).
+    """
+
+    tarea = models.ForeignKey(Tarea, on_delete=models.CASCADE, related_name="planes_b")
+    alternativa = models.ForeignKey(
+        Tarea, on_delete=models.CASCADE, related_name="es_plan_b_de", verbose_name="alternativa"
+    )
+    orden = models.PositiveSmallIntegerField()
+
+    class Meta:
+        verbose_name = "plan B"
+        verbose_name_plural = "planes B"
+        ordering = ["tarea", "orden", "pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["tarea", "alternativa"], name="plan_b_sin_repetir"),
+            models.CheckConstraint(
+                condition=~Q(tarea=F("alternativa")), name="plan_b_no_es_la_misma"
+            ),
+            models.CheckConstraint(condition=Q(orden__gt=0), name="plan_b_orden_positivo"),
+        ]
+
+    def __str__(self):
+        return f"{self.tarea} → {self.alternativa} ({self.orden})"
 
 
 class Paso(models.Model):
@@ -113,6 +139,10 @@ class Asignacion(models.Model):
     )
     vigencia_desde = models.DateField()
     vigencia_hasta = models.DateField(null=True, blank=True, help_text="Vacío = sin fecha de fin")
+    # HU-03-05: cancelar toda la serie. Desde `cancelada_el` ya no se hace; esa semana el
+    # estudiante la sigue viendo en su agenda, tachada como «Cancelada» (planificacion.py).
+    cancelada = models.BooleanField(default=False, verbose_name="cancelada")
+    cancelada_el = models.DateField("cancelada desde", null=True, blank=True)
 
     class Meta:
         verbose_name = "asignación"
@@ -135,6 +165,10 @@ class Asignacion(models.Model):
                 | Q(vigencia_hasta__gte=F("vigencia_desde")),
                 name="asignacion_vigencia_coherente",
             ),
+            models.CheckConstraint(
+                condition=Q(cancelada=False) | Q(cancelada_el__isnull=False),
+                name="asignacion_cancelada_con_fecha",
+            ),
         ]
 
     def __str__(self):
@@ -147,3 +181,56 @@ class Asignacion(models.Model):
         if fecha < self.vigencia_desde:
             return False
         return self.vigencia_hasta is None or fecha <= self.vigencia_hasta
+
+
+class TipoExcepcion(models.TextChoices):
+    MODIFICADA = "modificada", "Modificada"
+    CANCELADA = "cancelada", "Cancelada"
+
+
+class ExcepcionAsignacion(models.Model):
+    """Un cambio de una asignación en una sola fecha (RI3.2.3, RF3.5.2).
+
+    «Solo este día» en HU-03-04 (otras horas ese día) y HU-03-05 (ese día no se hace).
+    El resto de la serie sigue igual.
+    """
+
+    asignacion = models.ForeignKey(Asignacion, on_delete=models.CASCADE, related_name="excepciones")
+    fecha = models.DateField()
+    tipo = models.CharField(max_length=10, choices=TipoExcepcion.choices)
+    hora_inicio = models.TimeField(null=True, blank=True)
+    hora_fin = models.TimeField(null=True, blank=True)
+    creada_por = models.ForeignKey(
+        Usuario, on_delete=models.PROTECT, related_name="excepciones_hechas"
+    )
+    creada_el = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "excepción de una asignación"
+        verbose_name_plural = "excepciones de asignaciones"
+        ordering = ["asignacion", "fecha"]
+        constraints = [
+            models.UniqueConstraint(fields=["asignacion", "fecha"], name="excepcion_una_por_dia"),
+            models.CheckConstraint(
+                condition=Q(tipo__in=TipoExcepcion.values), name="excepcion_tipo_valido"
+            ),
+            # Modificada: con sus horas nuevas y coherentes. Cancelada: sin horas.
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        tipo=TipoExcepcion.MODIFICADA,
+                        hora_inicio__isnull=False,
+                        hora_fin__gt=F("hora_inicio"),
+                    )
+                    | Q(
+                        tipo=TipoExcepcion.CANCELADA,
+                        hora_inicio__isnull=True,
+                        hora_fin__isnull=True,
+                    )
+                ),
+                name="excepcion_horas_coherentes",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.asignacion} · {self.fecha:%d/%m/%Y} · {self.get_tipo_display()}"

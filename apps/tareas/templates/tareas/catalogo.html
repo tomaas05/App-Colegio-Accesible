@@ -29,11 +29,15 @@
         <p class="catalogo__datos">
           {{ tarea.get_ambito_display }} ·
           {% if tarea.n_pasos %}{{ tarea.n_pasos }} paso{{ tarea.n_pasos|pluralize }}{% else %}sin pasos{% endif %}
-          {% if tarea.planes_b.exists %} · 💡 Tiene plan B{% endif %}
+          {% if tarea.n_planes_b %} · Con plan B ({{ tarea.n_planes_b }}){% endif %}
         </p>
         {% if tarea.descripcion %}<p class="catalogo__desc">{{ tarea.descripcion|truncatechars:90 }}</p>{% endif %}
       </div>
-      <a class="boton boton--aux" href="{% url 'tareas:asignar_tarea_con_id' tarea.id %}">Asignar <span class="visualmente-oculto">«{{ tarea.nombre }}»</span></a>
+      <div class="catalogo__botones">
+        <a class="boton boton--aux boton--mediano" href="{% url 'tareas:editar_pasos_tarea' tarea.id %}">Pasos<span class="visualmente-oculto"> de «{{ tarea.nombre }}»</span></a>
+        <a class="boton boton--aux boton--mediano" href="{% url 'tareas:plan_b' tarea.id %}">Plan B<span class="visualmente-oculto"> de «{{ tarea.nombre }}»</span></a>
+        <a class="boton boton--principal boton--mediano" href="{% url 'tareas:asignar_tarea_con_id' tarea.id %}">Asignar<span class="visualmente-oculto"> «{{ tarea.nombre }}»</span></a>
+      </div>
     </li>
     {% endfor %}
   </ul>

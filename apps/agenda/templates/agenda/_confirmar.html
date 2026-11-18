@@ -1,0 +1,17 @@
+{# HU-02-07 · Confirmar una acción importante (RF2.5.1): «Terminar» (B08) y «No puedo   #}
+{# hacerla». La única ventana emergente que se permite al estudiante (RNF2.3.3). El     #}
+{# pictograma de la tarea y una frase corta. El foco empieza en «No»: si se pulsa sin    #}
+{# querer (barrido, temblor), no cambia nada. Sin JavaScript, el enlace que la abre      #}
+{# lleva a la misma pregunta en una página (confirmar.html).                             #}
+{# Recibe: id, pregunta, accion (la URL del POST) y t.                                   #}
+<dialog class="confirmar" id="{{ id }}" aria-labelledby="{{ id }}-titulo">
+  <img src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
+  <h2 id="{{ id }}-titulo">{{ pregunta }}</h2>
+  <div class="fila-botones">
+    <form method="post" action="{{ accion }}">
+      {% csrf_token %}
+      <button type="submit" class="boton boton--principal">Sí</button>
+    </form>
+    <form method="dialog"><button type="submit" class="boton" autofocus>No</button></form>
+  </div>
+</dialog>

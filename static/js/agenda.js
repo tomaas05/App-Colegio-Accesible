@@ -174,7 +174,7 @@
     }
     var destino =
       document.querySelector("[data-paso] button") ||
-      document.querySelector("[data-confirmar]") ||
+      document.querySelector('[data-confirmar="confirmar-fin"]') ||
       document.getElementById("pasos");
     if (destino && destino !== document.activeElement) {
       destino.focus();

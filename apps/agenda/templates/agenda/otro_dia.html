@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}{{ fecha_texto|capfirst }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
+
+{# HU-02-06, PA3 · Un día de esta semana, entero (desde «Mi semana», B30). La misma línea  #}
+{# de tiempo que «Tareas de hoy», solo para ver: las tarjetas no se abren, porque una      #}
+{# tarea no se empieza antes de su día. Las canceladas se ven tachadas.                    #}
+{% block pantalla %}pantalla--ancha agenda{% endblock %}
+{% block volver %}{% url 'agenda:semana' as atras %}{% include "_volver.html" with url=atras texto="Semana" etiqueta="Volver a mi semana" only %}{% endblock %}
+{% block h1 %}{{ fecha_texto|capfirst }}{% endblock %}
+
+{% block contenido %}
+{% if not tareas %}
+<div class="encaja encaja--centro">
+  <p class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>{% if pasado %}Este día no tenías tareas.{% else %}Este día no tienes tareas.{% endif %}</span></p>
+</div>
+{% else %}
+<div class="encaja encaja--centro">
+  <ol class="linea" id="tareas" aria-labelledby="titulo" data-paginar data-max="{{ perfil_activo.max_tarjetas|default:6 }}">
+    {% for t in tareas %}{% include "agenda/_tarjeta.html" with enlace="" %}{% endfor %}
+  </ol>
+</div>
+{% endif %}
+<div class="pie">
+  {% include "_paginador.html" with de="tareas" que="Más tareas de ese día" anterior="Antes" siguiente="Después" only %}
+  {% if fecha.isoweekday <= 5 %}
+  <div class="pie__acciones">
+    {# PA4: el horario de la clase de ese día, solo para ver. #}
+    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}?dia={{ fecha.isoweekday }}">Horario de clase del {{ dia_nombre }}</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

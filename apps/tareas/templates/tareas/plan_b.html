@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Plan B de «{{ tarea.nombre }}» · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
+
+{# Boceto B42 · Plan B de una tarea. HU-03-06.                                             #}
+{# La primera alternativa es la que se ofrece antes al estudiante (RF3.4.3, HU-07-04).    #}
+{# Tres partes: las alternativas, añadir una del catálogo y crear una nueva. Si no caben  #}
+{# juntas, una cada vez (decisión 0005). Sin JavaScript todo funciona: cada botón envía.  #}
+{% block volver %}{% url 'tareas:catalogo' as atras %}{% include "_volver.html" with url=atras texto="Tareas creadas" etiqueta="Volver a Tareas creadas" only %}{% endblock %}
+{% block h1 %}Plan B<span class="visualmente-oculto"> de «{{ tarea.nombre }}»</span>{% endblock %}
+{% block sub %}<span class="barra__sub barra__persona"><img src="{{ tarea.imagen.url }}" alt="" width="40" height="40"> {{ tarea.nombre }}</span>{% endblock %}
+
+{% block contenido %}
+{% include "usuarios/_mensajes.html" %}
+
+<div class="encaja">
+  <div class="partes" id="partes" data-paginar data-estado="Parte {n} de {total}">
+    <section class="parte parte--caja parte--lista" aria-labelledby="alternativas-t"{% if not accion %} data-pag-inicio{% endif %}>
+      <h2 id="alternativas-t">Alternativas, por orden</h2>
+      {% if planes %}
+      <div class="encaja">
+        <ol class="plan-b" id="alternativas" data-paginar>
+          {% for plan in planes %}
+          {% with alt=plan.alternativa %}
+          <li class="plan-b__fila"{% if alt.pk == foco_id %} data-pag-inicio{% endif %}>
+            <img src="{{ alt.imagen.url }}" alt="" width="56" height="56">
+            <div class="plan-b__texto">
+              <span class="plan-b__orden">Número {{ forloop.counter }}</span>
+              <span class="plan-b__nombre">{{ alt.nombre }}</span>
+            </div>
+            <form class="plan-b__botones" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="alternativa" value="{{ alt.pk }}">
+              {# Siempre los tres en el mismo sitio (con barrido no se mueve nada). En los  #}
+              {# extremos «Subir» o «Bajar» no hacen nada y lo dicen (aria-disabled).       #}
+              <button class="boton boton--aux" type="submit" name="accion" value="subir"{% if forloop.first %} aria-disabled="true"{% endif %}{% if alt.pk == foco_id and foco_accion == "subir" %} data-enfocar{% endif %}>Subir<span class="visualmente-oculto"> «{{ alt.nombre }}»</span></button>
+              <button class="boton boton--aux" type="submit" name="accion" value="bajar"{% if forloop.last %} aria-disabled="true"{% endif %}{% if alt.pk == foco_id and foco_accion == "bajar" %} data-enfocar{% endif %}>Bajar<span class="visualmente-oculto"> «{{ alt.nombre }}»</span></button>
+              <button class="boton boton--aux boton--peligro-suave" type="submit" name="accion" value="quitar">Quitar<span class="visualmente-oculto"> «{{ alt.nombre }}» del plan B</span></button>
+            </form>
+          </li>
+          {% endwith %}
+          {% endfor %}
+        </ol>
+      </div>
+      <div class="parte__pie">{% include "_paginador.html" with de="alternativas" que="Más alternativas" only %}</div>
+      {% else %}
+      <p class="aviso-vacio"><span aria-hidden="true">ℹ️</span> Esta tarea no tiene plan B. Puedes añadirlo cuando quieras.</p>
+      {% endif %}
+    </section>
+
+    <section class="parte parte--caja" aria-labelledby="anadir-t"{% if accion == "anadir" %} data-pag-inicio{% endif %}>
+      <h2 id="anadir-t">Añadir del catálogo</h2>
+      <form class="formulario" method="post" novalidate>
+        {% csrf_token %}
+        {% if anadir.fields.alternativa.queryset.exists %}
+        <div class="campo">{{ anadir.alternativa.as_field_group }}</div>
+        <button class="boton boton--aux" type="submit" name="accion" value="anadir">Añadir al plan B</button>
+        {% else %}
+        <p class="admin__nota">No queda ninguna otra tarea en el catálogo: crea una nueva.</p>
+        {% endif %}
+      </form>
+    </section>
+
+    <section class="parte parte--caja" aria-labelledby="crear-t"{% if accion == "crear" %} data-pag-inicio{% endif %}>
+      <h2 id="crear-t">O crear una nueva</h2>
+      <form class="formulario" method="post" novalidate>
+        {% csrf_token %}
+        {% if crear.non_field_errors %}<div class="aviso-error" role="alert"><span class="aviso-error__ico" aria-hidden="true">⚠️</span><p>{{ crear.non_field_errors.0 }}</p></div>{% endif %}
+        <div class="campo">
+          {{ crear.nombre.label_tag }}
+          {% if crear.nombre.errors %}<p class="campo__error" id="{{ crear.nombre.auto_id }}_error">{{ crear.nombre.errors.0 }}</p>{% endif %}
+          <input type="text" name="nombre" id="{{ crear.nombre.auto_id }}" maxlength="80" value="{{ crear.nombre.value|default:'' }}" data-nombre-desde-picto{% if crear.nombre.errors %} aria-invalid="true" aria-describedby="{{ crear.nombre.auto_id }}_error"{% endif %}>
+        </div>
+        {% if crear.arasaac_id_alternativa.errors %}<p class="campo__error" id="picto-alternativa-error">{{ crear.arasaac_id_alternativa.errors.0 }}</p>{% endif %}
+        {% include "tareas/_buscador_pictograma.html" with campo="arasaac_id_alternativa" elegido=crear.pictograma_elegido %}
+        <button class="boton boton--aux" type="submit" name="accion" value="crear">Crear y añadir</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% include "_paginador.html" with de="partes" que="Partes de la pantalla" only %}
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/usuarios.js' %}" defer></script><script src="{% static 'js/tarea.js' %}" defer></script>{% endblock %}
