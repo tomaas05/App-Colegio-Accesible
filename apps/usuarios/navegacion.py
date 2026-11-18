@@ -51,6 +51,11 @@ OPCIONES_POR_ROL = {
             "Elige a qué estudiantes atiendes y consulta su agenda.",
             "usuarios:mis_estudiantes",
         ),
+        (
+            "Tareas planificadas",
+            "Modificar o cancelar una tarea, en un día o en toda la serie.",
+            "tareas:tareas_planificadas",
+        ),
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
         ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
     ],
