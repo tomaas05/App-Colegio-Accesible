@@ -24,6 +24,7 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 | `/panel/mis-estudiantes/<código>/agenda/` | Agenda de un estudiante que atiendo, solo consulta, día a día (B27) | HU-01-09 | Javi |
 | `/centro/comedor/` | El administrador asigna, mes a mes, el comedor de cada día y el reparto del menú a un estudiante, y sube el menú del mes. Salen en su agenda como una tarea más; lo que no tiene estudiante, «Pendiente de asignar» (B67) | HU-05-03 | Javi |
 | `/centro/comedor/hoy/` | El estudiante encargado del comedor de hoy entra desde su tarea «Comedor» ya empezada: ve las clases (B60) y, en cada una, toca a cada compañero para marcar si come o no (B61); al acabar, «Clase terminada». Al pie, cuántos comen hoy en el centro | HU-05-04 | Javi |
+| `/centro/reprografia/` | El tutor (con los alumnos de su clase) o el administrador pone a un estudiante, un día y a una hora, la tarea «Reprografía» con sus copias, tipo de trabajo, color y aula; sale en su agenda con tres fases (recoger, hacer el trabajo, repartir). Se cambia o se quita mientras el estudiante no la ha empezado (B66) | HU-05-01 | Javi |
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
 

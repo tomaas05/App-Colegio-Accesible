@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Fases de la reprografía · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/centro.css' %}">{% endblock %}
+
+{# HU-05-01, PA3 (RF5.1.6): la tarea «Reprografía» trae sus fases. El tutor las cambia como  #}
+{# los pasos de cualquier tarea (HU-03-02, RF3.1.4); valen para todos los trabajos.           #}
+{% block volver %}{% url 'centro:reprografia' as atras %}{% include "_volver.html" with url=atras texto="Reprografía" etiqueta="Volver a reprografía" only %}{% endblock %}
+{% block h1 %}Fases de la reprografía{% endblock %}
+
+{% block contenido %}
+<div class="encaja">
+  <ol class="repro__fases" id="fases" aria-label="Fases" data-paginar data-pag-variable data-estado="Fases {desde} a {hasta} de {de}">
+    {% for p in pasos %}
+    <li class="repro__fase"><img src="{{ p.imagen.url }}" alt="{{ p.descripcion_imagen }}" width="64" height="64"><span><span class="visualmente-oculto">Fase </span><b>{{ forloop.counter }}.</b> {{ p.descripcion|default:p.descripcion_imagen }}</span></li>
+    {% empty %}
+    <li class="repro__fase">Esta tarea no tiene fases.</li>
+    {% endfor %}
+  </ol>
+</div>
+{% include "_paginador.html" with de="fases" que="Más fases" only %}
+<p class="admin__nota">{% if puede_cambiar %}Si las cambias, cambian para todos los trabajos de reprografía.{% else %}Las fases las cambia el tutor, en «Tareas creadas».{% endif %}</p>
+{% if puede_cambiar %}
+<div class="pie"><div class="pie__acciones">
+  <a class="boton boton--principal boton--mediano" href="{% url 'tareas:editar_pasos_tarea' tarea.pk %}">Cambiar las fases</a>
+</div></div>
+{% endif %}
+{% endblock %}

@@ -92,7 +92,7 @@ a.centro__tarjeta[href]:hover {
   gap: 0.75rem;
 }
 .centro__form .campo select,
-.centro__form .campo input:not([type="checkbox"]) {
+.centro__form .campo input:not([type="checkbox"], [type="radio"]) {
   width: 100%;
   max-width: 28rem;
 }
@@ -239,13 +239,22 @@ button.comedor__companero {
   font-weight: 700;
 }
 .comedor__total {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 1rem;
+}
+/* «Volver a la tarea» (B60): con la flecha y el texto, nunca solo un icono. */
+.comedor__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
 }
 .comedor__faltan {
   font-weight: 400;
 }
-.comedor__marca {
+.comedor__marca,
+.comedor__estado {
   white-space: nowrap;
 }
 
@@ -275,6 +284,19 @@ button.comedor__companero {
   .comedor__solo-ancho {
     display: none;
   }
+  /* «✓ Terminada» cabe en la loseta de 2 columnas. */
+  .comedor__estado {
+    gap: 0.15rem;
+    padding: 0 0.3rem;
+  }
+  /* B60 con todas las clases terminadas: «Volver a la tarea» ocupa todo el ancho. */
+  .pie__acciones:has(> .comedor__volver.boton--principal) {
+    flex: 1 1 100%;
+  }
+  .comedor__volver.boton--principal {
+    flex: 1;
+    justify-content: center;
+  }
 }
 
 /* «Clase terminada» mientras falta alguien: se sigue pudiendo pulsar (dice cuántos faltan),
@@ -285,4 +307,94 @@ button.comedor__companero {
   border-style: dashed;
   border-color: var(--petroleo);
   opacity: 1;
+}
+
+/* --- HU-05-01 · Reprografía (tutor y administrador, B66) --- */
+.repro__fila .centro__fecha {
+  flex-basis: 19rem;
+}
+.repro__fila .centro__quien {
+  flex: 1 1 10rem;
+}
+.repro__datos {
+  flex: 1 1 14rem;
+}
+/* Estado del trabajo: símbolo y texto, nunca solo color (RNF4.1.3). */
+.repro__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0 0.6rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 2px solid var(--petroleo);
+  border-radius: var(--radio-boton);
+}
+.repro__estado--pendiente {
+  background: var(--aviso-fondo);
+  border: 2px dashed var(--naranja);
+}
+.repro__copias input {
+  max-width: 8rem;
+}
+.repro__aviso {
+  flex: none;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  background: var(--aviso-fondo);
+  border: 2px dashed var(--naranja);
+  border-radius: 1rem;
+}
+.repro__ficha {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+.repro__ficha > div {
+  display: grid;
+  grid-template-columns: minmax(0, 10rem) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+.repro__ficha dt {
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.repro__ficha dd {
+  margin: 0;
+}
+.repro__fases {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.repro__fase {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid var(--menta);
+  border-radius: 1rem;
+}
+.repro__fase img {
+  flex: none;
+  width: 4rem;
+  height: 4rem;
+}
+
+@media (max-width: 30rem) {
+  .repro__hora {
+    display: block;
+    font-weight: 400;
+  }
+  .repro__coma {
+    display: none;
+  }
+  .repro__ficha > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
 }

@@ -4,6 +4,8 @@ HU-05-03 · Comedor y menú (administrador): de un mes, quién reparte el menú,
 mes y quién se encarga del comedor cada día (boceto B67, «Tareas del centro»).
 HU-05-04 · Anotar quién come (el estudiante encargado del comedor de hoy): las clases (B60)
 y los compañeros de cada clase (B61).
+HU-05-01 · Reprografía (tutor y administrador, boceto B66): los trabajos de hoy en adelante,
+crear uno, cambiarlo mientras el estudiante no lo empiece y ver sus fases.
 """
 
 import re
@@ -11,6 +13,7 @@ from datetime import date
 from functools import wraps
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,12 +21,12 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.agenda.acceso import estudiante_requerido
-from apps.usuarios.models import Clase, Estudiante
+from apps.usuarios.models import Clase, Estudiante, Rol
 from apps.usuarios.permisos import admin_requerido
 
 from . import comedor as quien_come
-from . import servicios
-from .forms import FormComedor, FormMenu, FormReparto
+from . import reprografia, servicios
+from .forms import FormComedor, FormMenu, FormReparto, FormReprografia
 from .models import ComedorDelDia
 
 MES = re.compile(r"(\d{4})-(\d{2})")
@@ -332,3 +335,131 @@ def comedor_terminar(request, pk):
     faltan = quien_come.resumen(servicios.hoy()).texto_faltan
     messages.success(request, f"{clase.nombre} terminada. {faltan}")
     return redirect("centro:comedor_hoy")
+
+
+# --- HU-05-01 · Reprografía (tutor y administrador) ------------------------------------
+
+
+def _tutor_o_admin(vista):
+    """Solo el tutor y el administrador. Sin sesión, a la portada; con otro rol, 403."""
+
+    @login_required
+    @wraps(vista)
+    def envoltura(request, *args, **kwargs):
+        if not reprografia.puede_crear(request.user):
+            raise PermissionDenied
+        return vista(request, *args, **kwargs)
+
+    return envoltura
+
+
+def _fila(request, pk):
+    """El trabajo, si es de un estudiante que ve el usuario (si no, 404), con su día."""
+    trabajo = get_object_or_404(
+        reprografia.visibles(request.user).select_related(
+            "asignacion__estudiante__usuario", "asignacion__estudiante__clase"
+        ),
+        pk=pk,
+    )
+    return reprografia.Fila(trabajo, *reprografia.como_queda(trabajo))
+
+
+def _texto_guardado(trabajo, verbo):
+    a = trabajo.asignacion
+    return (
+        f"Reprografía {verbo} en la agenda de {a.estudiante.usuario.get_full_name()}: "
+        f"{servicios.texto_fecha(a.vigencia_desde)}, de {a.hora_inicio:%H:%M} a "
+        f"{a.hora_fin:%H:%M}."
+    )
+
+
+@_tutor_o_admin
+@require_GET
+def reprografia_lista(request):
+    """PA1: los trabajos de reprografía de hoy en adelante y «Nueva tarea de reprografía»."""
+    return render(
+        request,
+        "centro/reprografia.html",
+        {"filas": reprografia.lista(request.user)},
+    )
+
+
+def _formulario(request, fila=None):
+    """«Nueva» (sin fila) o «Cambiar» (con la fila del trabajo)."""
+    usuario = request.user
+    error = None
+    if request.method == "POST" and request.POST.get("accion") == "quitar" and fila:
+        try:
+            reprografia.quitar(fila.trabajo)
+        except servicios.ErrorDeCentro as e:
+            messages.error(request, str(e))
+            return redirect("centro:reprografia_cambiar", pk=fila.trabajo.pk)
+        messages.success(
+            request,
+            f"Quitada la reprografía de la agenda de {fila.estudiante.usuario.get_full_name()}.",
+        )
+        return redirect("centro:reprografia")
+    if request.method == "POST":
+        form = FormReprografia(request.POST, usuario=usuario)
+        if form.is_valid():
+            try:
+                if fila:
+                    trabajo = reprografia.cambiar(fila.trabajo, form.datos(), usuario)
+                    texto = _texto_guardado(trabajo, "cambiada")
+                else:
+                    trabajo = reprografia.crear(form.datos(), usuario)
+                    texto = _texto_guardado(trabajo, "creada")
+            except servicios.ErrorDeCentro as e:
+                error = str(e)
+            else:
+                messages.success(request, texto)
+                return redirect("centro:reprografia")
+    elif fila:
+        form = FormReprografia.de_un_trabajo(fila, usuario=usuario)
+    else:
+        form = FormReprografia(usuario=usuario)
+    return render(
+        request,
+        "centro/reprografia_form.html",
+        {"form": form, "fila": fila, "error": error},
+        status=400 if (error or form.errors) else 200,
+    )
+
+
+@_tutor_o_admin
+@require_http_methods(["GET", "POST"])
+def reprografia_nueva(request):
+    """PA1 y PA2: crear la tarea de reprografía en la agenda de un estudiante."""
+    return _formulario(request)
+
+
+@_tutor_o_admin
+@require_http_methods(["GET", "POST"])
+def reprografia_cambiar(request, pk):
+    """Cambiar (o quitar) un trabajo. PA4: si ya no está pendiente (la ha empezado, ya
+    pasó su hora o está cancelada), solo se ven sus datos."""
+    fila = _fila(request, pk)
+    if not fila.se_puede_cambiar:
+        if request.method == "POST":
+            # Lo ha empezado mientras se rellenaba el formulario: no se guarda nada.
+            messages.error(request, reprografia.por_que_no_se_cambia(fila.trabajo, fila.estado))
+            return redirect("centro:reprografia_cambiar", pk=pk)
+        return render(request, "centro/reprografia_ver.html", {"fila": fila})
+    return _formulario(request, fila)
+
+
+@_tutor_o_admin
+@require_GET
+def reprografia_fases(request):
+    """PA3: las fases con las que viene la tarea. El tutor las cambia en «Pasos de la
+    tarea» (HU-03-02, Úrsula); el administrador no entra ahí (no gestiona tareas)."""
+    tarea, pasos = reprografia.fases(request.user)
+    return render(
+        request,
+        "centro/reprografia_fases.html",
+        {
+            "tarea": tarea,
+            "pasos": pasos,
+            "puede_cambiar": request.user.rol == Rol.TUTOR,
+        },
+    )

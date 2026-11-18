@@ -6,6 +6,7 @@ from .models import (
     ComedorDelDia,
     RepartoMenu,
     TareaDelCentro,
+    TrabajoReprografia,
 )
 
 
@@ -36,3 +37,8 @@ class AsistenciaComedorAdmin(admin.ModelAdmin):
 class ClaseComedorTerminadaAdmin(admin.ModelAdmin):
     list_display = ("fecha", "clase", "terminada_por", "terminada_en")
     date_hierarchy = "fecha"
+
+
+@admin.register(TrabajoReprografia)
+class TrabajoReprografiaAdmin(admin.ModelAdmin):
+    list_display = ("asignacion", "copias", "imprimir", "fotocopiar", "plastificar", "aula")

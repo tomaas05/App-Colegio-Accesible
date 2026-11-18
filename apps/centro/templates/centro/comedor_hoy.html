@@ -6,7 +6,8 @@
 
 {# Boceto B60 · HU-05-04. El estudiante encargado del comedor de hoy elige una clase. Cada  #}
 {# clase con su imagen y su tutor (como en la hoja de comedor del colegio), cuántos lleva  #}
-{# marcados o «✓ Terminada». Al pie, cuántos comen hoy en el centro y qué clases le faltan. #}
+{# marcados o «✓ Terminada». Al pie, cuántos comen hoy en el centro, qué clases le faltan   #}
+{# y un botón grande para volver a la tarea «Comedor».                                       #}
 {% block volver %}{% include "_volver.html" with url=volver texto="Tarea" etiqueta="Volver a la tarea Comedor" only %}{% endblock %}
 {% block h1 %}¿Quién come hoy?{% endblock %}
 
@@ -30,8 +31,14 @@
     {% endfor %}
   </ul>
 </div>
-<div class="pie">
+<div class="pie comedor__pie">
   {% include "_paginador.html" with de="clases-comedor" que="Más clases" only %}
-  <p class="pie__acciones comedor__total"><span><span aria-hidden="true">🍽️</span> Comen hoy: <strong>{{ resumen.comen }}</strong></span> <span class="comedor__faltan">{{ resumen.texto_faltan }}</span></p>
+  <p class="comedor__total"><span><span aria-hidden="true">🍽️</span> Comen hoy: <strong>{{ resumen.comen }}</strong></span> <span class="comedor__faltan">{{ resumen.texto_faltan }}</span></p>
+  {# Revisión con Javi: volver a la tarea tiene que verse bien, no solo arriba en la esquina. #}
+  {# Abajo, donde va siempre el botón principal. Con todas las clases terminadas es lo que   #}
+  {# toca hacer (y allí, «Terminar»), así que pasa a ser el botón grande.                    #}
+  <p class="pie__acciones">
+    <a class="boton {% if resumen.faltan %}boton--mediano{% else %}boton--principal{% endif %} comedor__volver" href="{{ volver }}"><span aria-hidden="true">‹</span> Volver a la tarea</a>
+  </p>
 </div>
 {% endblock %}

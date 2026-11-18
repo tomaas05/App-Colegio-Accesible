@@ -7,7 +7,7 @@ desplazamiento vertical (decisión 0005).
 Se lanzan con:  pytest -m e2e
 """
 
-from datetime import time, timedelta
+from datetime import datetime, time, timedelta
 
 import pytest
 from axe_playwright_python.sync_playwright import Axe
@@ -135,5 +135,102 @@ def test_anotar_quien_come_companeros(live_server, page, encargado, nombre):
 
     with page.expect_navigation():
         page.get_by_role("button", name="Clase terminada").click(force=True)
+    assert page.locator("[role=alert]").first.is_visible()
+    revisar(page, nombre)
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_anotar_quien_come_todas_terminadas(live_server, page, encargado, nombre):
+    """B60 al acabar: «Volver a la tarea» pasa a ser el botón grande del pie."""
+    from apps.centro import comedor
+
+    for clase in comedor.clases_del_centro():
+        for e in Estudiante.objects.filter(clase=clase, usuario__is_active=True):
+            comedor.marcar(encargado, e, True)
+        comedor.terminar_clase(encargado, clase)
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(f"{live_server.url}{reverse('centro:comedor_hoy')}")
+    assert page.get_by_role("link", name="Volver a la tarea", exact=True).is_visible()
+    revisar(page, nombre)
+
+
+# --- HU-05-01 · Reprografía (tutor y administrador, B66) -------------------------------
+
+
+@pytest.fixture
+def con_trabajos(datos, page, live_server, client, monkeypatch):
+    """Ana (tutora de PTVAL 1) con cuatro trabajos de reprografía; Lucía ya ha empezado uno.
+    Devuelve una función que entra como tutor o como administrador."""
+    from apps.agenda import servicios as agenda
+    from apps.centro import reprografia
+
+    hoy = timezone.localdate()
+    dia = next(hoy + timedelta(days=n) for n in range(7) if (hoy + timedelta(days=n)).weekday() < 5)
+    monkeypatch.setattr(servicios, "hoy", lambda: dia)
+    tutor = Usuario.objects.get(username="tutor")
+    trabajos = []
+    for i, (codigo, trabajos_, color) in enumerate(
+        [
+            ("A01", ["fotocopiar"], False),
+            ("A02", ["imprimir", "plastificar"], True),
+            ("A03", ["plastificar"], False),
+            ("A04", ["imprimir", "fotocopiar", "plastificar"], False),
+        ]
+    ):
+        estudiante = Estudiante.objects.select_related("usuario").get(codigo_estudiante=codigo)
+        datos_ = reprografia.Datos(
+            estudiante, dia, time(13, 0), time(13, 30), 10 + i, trabajos_, color, f"Aula {i + 1}"
+        )
+        trabajos.append(reprografia.crear(datos_, tutor))
+    lucia = trabajos[0].asignacion.estudiante
+    agenda.empezar(
+        lucia,
+        trabajos[0].asignacion_id,
+        timezone.make_aware(datetime.combine(dia, time(13, 5))),
+    )
+
+    def entrar(username="tutor"):
+        client.force_login(Usuario.objects.get(username=username))
+        page.context.add_cookies(
+            [
+                {
+                    "name": "sessionid",
+                    "value": client.cookies["sessionid"].value,
+                    "url": live_server.url,
+                }
+            ]
+        )
+        return trabajos
+
+    return entrar
+
+
+@pytest.mark.parametrize("pantalla", ["lista", "nueva", "cambiar", "ver", "fases"])
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_reprografia(live_server, page, con_trabajos, pantalla, nombre):
+    trabajos = con_trabajos("tutor")
+    url = {
+        "lista": reverse("centro:reprografia"),
+        "nueva": reverse("centro:reprografia_nueva"),
+        "cambiar": reverse("centro:reprografia_cambiar", args=[trabajos[1].pk]),
+        "ver": reverse("centro:reprografia_cambiar", args=[trabajos[0].pk]),
+        "fases": reverse("centro:reprografia_fases"),
+    }[pantalla]
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(f"{live_server.url}{url}")
+    revisar(page, nombre)
+
+
+@pytest.mark.parametrize("nombre", RESOLUCIONES)
+def test_reprografia_con_errores(live_server, page, con_trabajos, nombre):
+    """Crear sin rellenar nada: el resumen de errores y cada campo marcado (PA2)."""
+    con_trabajos("admin")
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[nombre], strict=True)))
+    page.goto(f"{live_server.url}{reverse('centro:reprografia_nueva')}")
+    with page.expect_navigation():
+        page.evaluate(
+            "() => { const f = document.querySelector('form.centro__form');"
+            " f.requestSubmit(f.querySelector('button[value=guardar]')); }"
+        )
     assert page.locator("[role=alert]").first.is_visible()
     revisar(page, nombre)

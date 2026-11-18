@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Reprografía de {{ fila.estudiante.usuario.get_full_name }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/centro.css' %}">{% endblock %}
+
+{# HU-05-01, PA4: si el estudiante ya ha empezado la tarea (o está cancelada), sus datos se ven #}
+{# pero no se pueden cambiar (RF5.1.5).                                                        #}
+{% block volver %}{% url 'centro:reprografia' as atras %}{% include "_volver.html" with url=atras texto="Reprografía" etiqueta="Volver a reprografía" only %}{% endblock %}
+{% block h1 %}Reprografía{% endblock %}
+{% block sub %}<span class="barra__sub">{{ fila.estudiante.usuario.get_full_name }}</span>{% endblock %}
+
+{% block contenido %}
+{% include "usuarios/_mensajes.html" %}
+<p class="repro__aviso"><span aria-hidden="true">🔒</span> {% if fila.estado == "cancelada" %}Esta tarea está cancelada: no se puede cambiar.{% elif fila.estado == "sin_hacer" %}Esta tarea ya no está pendiente (ya pasó su hora o no se ha podido hacer): sus datos no se pueden cambiar.{% else %}{{ fila.estudiante.usuario.first_name }} ya ha empezado esta tarea: sus datos no se pueden cambiar.{% endif %}</p>
+<dl class="repro__ficha">
+  <div><dt>Estado</dt><dd>{{ fila.texto_estado }}</dd></div>
+  <div><dt>Día</dt><dd>{{ fila.texto_fecha|capfirst }}, de {{ fila.hora_inicio|time:"H:i" }} a {{ fila.hora_fin|time:"H:i" }}</dd></div>
+  <div><dt>Copias</dt><dd>{{ fila.trabajo.copias }}</dd></div>
+  <div><dt>Tipo de trabajo</dt><dd>{{ fila.trabajo.texto_trabajo }}</dd></div>
+  <div><dt>Color</dt><dd>{% if fila.trabajo.texto_color %}{{ fila.trabajo.texto_color }}{% else %}No aplica (solo plastificar){% endif %}</dd></div>
+  <div><dt>Aula</dt><dd>{{ fila.trabajo.aula }}</dd></div>
+</dl>
+{% endblock %}
