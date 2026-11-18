@@ -30,6 +30,11 @@ OPCIONES_POR_ROL = {
             "horario:cargar",
         ),
         ("Vínculos", "Tutor y familiar de cada estudiante.", "usuarios:vinculos"),
+        (
+            "Comedor y menú",
+            "Quién se encarga del comedor cada día y del reparto del menú cada mes.",
+            "centro:comedor",
+        ),
     ],
     Rol.TUTOR: [
         (
@@ -78,6 +83,7 @@ ICONOS = {
     "admin:usuarios_clase_changelist": "escuela",
     "horario:cargar": "reloj",
     "usuarios:vinculos": "enlace",
+    "centro:comedor": "calendario",
     "tareas:crear_tarea": "mas",
     "tareas:catalogo": "archivo",
     "perfil:lista": "personas",

@@ -1,0 +1,4 @@
+{# HU-05-04 · En la tarea «Comedor» del encargado de hoy, ya empezada: ir a anotar quién come. #}
+{% if t.en_curso and t.asignacion.comedor_del_dia %}
+<a class="boton boton--mediano comedor__ir" href="{% url 'centro:comedor_hoy' %}"><span aria-hidden="true">🍽️</span> Anotar quién come</a>
+{% endif %}

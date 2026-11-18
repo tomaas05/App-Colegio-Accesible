@@ -1,0 +1,3 @@
+{# La marca de un compañero (B61): símbolo y texto. id: lo que cambia HTMX al tocarlo.      #}
+{# En el móvil, «Sin marcar» se queda en «○» a la vista (el lector sigue diciendo el texto). #}
+<span class="comedor__marca{% if c.come %} comedor__marca--come{% elif c.no_come %} comedor__marca--no-come{% endif %}" id="{{ id }}">{% if c.come %}<span aria-hidden="true">✓</span> <span class="comedor__texto-marca">Come</span>{% elif c.no_come %}<span aria-hidden="true">✕</span> <span class="comedor__texto-marca">No come</span>{% else %}<span aria-hidden="true">○</span> <span class="comedor__texto-marca">Sin marcar</span>{% endif %}</span>
