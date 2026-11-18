@@ -642,3 +642,8 @@
   padding: 0.4rem 0.8rem;
   font-size: 0.9rem;
 }
+.catalogo__botones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
