@@ -2,18 +2,26 @@
 
 HU-05-03 · Comedor y menú (administrador): de un mes, quién reparte el menú, el menú del
 mes y quién se encarga del comedor cada día (boceto B67, «Tareas del centro»).
+HU-05-04 · Anotar quién come (el estudiante encargado del comedor de hoy): las clases (B60)
+y los compañeros de cada clase (B61).
 """
 
 import re
 from datetime import date
+from functools import wraps
 
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from apps.agenda.acceso import estudiante_requerido
+from apps.usuarios.models import Clase, Estudiante
 from apps.usuarios.permisos import admin_requerido
 
+from . import comedor as quien_come
 from . import servicios
 from .forms import FormComedor, FormMenu, FormReparto
 from .models import ComedorDelDia
@@ -191,3 +199,136 @@ def comedor(request):
         },
         status=400 if hay_errores else 200,
     )
+
+
+# --- HU-05-04 · Anotar quién come (el estudiante encargado del comedor de hoy) -----------
+
+
+def _encargado(vista):
+    """Solo entra el estudiante que hoy tiene el comedor (HU-05-03). Deja su ComedorDelDia
+    en `request.encargo`."""
+
+    @estudiante_requerido
+    @wraps(vista)
+    def envoltura(request, *args, **kwargs):
+        request.encargo = quien_come.encargo_de_hoy(request.estudiante)
+        if request.encargo is None:
+            raise PermissionDenied  # hoy no le toca: la tarea no está en su agenda
+        return vista(request, *args, **kwargs)
+
+    return envoltura
+
+
+def _volver_a_la_tarea(request):
+    return reverse("agenda:detalle", args=[request.encargo.asignacion_id])
+
+
+@_encargado
+@require_GET
+def comedor_hoy(request):
+    """B60 · Las clases del centro: cuántos lleva marcados de cada una, cuáles ha terminado y
+    cuántos comen hoy en todo el centro (PA1, PA4, RF5.2.7)."""
+    return render(
+        request,
+        "centro/comedor_hoy.html",
+        {"resumen": quien_come.resumen(servicios.hoy()), "volver": _volver_a_la_tarea(request)},
+    )
+
+
+def _clase(pk):
+    """La clase, si es del centro (tiene algún estudiante activo). Si no, 404."""
+    return get_object_or_404(
+        Clase.objects.filter(estudiantes__usuario__is_active=True).distinct(), pk=pk
+    )
+
+
+def _es_htmx(request):
+    return request.headers.get("HX-Request") == "true"
+
+
+def _url_clase(clase, ultimo=""):
+    url = reverse("centro:comedor_clase", args=[clase.pk])
+    return f"{url}?ultimo={ultimo}" if ultimo else url
+
+
+def _pantalla_clase(request, clase, tocado=None):
+    """B61. `tocado`: el compañero que se acaba de marcar, para anunciarlo al lector."""
+    hoy = servicios.hoy()
+    dia = quien_come.clase_del_dia(clase, hoy)
+    anuncio = next(
+        (
+            f"{c.nombre}: {'come' if c.come else 'no come'}."
+            for c in dia.companeros
+            if c.estudiante.pk == tocado and c.marcado
+        ),
+        "",
+    )
+    return render(
+        request,
+        "centro/comedor_clase.html",
+        {
+            "dia": dia,
+            "comen_hoy": quien_come.comen_hoy(hoy),
+            "anuncio": anuncio,
+            "ultimo": request.GET.get("ultimo", ""),
+        },
+    )
+
+
+@_encargado
+@require_GET
+def comedor_clase(request, pk):
+    """B61 · Los compañeros de una clase con su avatar y su marca (PA1, PA2, PA3)."""
+    return _pantalla_clase(request, _clase(pk))
+
+
+@_encargado
+@require_POST
+def comedor_marcar(request, pk, codigo):
+    """PA2 y PA3: un toque en el compañero cambia su marca (come / no come).
+
+    El formulario envía la marca que tiene que quedar (`come=1` o `0`), así que si el mismo
+    toque llega dos veces (doble pulsación sin JavaScript, reintento) no se deshace. Con HTMX
+    solo cambia su marca, el recuento y los mensajes; sin JavaScript, vuelve a la clase.
+    """
+    clase = _clase(pk)
+    companero = get_object_or_404(
+        Estudiante.objects.select_related("usuario", "clase"),
+        codigo_estudiante=codigo,
+        clase=clase,
+        usuario__is_active=True,
+    )
+    htmx = _es_htmx(request)
+    come = request.POST.get("come")
+    try:
+        if come in ("0", "1"):
+            quien_come.marcar(request.estudiante, companero, come == "1")
+        else:
+            quien_come.cambiar(request.estudiante, companero)
+    except servicios.ErrorDeCentro as e:
+        messages.error(request, str(e))
+        if htmx:
+            # La pantalla ya no vale (p. ej. la clase se ha terminado en otra pestaña):
+            # se carga entera, con el mensaje.
+            respuesta = HttpResponse(status=204)
+            respuesta["HX-Redirect"] = _url_clase(clase, codigo)
+            return respuesta
+        return redirect(_url_clase(clase, codigo))
+    if htmx:
+        return _pantalla_clase(request, clase, tocado=companero.pk)
+    return redirect(_url_clase(clase, codigo))
+
+
+@_encargado
+@require_POST
+def comedor_terminar(request, pk):
+    """PA4 y PA5: «Clase terminada» si todos tienen marca. Vuelve a las clases."""
+    clase = _clase(pk)
+    try:
+        quien_come.terminar_clase(request.estudiante, clase)
+    except servicios.ErrorDeCentro as e:
+        messages.error(request, str(e))
+        return redirect(_url_clase(clase))
+    faltan = quien_come.resumen(servicios.hoy()).texto_faltan
+    messages.success(request, f"{clase.nombre} terminada. {faltan}")
+    return redirect("centro:comedor_hoy")

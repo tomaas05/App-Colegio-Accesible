@@ -2,6 +2,8 @@
 
 HU-05-03 (AGENDA-270): el administrador asigna a un estudiante el comedor de un día o el
 reparto del menú de un mes.
+HU-05-04 (AGENDA-276): el estudiante encargado del comedor anota quién come cada día
+(AsistenciaComedor) y da por terminada cada clase (ClaseComedorTerminada).
 
 - TareaDelCentro: la tarea del catálogo (apps.tareas.Tarea) que corresponde a cada tipo
   de tarea del centro («Comedor», «Reparto del menú»). Se crea sola la primera vez.
@@ -19,6 +21,7 @@ from django.db import models
 from django.db.models import Q
 
 from apps.tareas.models import Asignacion, Tarea
+from apps.usuarios.models import Clase, Estudiante, Usuario
 
 # Formatos del menú del mes: PDF o imagen.
 EXTENSIONES_MENU = ["pdf", "png", "jpg", "jpeg", "webp"]
@@ -106,3 +109,57 @@ class RepartoMenu(models.Model):
     def __str__(self):
         quien = self.asignacion.estudiante if self.asignacion else "pendiente de asignar"
         return f"Reparto del menú de {self.mes:%m/%Y}: {quien}"
+
+
+class AsistenciaComedor(models.Model):
+    """Si un estudiante come o no come un día (RF5.2.4). La anota el encargado del comedor.
+
+    Sin dietas ni tipos de comida (decisión del equipo, 20/10). Mientras su clase no esté
+    terminada, la marca se puede cambiar (RF5.2.5).
+    """
+
+    fecha = models.DateField()
+    estudiante = models.ForeignKey(
+        Estudiante, on_delete=models.CASCADE, related_name="asistencias_comedor"
+    )
+    come = models.BooleanField()
+    # Quién la anotó. Si se borra su cuenta, la marca se queda.
+    anotada_por = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    anotada_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "asistencia al comedor"
+        verbose_name_plural = "asistencias al comedor"
+        ordering = ["-fecha", "estudiante"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["fecha", "estudiante"], name="asistencia_comedor_una_por_dia"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.estudiante} · {self.fecha:%d/%m/%Y} · {'come' if self.come else 'no come'}"
+
+
+class ClaseComedorTerminada(models.Model):
+    """Una clase que el encargado ha dado por terminada un día (RF5.2.6)."""
+
+    fecha = models.DateField()
+    clase = models.ForeignKey(Clase, on_delete=models.CASCADE, related_name="+")
+    terminada_por = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    terminada_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "clase terminada en el comedor"
+        verbose_name_plural = "clases terminadas en el comedor"
+        ordering = ["-fecha", "clase"]
+        constraints = [
+            models.UniqueConstraint(fields=["fecha", "clase"], name="clase_comedor_una_por_dia"),
+        ]
+
+    def __str__(self):
+        return f"{self.clase} · {self.fecha:%d/%m/%Y} · terminada"
