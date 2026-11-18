@@ -23,6 +23,7 @@ urlpatterns = [
     path("tareas/", include("apps.tareas.urls")),
     path("horario/", include("apps.horario.urls")),
     path("perfil/", include("apps.perfil.urls")),
+    path("centro/", include("apps.centro.urls")),
     # HU-06-02: seguimiento de hoy del tutor y del profesional (B50).
     path("seguimiento/", include("apps.seguimiento.urls")),
     # Buscador de pictogramas de ARASAAC en el servidor (decisión 0004).

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}{% if abierto == "comedor" %}Asignar el comedor · {% elif abierto == "reparto" %}Reparto del menú · {% elif abierto == "menu" %}Menú del mes · {% endif %}Comedor y menú · {{ nombre_mes|capfirst }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/centro.css' %}">{% endblock %}
+
+{# HU-05-03 (AGENDA-270) · Administrador. Boceto B67 «Tareas del centro».                    #}
+{# De un mes: quién reparte el menú y con qué horario, el menú del mes (para el familiar,    #}
+{# HU-06-03) y quién se encarga del comedor cada día. Lo que no tiene estudiante sale como   #}
+{# «Pendiente de asignar» (PA5). Sin desplazamiento (decisión 0005): «Asignar», «Cambiar» y  #}
+{# «Subir» abren su formulario en lugar de la lista, y los días pasan con «Antes / Después». #}
+{% block volver %}{% if abierto %}{% include "_volver.html" with url=url_mes texto="Comedor y menú" etiqueta="Volver a comedor y menú sin guardar" only %}{% else %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endif %}{% endblock %}
+{% block h1 %}{% if abierto == "comedor" %}Asignar el comedor{% elif abierto == "reparto" %}Reparto del menú{% elif abierto == "menu" %}Menú del mes{% else %}Comedor y menú{% endif %}{% endblock %}
+{% block sub %}{% if abierto %}<span class="barra__sub">{{ nombre_mes|capfirst }}</span>{% endif %}{% endblock %}
+
+{% block contenido %}
+{% include "usuarios/_mensajes.html" %}
+{% if error %}
+<div class="aviso-error" role="alert" tabindex="-1" data-enfocar>
+  <span class="aviso-error__ico" aria-hidden="true">⚠️</span>
+  <p>{{ error }}</p>
+</div>
+{% endif %}
+
+{% if abierto == "reparto" %}
+{# --- PA2, PA3 y PA4: quién reparte el menú del mes y con qué horario --- #}
+<form method="post" class="formulario encaja centro__form" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="mes" value="{{ mes_param }}">
+  <div class="encaja">
+    <div class="partes" id="partes-reparto" data-paginar data-pag-variable data-foco="titulo" data-estado="Parte {n} de {total}">
+      {% if form_reparto.errors %}<div class="parte" data-pag-inicio>{% with form=form_reparto %}{% include "usuarios/_errores.html" %}{% endwith %}</div>{% endif %}
+      <div class="parte">
+        <p class="admin__nota">La tarea «Reparto del menú» saldrá en su agenda esos días de {{ nombre_mes }}{% if mes_empezado %}, desde hoy{% endif %}.{% if reparto.asignacion %} Si eliges a otro estudiante, sustituye a {{ reparto.asignacion.estudiante.usuario.get_full_name }}.{% endif %}</p>
+        <div class="campo">{{ form_reparto.estudiante.as_field_group }}</div>
+      </div>
+      <div class="parte campo campo--opciones">{{ form_reparto.dias.as_field_group }}</div>
+      <div class="parte centro__horas">
+        <div class="campo">{{ form_reparto.hora_inicio.as_field_group }}</div>
+        <div class="campo">{{ form_reparto.hora_fin.as_field_group }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="partes-reparto" que="Partes del formulario" final=True only %}
+    <div class="pie__acciones">
+      {% if reparto.asignacion %}<button class="boton--aux" type="submit" form="quitar" name="accion" value="quitar_reparto">Quitar<span class="visualmente-oculto"> a {{ reparto.asignacion.estudiante.usuario.get_full_name }} del reparto</span></button>{% endif %}
+      <button class="boton--principal boton--mediano" type="submit" name="accion" value="reparto" data-solo-ultima="partes-reparto">Guardar</button>
+    </div>
+  </div>
+</form>
+{% if reparto.asignacion %}{% include "centro/_quitar.html" with mes=mes_param only %}{% endif %}
+
+{% elif abierto == "menu" %}
+{# --- El menú del mes (PDF o imagen): lo ve el familiar en HU-06-03 --- #}
+<form method="post" enctype="multipart/form-data" class="formulario encaja centro__form" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="mes" value="{{ mes_param }}">
+  <div class="encaja">
+    {% with form=form_menu %}{% include "usuarios/_errores.html" %}{% endwith %}
+    {% if menu %}<p><a class="centro__enlace" href="{{ menu.url }}" target="_blank" rel="noopener">Ver el menú de {{ nombre_mes }}<span class="visualmente-oculto"> ({% if menu_es_imagen %}imagen{% else %}PDF{% endif %}, se abre en otra pestaña)</span></a></p>{% endif %}
+    <div class="campo">{{ form_menu.archivo.as_field_group }}</div>
+    <p class="admin__nota">PDF o imagen, hasta 5 MB. Lo verá el familiar en el día del estudiante.{% if menu %} Sustituye al que hay ahora.{% endif %}</p>
+  </div>
+  <div class="pie"><div class="pie__acciones">
+    {% if menu %}<button class="boton--aux" type="submit" form="quitar" name="accion" value="quitar_menu">Quitar<span class="visualmente-oculto"> el menú de {{ nombre_mes }}</span></button>{% endif %}
+    <button class="boton--principal boton--mediano" type="submit" name="accion" value="menu">Subir</button>
+  </div></div>
+</form>
+{% if menu %}{% include "centro/_quitar.html" with mes=mes_param only %}{% endif %}
+
+{% elif abierto == "comedor" %}
+{# --- PA1, PA3 y PA4: el comedor de un día --- #}
+<form method="post" class="formulario encaja centro__form" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="mes" value="{{ mes_param }}">
+  <div class="encaja">
+    <div class="partes" id="partes-comedor" data-paginar data-pag-variable data-foco="titulo" data-estado="Parte {n} de {total}">
+      {% if form_comedor.errors %}<div class="parte" data-pag-inicio>{% with form=form_comedor %}{% include "usuarios/_errores.html" %}{% endwith %}</div>{% endif %}
+      <div class="parte">
+        <p class="admin__nota">La tarea «Comedor» saldrá en su agenda ese día.{% if comedor_abierto %} Ahora lo tiene {{ comedor_abierto.asignacion.estudiante.usuario.get_full_name }}: si eliges a otro, lo sustituye.{% else %} Si el día ya tiene estudiante, el nuevo lo sustituye.{% endif %}</p>
+        <div class="campo">{{ form_comedor.dia.as_field_group }}</div>
+        <div class="campo">{{ form_comedor.estudiante.as_field_group }}</div>
+      </div>
+      <div class="parte centro__horas">
+        <div class="campo">{{ form_comedor.hora_inicio.as_field_group }}</div>
+        <div class="campo">{{ form_comedor.hora_fin.as_field_group }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="pie pie--pasos">
+    {% include "_paginador.html" with de="partes-comedor" que="Partes del formulario" final=True only %}
+    <div class="pie__acciones">
+      {% if comedor_abierto %}<button class="boton--aux" type="submit" form="quitar" name="accion" value="quitar_comedor">Quitar<span class="visualmente-oculto"> a {{ comedor_abierto.asignacion.estudiante.usuario.get_full_name }} del comedor del {{ texto_dia_abierto }}</span></button>{% endif %}
+      <button class="boton--principal boton--mediano" type="submit" name="accion" value="comedor" data-solo-ultima="partes-comedor">Guardar</button>
+    </div>
+  </div>
+</form>
+{% if comedor_abierto %}{% include "centro/_quitar.html" with mes=mes_param dia=comedor_abierto.fecha only %}{% endif %}
+
+{% else %}
+<nav class="centro__meses" aria-label="Cambiar de mes">
+  <a class="boton boton--aux" href="?mes={{ mes_anterior|date:'Y-m' }}" aria-label="Mes anterior: {{ nombre_mes_anterior }}"><span aria-hidden="true">‹</span><span class="centro__mes-corto"> {{ corto_anterior|capfirst }}</span></a>
+  <h2 class="centro__mes" id="mes-titulo">{{ nombre_mes|capfirst }}</h2>
+  <a class="boton boton--aux" href="?mes={{ mes_siguiente|date:'Y-m' }}" aria-label="Mes siguiente: {{ nombre_mes_siguiente }}"><span class="centro__mes-corto">{{ corto_siguiente|capfirst }} </span><span aria-hidden="true">›</span></a>
+</nav>
+
+{# --- Reparto del menú y menú del mes (PA2, PA4, PA5): dos tarjetas que abren su formulario --- #}
+<ul class="centro__tarjetas" aria-label="Reparto y menú del mes">
+  <li>
+    {% with asignacion=reparto.asignacion %}
+    <a class="centro__tarjeta{% if not asignacion %} centro__tarjeta--pendiente{% endif %}"{% if not mes_pasado %} href="?mes={{ mes_param }}&amp;abrir=reparto"{% else %} role="link" aria-disabled="true"{% endif %}>
+      <span class="centro__tarjeta-titulo">Reparto del menú</span>
+      {% if asignacion %}
+      <span class="centro__quien"><img src="{{ asignacion.estudiante.avatar.url }}" alt="" width="32" height="32"><span><b>{{ asignacion.estudiante.usuario.get_full_name }}</b><span class="centro__detalle"> ({{ asignacion.estudiante.clase.nombre }}), {{ texto_dias_reparto }}, de {{ asignacion.hora_inicio|time:"H:i" }} a {{ asignacion.hora_fin|time:"H:i" }}</span></span></span>
+      {% else %}
+      <span class="centro__pendiente"><span aria-hidden="true">○</span> Pendiente<span class="centro__largo"> de asignar</span></span>
+      {% endif %}
+      {% if not mes_pasado %}<span class="visualmente-oculto">. {% if asignacion %}Cambiar{% else %}Asignar{% endif %}</span>{% endif %}
+    </a>
+    {% endwith %}
+  </li>
+  <li>
+    <a class="centro__tarjeta{% if not menu %} centro__tarjeta--pendiente{% endif %}"{% if not mes_pasado %} href="?mes={{ mes_param }}&amp;abrir=menu"{% elif menu %} href="{{ menu.url }}" target="_blank" rel="noopener"{% else %} role="link" aria-disabled="true"{% endif %}>
+      <span class="centro__tarjeta-titulo">Menú del mes</span>
+      {% if menu %}
+      <span class="centro__hecho"><span aria-hidden="true">✓</span> Subido</span>
+      {% else %}
+      <span class="centro__pendiente"><span aria-hidden="true">○</span> Sin subir</span>
+      {% endif %}
+      {% if not mes_pasado %}<span class="visualmente-oculto">. {% if menu %}Ver o cambiar{% else %}Subir{% endif %}</span>{% endif %}
+    </a>
+  </li>
+</ul>
+
+{# --- Comedor de cada día (PA1, PA4, PA5) --- #}
+<h2 class="centro__titulo" id="comedor-titulo">Comedor de cada día</h2>
+<div class="encaja centro__caja">
+  <ol class="centro__dias" id="dias-comedor" aria-labelledby="comedor-titulo" data-paginar data-pag-variable data-estado="Días {desde} a {hasta} de {de}">
+    {% for d in dias %}
+    <li class="centro__dia{% if d.pasado %} centro__dia--pasado{% endif %}"{% if d.inicio %} data-pag-inicio{% endif %}>
+      <span class="centro__fecha">{% include "_dia_forma.html" with numero=d.fecha.isoweekday only %}<span>{{ d.texto_corto|capfirst }}{% if d.es_hoy %} <span class="centro__hoy">(hoy)</span>{% endif %}</span></span>
+      {% if d.comedor %}
+      {% with asignacion=d.comedor.asignacion %}
+      <span class="centro__quien"><img src="{{ asignacion.estudiante.avatar.url }}" alt="" width="32" height="32"><span><b>{{ asignacion.estudiante.usuario.get_full_name }}</b><span class="centro__detalle"> ({{ asignacion.estudiante.clase.nombre }})</span>, de {{ asignacion.hora_inicio|time:"H:i" }} a {{ asignacion.hora_fin|time:"H:i" }}</span></span>
+      {% endwith %}
+      {% else %}
+      {% if d.pasado %}<span class="centro__sin">Sin asignar</span>{% else %}<span class="centro__pendiente"><span aria-hidden="true">○</span> Pendiente<span class="centro__largo"> de asignar</span></span>{% endif %}
+      {% endif %}
+      {% if not d.pasado %}
+      <span class="centro__acciones">
+        <a class="boton boton--aux" href="?mes={{ mes_param }}&amp;abrir=comedor&amp;dia={{ d.fecha|date:'Y-m-d' }}">{% if d.comedor %}Cambiar{% else %}Asignar{% endif %}<span class="visualmente-oculto"> el comedor del {{ d.texto }}</span></a>
+      </span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% include "_paginador.html" with de="dias-comedor" que="Más días del mes" anterior="Antes" siguiente="Después" only %}
+{% endif %}
+{% endblock %}
