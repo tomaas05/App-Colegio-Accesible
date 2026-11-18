@@ -35,6 +35,11 @@ OPCIONES_POR_ROL = {
             "Quién se encarga del comedor cada día y del reparto del menú cada mes.",
             "centro:comedor",
         ),
+        (
+            "Reprografía",
+            "Poner a un estudiante a imprimir, fotocopiar o plastificar un trabajo.",
+            "centro:reprografia",
+        ),
     ],
     Rol.TUTOR: [
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
@@ -48,6 +53,11 @@ OPCIONES_POR_ROL = {
             "Alumnos",
             "Cómo ve la agenda cada uno: colores, letra, botones y temporizador.",
             "perfil:lista",
+        ),
+        (
+            "Reprografía",
+            "Poner a un alumno a imprimir, fotocopiar o plastificar un trabajo.",
+            "centro:reprografia",
         ),
     ],
     Rol.PROFESIONAL: [
@@ -79,6 +89,7 @@ ICONOS = {
     "horario:cargar": "reloj",
     "usuarios:vinculos": "enlace",
     "centro:comedor": "calendario",
+    "centro:reprografia": "impresora",
     "tareas:crear_tarea": "mas",
     "tareas:catalogo": "archivo",
     "perfil:lista": "personas",

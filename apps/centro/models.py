@@ -4,9 +4,12 @@ HU-05-03 (AGENDA-270): el administrador asigna a un estudiante el comedor de un 
 reparto del menú de un mes.
 HU-05-04 (AGENDA-276): el estudiante encargado del comedor anota quién come cada día
 (AsistenciaComedor) y da por terminada cada clase (ClaseComedorTerminada).
+HU-05-01 (AGENDA-260): el tutor o el administrador crea en la agenda de un estudiante una
+tarea de reprografía con sus datos (TrabajoReprografia).
 
 - TareaDelCentro: la tarea del catálogo (apps.tareas.Tarea) que corresponde a cada tipo
-  de tarea del centro («Comedor», «Reparto del menú»). Se crea sola la primera vez.
+  de tarea del centro («Comedor», «Reparto del menú», «Reprografía»). Se crea sola la
+  primera vez.
 - ComedorDelDia y RepartoMenu: quién se encarga de cada día y de cada mes. Apuntan a la
   Asignacion (Úrsula) que pone la tarea en la agenda del estudiante con su horario; así
   sale en su agenda como cualquier otra tarea, sin tocar la agenda de Tomás. El
@@ -30,6 +33,7 @@ EXTENSIONES_MENU = ["pdf", "png", "jpg", "jpeg", "webp"]
 class TipoTareaCentro(models.TextChoices):
     COMEDOR = "comedor", "Comedor"
     REPARTO_MENU = "reparto_menu", "Reparto del menú"
+    REPROGRAFIA = "reprografia", "Reprografía"
 
 
 class TareaDelCentro(models.Model):
@@ -163,3 +167,81 @@ class ClaseComedorTerminada(models.Model):
 
     def __str__(self):
         return f"{self.clase} · {self.fecha:%d/%m/%Y} · terminada"
+
+
+COPIAS_MAXIMO = 99
+AULA_MAXIMO = 50
+
+
+class TrabajoReprografia(models.Model):
+    """Los datos de una tarea de reprografía (RI5.1.2): copias, tipo de trabajo, color y aula.
+
+    Apunta a la Asignacion (Úrsula) que pone la tarea «Reprografía» en la agenda del
+    estudiante un día, con su horario. El estudiante, el día y las horas se leen de ella.
+    `color`: True color, False blanco y negro, vacío = no aplica (solo plastificar, RF5.1.2).
+    """
+
+    asignacion = models.OneToOneField(
+        Asignacion, on_delete=models.CASCADE, related_name="reprografia"
+    )
+    copias = models.PositiveSmallIntegerField("número de copias")
+    imprimir = models.BooleanField(default=False)
+    fotocopiar = models.BooleanField(default=False)
+    plastificar = models.BooleanField(default=False)
+    color = models.BooleanField(null=True, blank=True)
+    aula = models.CharField("aula de recogida y entrega", max_length=AULA_MAXIMO)
+
+    class Meta:
+        verbose_name = "trabajo de reprografía"
+        verbose_name_plural = "trabajos de reprografía"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(copias__gte=1, copias__lte=COPIAS_MAXIMO),
+                name="reprografia_copias_1_a_99",
+            ),
+            models.CheckConstraint(
+                condition=Q(imprimir=True) | Q(fotocopiar=True) | Q(plastificar=True),
+                name="reprografia_algun_trabajo",
+            ),
+            # Color solo si se imprime o se fotocopia; si no, «no aplica».
+            models.CheckConstraint(
+                condition=((Q(imprimir=True) | Q(fotocopiar=True)) & Q(color__isnull=False))
+                | (Q(imprimir=False, fotocopiar=False) & Q(color__isnull=True)),
+                name="reprografia_color_coherente",
+            ),
+            models.CheckConstraint(condition=~Q(aula=""), name="reprografia_aula_no_vacia"),
+        ]
+
+    def __str__(self):
+        return f"Reprografía: {self.texto_trabajo} · {self.copias} · {self.aula}"
+
+    @property
+    def trabajos(self):
+        """Los tipos de trabajo, en orden: ["imprimir", "plastificar"]."""
+        return [
+            nombre
+            for nombre, si in (
+                ("imprimir", self.imprimir),
+                ("fotocopiar", self.fotocopiar),
+                ("plastificar", self.plastificar),
+            )
+            if si
+        ]
+
+    @property
+    def texto_trabajo(self):
+        """«Imprimir y plastificar»."""
+        t = self.trabajos
+        texto = t[0] if len(t) == 1 else ", ".join(t[:-1]) + " y " + t[-1]
+        return texto.capitalize()
+
+    @property
+    def texto_color(self):
+        """«En color», «En blanco y negro» o "" (no aplica)."""
+        if self.color is None:
+            return ""
+        return "En color" if self.color else "En blanco y negro"
+
+    @property
+    def texto_copias(self):
+        return "1 copia" if self.copias == 1 else f"{self.copias} copias"

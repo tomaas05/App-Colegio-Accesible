@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Reprografía · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/centro.css' %}">{% endblock %}
+
+{# HU-05-01 (AGENDA-260) · Tutor y administrador. Boceto B66 «Tareas del centro».            #}
+{# Los trabajos de reprografía de hoy en adelante (PA1): día, estudiante y datos. «Cambiar»  #}
+{# solo mientras el estudiante no la ha empezado (PA4); si no, «Ver». Sin desplazamiento     #}
+{# (decisión 0005): la lista pasa con «Antes / Después».                                     #}
+{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
+{% block h1 %}Reprografía{% endblock %}
+
+{% block contenido %}
+{% include "usuarios/_mensajes.html" %}
+<h2 class="centro__titulo" id="trabajos-titulo">Trabajos de hoy en adelante</h2>
+{% if filas %}
+<div class="encaja centro__caja">
+  <ol class="centro__dias" id="trabajos" aria-labelledby="trabajos-titulo" data-paginar data-pag-variable data-estado="Trabajos {desde} a {hasta} de {de}">
+    {% for f in filas %}
+    <li class="centro__dia repro__fila{% if f.estado == 'cancelada' %} centro__dia--pasado{% endif %}">
+      <span class="centro__fecha">{% include "_dia_forma.html" with numero=f.fecha.isoweekday only %}<span>{{ f.texto_fecha|capfirst }}{% if f.es_hoy %} <span class="centro__hoy">(hoy)</span>{% endif %}<span class="repro__hora"><span class="repro__coma">,</span> de {{ f.hora_inicio|time:"H:i" }} a {{ f.hora_fin|time:"H:i" }}</span></span></span>
+      <span class="centro__quien"><img src="{{ f.estudiante.avatar.url }}" alt="" width="32" height="32"><span><b>{{ f.estudiante.usuario.get_full_name }}</b><span class="centro__detalle"> ({{ f.estudiante.clase.nombre }})</span></span></span>
+      <span class="repro__datos">{{ f.trabajo.texto_copias }} · {{ f.trabajo.texto_trabajo }}{% if f.trabajo.texto_color %} · {{ f.trabajo.texto_color|lower }}{% endif %} · {{ f.trabajo.aula }}</span>
+      <span class="repro__estado repro__estado--{{ f.estado }}">{% if f.estado == "hecha" %}<span aria-hidden="true">✓</span> {% elif f.estado == "pendiente" %}<span aria-hidden="true">○</span> {% elif f.estado == "empezada" %}<span aria-hidden="true">▶</span> {% else %}<span aria-hidden="true">✕</span> {% endif %}{{ f.texto_estado }}</span>
+      <span class="centro__acciones">
+        <a class="boton boton--aux" href="{% url 'centro:reprografia_cambiar' f.trabajo.pk %}">{% if f.se_puede_cambiar %}Cambiar{% else %}Ver{% endif %}<span class="visualmente-oculto"> la reprografía de {{ f.estudiante.usuario.get_full_name }} del {{ f.texto_fecha }}</span></a>
+      </span>
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% include "_paginador.html" with de="trabajos" que="Más trabajos" anterior="Antes" siguiente="Después" only %}
+{% else %}
+<p class="admin__nota">Todavía no hay trabajos de reprografía de hoy en adelante.</p>
+{% endif %}
+<div class="pie"><div class="pie__acciones">
+  <a class="boton boton--aux" href="{% url 'centro:reprografia_fases' %}">Fases de la tarea</a>
+  <a class="boton boton--principal boton--mediano" href="{% url 'centro:reprografia_nueva' %}"><span aria-hidden="true">+</span> Nueva tarea de reprografía</a>
+</div></div>
+{% endblock %}
