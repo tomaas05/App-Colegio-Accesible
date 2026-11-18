@@ -239,3 +239,60 @@
   line-height: 1.1;
   padding-block: 0.2rem;
 }
+/* Contenido de los botones del estudiante (RF4.2.4, HU-04-02: imagen, texto o ambos) */
+html[data-contenido-botones] .salir-est button::before {
+  content: "⏻ ";
+}
+html[data-contenido-botones] .pie__acciones a[href*="/semana/"]::before {
+  content: "📅 ";
+}
+html[data-contenido-botones] .pie__acciones a[href*="/mi-horario/"]::before {
+  content: "🕒 ";
+}
+html[data-contenido-botones] .botones-tarea form button.boton--principal::before {
+  content: "▶ ";
+}
+html[data-contenido-botones] .botones-tarea a[data-confirmar="confirmar-fin"]::before {
+  content: "✓ ";
+}
+html[data-contenido-botones] .boton--no-puedo::before {
+  content: "✕ ";
+}
+html[data-contenido-botones] .botones-tarea a[href*="/plan-b/"]::before {
+  content: "⇄ ";
+}
+html[data-contenido-botones] [data-ocultar-temporizador]::before {
+  content: "⏱ ";
+}
+html[data-contenido-botones] .confirmar .boton--principal::before {
+  content: "✓ ";
+}
+html[data-contenido-botones] .confirmar form[method="dialog"] .boton::before {
+  content: "✕ ";
+}
+
+/* Modo «texto»: oculta los iconos/pictogramas de los botones */
+html[data-contenido-botones="texto"] :is(button:not(.tarjeta), .boton)::before {
+  content: none !important;
+}
+html[data-contenido-botones="texto"] :is(button:not(.tarjeta), .boton) > span[aria-hidden="true"] {
+  display: none !important;
+}
+
+/* Modo «imagen»: muestra solo el pictograma/icono y oculta visualmente el texto (se sigue leyendo) */
+html[data-contenido-botones="imagen"] :is(button:not(.tarjeta), .boton) {
+  font-size: 0;
+  gap: 0;
+}
+html[data-contenido-botones="imagen"] :is(button:not(.tarjeta), .boton) :is(.desc__texto-boton, .solo-ancho) {
+  font-size: 0;
+}
+html[data-contenido-botones="imagen"] :is(button:not(.tarjeta), .boton)::before,
+html[data-contenido-botones="imagen"] :is(button:not(.tarjeta), .boton) > span[aria-hidden="true"] {
+  font-size: var(--tamano-base);
+  line-height: 1;
+}
+html[data-contenido-botones="imagen"] .boton--principal::before,
+html[data-contenido-botones="imagen"] .boton--principal > span[aria-hidden="true"] {
+  font-size: 1.5rem;
+}

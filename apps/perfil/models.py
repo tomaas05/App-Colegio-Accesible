@@ -55,6 +55,22 @@ class ContenidoBotones(models.TextChoices):
     AMBOS = "ambos", "Imagen y texto"
 
 
+class AlcanceAgenda(models.TextChoices):
+    ACTUAL = "actual", "Solo la tarea actual"
+    ACTUAL_SIGUIENTE = "actual_sig", "La actual y la siguiente"
+    DIA = "dia", "Todo el día"
+    SEMANA = "semana", "La semana completa"
+
+
+class MaxTarjetas(models.IntegerChoices):
+    UNA = 1, "1 tarjeta"
+    DOS = 2, "2 tarjetas"
+    TRES = 3, "3 tarjetas"
+    CUATRO = 4, "4 tarjetas"
+    CINCO = 5, "5 tarjetas"
+    SEIS = 6, "6 tarjetas"
+
+
 class TipoTemporizador(models.TextChoices):
     LINEAL = "lineal", "Lineal"
     RADIAL = "radial", "Radial"
@@ -105,9 +121,16 @@ class Perfil(models.Model):
         choices=ContenidoBotones.choices,
         default=ContenidoBotones.AMBOS,
     )
+    alcance_agenda = models.CharField(
+        "qué tareas ve",
+        max_length=15,
+        choices=AlcanceAgenda.choices,
+        default=AlcanceAgenda.SEMANA,
+    )
     max_tarjetas = models.PositiveSmallIntegerField(
         "máximo de tarjetas",
-        default=6,
+        choices=MaxTarjetas.choices,
+        default=MaxTarjetas.SEIS,
         validators=[MinValueValidator(1), MaxValueValidator(6)],
     )
     tipo_temporizador = models.CharField(
@@ -157,6 +180,10 @@ class Perfil(models.Model):
             models.CheckConstraint(
                 condition=Q(metodo_acceso__in=MetodoAcceso.values),
                 name="perfil_metodo_acceso_valido",
+            ),
+            models.CheckConstraint(
+                condition=Q(alcance_agenda__in=AlcanceAgenda.values),
+                name="perfil_alcance_agenda_valido",
             ),
         ]
 

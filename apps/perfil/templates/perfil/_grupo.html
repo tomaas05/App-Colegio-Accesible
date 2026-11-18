@@ -10,8 +10,8 @@
   <div class="encaja">
     <div class="opciones-lista" id="opciones-{{ clave }}" data-paginar>
       {% for radio in campo %}
-      {# Cada tipo de letra se enseña escrito con esa letra. #}
-      <label class="opcion-radio">{{ radio.tag }} <span{% if clave == "tipo_letra" %} class="opcion__fuente" data-fuente="{{ radio.data.value }}"{% endif %}>{{ radio.choice_label }}</span></label>
+      {# Cada tipo de letra se enseña escrito con esa letra; cada contenido de botón, con su muestra. #}
+      <label class="opcion-radio{% if clave == 'contenido_botones' %} opcion-radio--muestra{% endif %}">{{ radio.tag }} <span{% if clave == "tipo_letra" %} class="opcion__fuente" data-fuente="{{ radio.data.value }}"{% endif %}>{{ radio.choice_label }}</span>{% if clave == "contenido_botones" %}<span class="muestra-boton muestra-boton--{{ radio.data.value }}" aria-hidden="true"></span>{% endif %}</label>
       {% endfor %}
     </div>
   </div>

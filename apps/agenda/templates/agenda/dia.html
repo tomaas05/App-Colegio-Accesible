@@ -12,14 +12,14 @@
 {% block h1 %}Tareas de hoy{% endblock %}
 
 {% block contenido %}
-{% if not agenda.tareas %}
+{% if not agenda.en_alcance %}
 <div class="encaja encaja--centro">
   <p class="vacio">{% include "agenda/_imagen_vacia.html" %} <span>Hoy no tienes tareas.</span></p>
 </div>
 {% else %}
 <div class="encaja encaja--centro">
-  <ol class="linea" id="tareas" aria-labelledby="titulo" data-paginar data-max="{{ perfil_activo.max_tarjetas|default:6 }}">
-    {% for t in agenda.tareas %}
+  <ol class="linea" id="tareas" aria-labelledby="titulo" data-paginar data-max="{% if agenda.alcance == 'actual_sig' %}2{% else %}{{ perfil_activo.max_tarjetas|default:6 }}{% endif %}">
+    {% for t in agenda.en_alcance %}
     {% url 'agenda:detalle' t.asignacion.pk as enlace %}
     {% if t == agenda.actual or not agenda.actual and t == agenda.siguiente %}
     {% include "agenda/_tarjeta.html" with inicio=True %}
@@ -36,8 +36,10 @@
   <div class="pie__acciones">
     {# La siguiente tarea, 10 minutos antes de que empiece (RF2.10.1). Solo aquí, no dentro de otra tarea. #}
     <div id="siguiente" class="pie-siguiente" role="status">{% include "agenda/_aviso_siguiente.html" %}</div>
-    {# HU-02-06: su semana (B30), y desde ella cada día y el horario de la clase. #}
+    {# HU-02-06 y HU-04-02: su semana (B30), solo cuando el alcance es la semana completa. #}
+    {% if agenda.puede_ver_semana %}
     <a class="boton boton--aux" href="{% url 'agenda:semana' %}">Mi semana</a>
+    {% endif %}
     {# HU-03-11, PA1 (Javi): el estudiante ve el horario de su clase. #}
     {# En el móvil se ve «Mi horario» para que quepa al lado de «Mi semana»; el nombre     #}
     {# completo se sigue leyendo (y empieza igual, WCAG 2.5.3).                            #}
