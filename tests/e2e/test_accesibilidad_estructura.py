@@ -136,7 +136,7 @@ def test_recorrido_con_teclado_en_ordenador(live_server, page, client, datos):
     """Saltar al contenido → logotipo → panel lateral → «Salir» → contenido."""
     abrir(page, live_server, client, "tutor", "ordenador")
     recorrido = []
-    for _ in range(9):
+    for _ in range(10):  # 9 paradas hasta «Salir» y una más, ya en el contenido
         page.keyboard.press("Tab")
         recorrido.append(
             page.evaluate(
@@ -146,8 +146,9 @@ def test_recorrido_con_teclado_en_ordenador(live_server, page, client, datos):
         )
     assert recorrido[0] == "Saltar al contenido"
     assert recorrido[1] == "" or "Despega" in recorrido[1]
-    assert recorrido[2:8] == [
+    assert recorrido[2:9] == [
         "Inicio",
+        "Seguimiento de hoy",
         "Crear una tarea",
         "Tareas creadas",
         "Tareas planificadas",

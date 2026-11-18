@@ -198,10 +198,21 @@ def test_pa3_el_codigo_en_minusculas_tambien_vale(client, luis):
     assert client.get(url("a01")).status_code == 200
 
 
-@pytest.mark.parametrize("usuario", ["tutor", "familiar", "admin", "est-a01"])
-def test_pa3_solo_el_profesional_usa_esta_pantalla(client, datos, usuario):
+@pytest.mark.parametrize("usuario", ["familiar", "admin", "est-a01"])
+def test_pa3_solo_el_profesional_y_el_tutor_usan_esta_pantalla(client, datos, usuario):
     client.force_login(Usuario.objects.get(username=usuario))
     assert client.get(url("A01")).status_code == 403
+
+
+def test_hu_06_02_el_tutor_consulta_la_agenda_de_los_suyos(client, datos):
+    """Desde «Seguimiento de hoy» (HU-06-02) el tutor abre «Ver su día» de sus estudiantes;
+    la de los de otra clase, no (404, como el profesional con los que no atiende)."""
+    client.force_login(Usuario.objects.get(username="tutor"))
+    respuesta = client.get(url("A01"))
+    assert respuesta.status_code == 200
+    html = respuesta.content.decode()
+    assert "Solo consulta" in html and reverse("seguimiento:hoy") in html
+    assert client.get(url("B01")).status_code == 404
 
 
 def test_sin_sesion_va_a_la_portada(client, datos):
