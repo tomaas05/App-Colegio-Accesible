@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Día en el colegio · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/seguimiento.css' %}">{% endblock %}
+
+{# HU-06-03 · El familiar con más de un estudiante (hermanos) elige de quién ver el día.  #}
+{# Con uno solo, esta pantalla no sale: se va directo a su día.                         #}
+{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
+{% block h1 %}Día en el colegio{% endblock %}
+
+{% block contenido %}
+<div class="encaja">
+  {% if estudiantes %}
+  <ul class="panel__estudiantes" id="estudiantes" aria-label="¿De quién?" data-paginar>
+    {% for estudiante in estudiantes %}
+    <li>
+      <a class="panel__estudiante panel__estudiante--enlace" href="{% url 'seguimiento:dia' estudiante.codigo_estudiante %}">
+        <img src="{{ estudiante.avatar.url }}" alt="" width="56" height="56">
+        <span><b>{{ estudiante.usuario.get_full_name }}</b><span>{{ estudiante.clase.nombre }}</span></span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Todavía no tienes ningún estudiante vinculado. Pídeselo al administrador del centro.</p>
+  {% endif %}
+</div>
+{% include "_paginador.html" with de="estudiantes" que="Más estudiantes" only %}
+{% endblock %}

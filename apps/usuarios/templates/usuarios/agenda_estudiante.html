@@ -13,63 +13,11 @@
 {% block sub %}<span class="barra__sub barra__persona"><img src="{{ estudiante.avatar.url }}" alt="" width="40" height="40"> {{ estudiante.clase.nombre }} · Solo consulta</span>{% endblock %}
 
 {% block contenido %}
-{# El día que se ve, con su letra y su forma (como en la semana del estudiante), y cómo cambiarlo. #}
-<nav class="consulta__dias" aria-label="Cambiar de día">
-  <a class="boton boton--aux" href="?dia={{ anterior|date:'Y-m-d' }}"><span aria-hidden="true">‹</span> <span class="consulta__dia-texto">Día anterior</span></a>
-  <h2 class="consulta__fecha" aria-live="polite">{% include "_dia_forma.html" with numero=fecha.isoweekday only %} <span>{{ fecha_texto }}{% if es_hoy %} (hoy){% endif %}</span></h2>
-  {% if not es_hoy %}<a class="boton boton--aux" href="?">Hoy</a>{% endif %}
-  <a class="boton boton--aux" href="?dia={{ siguiente|date:'Y-m-d' }}"><span class="consulta__dia-texto">Día siguiente</span> <span aria-hidden="true">›</span></a>
-</nav>
+{% include "usuarios/_consulta_dias.html" %}
 
 <div class="encaja">
   <div class="partes" id="partes" data-paginar data-estado="Parte {n} de {total}">
-    <section class="parte parte--caja parte--lista" aria-labelledby="consulta-tareas" data-titulo="Tareas">
-      <h2 id="consulta-tareas">Tareas</h2>
-      <div class="encaja">
-        {% if tareas %}
-        <ol class="consulta__tareas" id="tareas" data-paginar>
-          {% for t in tareas %}
-          <li class="consulta__tarea">
-            <img src="{{ t.tarea.imagen.url }}" alt="" width="56" height="56">
-            <div class="consulta__cuerpo">
-              <p class="consulta__hora">{{ t.hora_inicio|time:"H:i" }} – {{ t.hora_fin|time:"H:i" }}</p>
-              <h3>{{ t.tarea.nombre }}</h3>
-              <p class="consulta__estado">
-                <span>Estado: <b>{{ t.estado }}</b></span>
-                {# HU-07-04: no se pudo hacer; qué eligió del plan B y por qué, si lo dijo un adulto. #}
-                {% if t.ejecucion.plan_b %}<span>Plan B: <b>{{ t.ejecucion.plan_b.nombre }}</b></span>{% endif %}
-                {% if t.ejecucion.motivo %}<span>Motivo: {{ t.ejecucion.motivo }}</span>{% endif %}
-                {# PA2: lo de otros se marca como solo consulta; no hay botones de cambiar ni borrar. #}
-                {% if t.modificable %}
-                <span class="consulta__marca consulta__marca--mia">Creada por ti</span>
-                {% else %}
-                <span class="consulta__marca"><span aria-hidden="true">🔒</span> Solo consulta</span>
-                {% endif %}
-              </p>
-              <p class="consulta__quien">
-                Creada por {{ t.tarea.creador.get_full_name }}{% if t.asignacion.asignado_por_id != t.tarea.creador_id %} · puesta en la agenda por {{ t.asignacion.asignado_por.get_full_name }}{% endif %}
-              </p>
-              {% with pasos=t.tarea.pasos.all %}
-              {% if pasos %}
-              {# Al abrirlo, los pasos ocupan el sitio de los demás datos de la tarjeta (usuarios.css). #}
-              <details class="consulta__pasos">
-                <summary>Ver sus {{ pasos|length }} pasos</summary>
-                <ol>
-                  {% for paso in pasos %}<li>{{ paso.descripcion|default:paso.descripcion_imagen }}</li>{% endfor %}
-                </ol>
-              </details>
-              {% endif %}
-              {% endwith %}
-            </div>
-          </li>
-          {% endfor %}
-        </ol>
-        {% else %}
-        <p>Este día no tiene tareas.</p>
-        {% endif %}
-      </div>
-      <div class="parte__pie">{% include "_paginador.html" with de="tareas" que="Más tareas del día" anterior="Antes" siguiente="Después" only %}</div>
-    </section>
+    {% include "usuarios/_consulta_tareas.html" %}
 
     <section class="parte parte--caja parte--lista" aria-labelledby="consulta-horario" data-titulo="Horario de clase">
       <h2 id="consulta-horario">Horario de clase</h2>

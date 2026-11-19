@@ -941,6 +941,27 @@
   font-size: 1rem;
   color: var(--gris);
 }
+/* HU-06-03: en el panel del familiar, cada estudiante es un enlace a su día. Toda la
+   tarjeta se pulsa (más de 48 px de alto) y se distingue por el borde y la flecha. */
+.panel__estudiante--enlace {
+  min-height: var(--toque-grande);
+  color: inherit;
+  text-decoration: none;
+  border-color: var(--petroleo);
+}
+.panel__estudiante--enlace::after {
+  content: "›";
+  margin-left: auto;
+  font-size: 1.75rem;
+  color: var(--petroleo);
+}
+.panel__estudiante--enlace:hover {
+  background: var(--menta);
+}
+.panel__estudiante--enlace:focus-visible {
+  outline: var(--foco-grosor) solid var(--focus);
+  outline-offset: var(--foco-separacion);
+}
 
 /* B21 y cargar lista: «Los campos con * son obligatorios». */
 .admin__titulo .admin__nota {
