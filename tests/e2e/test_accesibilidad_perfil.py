@@ -174,3 +174,29 @@ def test_contenido_botones_accesible_en_los_tres_modos(
     page.set_viewport_size({"width": 1280, "height": 800})
     page.goto(live_server.url + reverse("agenda:detalle", args=[regar.pk]))
     revisar(page, "tablet-horizontal")
+
+
+def test_aviso_poco_tiempo_aparece_al_llegar_al_umbral_y_es_accesible(
+    live_server, page, client, datos, monkeypatch
+):
+    """HU-07-02 PA1, PA2, PA3: al bajar a 5 min aparece el aviso con siguiente tarea y sonido."""
+    # 12:24:59: quedan 301 s (1 s antes del umbral de 5 min = 300 s).
+    monkeypatch.setattr(servicios, "ahora", lambda: a_las(12, 24, 59))
+    lucia = Estudiante.objects.get(codigo_estudiante="A01")
+    regar = lucia.asignaciones.get(tarea__nombre="Regar las plantas")
+    servicios.empezar(lucia, regar.pk)
+
+    con_sesion(page, live_server, client, lucia.usuario)
+    page.clock.install()
+    page.set_viewport_size({"width": 1280, "height": 800})
+    page.goto(live_server.url + reverse("agenda:detalle", args=[regar.pk]))
+
+    aviso = page.locator("[data-temporizador-aviso]")
+    assert not aviso.is_visible()
+
+    # Avanza 2 segundos: entra en el umbral de 5 min (<= 300 s).
+    page.clock.run_for(2_000)
+    assert aviso.is_visible()
+    assert "Leer un cuento" in aviso.inner_text()
+    assert page.locator("[data-temporizador]").get_attribute("data-sonido-reproducido") == "true"
+    revisar(page, "tablet-horizontal")

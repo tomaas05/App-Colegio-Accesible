@@ -564,6 +564,49 @@ dialog.confirmar::backdrop {
 .tiempo__boton-ocultar {
   align-self: flex-start;
 }
+.tiempo__aviso {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--aviso-fondo);
+  border: 2px solid var(--petroleo);
+  border-radius: 0.9rem;
+}
+.tiempo__aviso[hidden] {
+  display: none;
+}
+.tiempo__aviso-titulo {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.tiempo__siguiente {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.tiempo__siguiente-img {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+.tiempo__siguiente .vacio__dibujo {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+}
+.tiempo__siguiente-texto {
+  font-size: 1rem;
+  color: var(--texto);
+}
+.tiempo__siguiente-texto b {
+  font-family: var(--fuente-titulos);
+  color: var(--petroleo);
+}
 
 /* --- Tarea cancelada (HU-03-05): tachada y más clara; la etiqueta «✕ Cancelada» --- */
 /* --- dice lo mismo con texto, así que el color no es la única señal (RNF4.1.3).  --- */

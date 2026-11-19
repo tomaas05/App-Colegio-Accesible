@@ -1,20 +1,49 @@
-"""Cálculo del estado inicial del temporizador de una tarea en curso (HU-07-01)."""
+"""Cálculo del temporizador y avisos de una tarea en curso (HU-07-01, HU-07-02)."""
 
 import math
 
 from django import template
 
 from apps.agenda import servicios
-from apps.perfil.models import TipoTemporizador
+from apps.perfil.models import Paleta, TipoTemporizador
 
 register = template.Library()
 
 CIRCUNFERENCIA_RADIAL = 226.19  # 2 * pi * r (con r = 36)
+UMBRAL_AVISO_5_SEG = 300  # 5 minutos (RF4.3.2)
+UMBRAL_AVISO_1_SEG = 60  # 1 minuto (RF4.3.2)
+
+# Sonido suave local en WAV base64 (sin peticiones externas, RNF1.1.2).
+SONIDO_AVISO_WAV = (
+    "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACA"
+    "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+    "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+)
+
+
+def _resolver_siguiente_tarea(context, t):
+    """Obtiene la siguiente tarea activa del día después de `t` (PA3, PA4)."""
+    siguiente = context.get("despues")
+    if siguiente is not None and not getattr(siguiente, "cancelada", False):
+        return siguiente
+    agenda = context.get("agenda")
+    tareas = getattr(agenda, "tareas", None) if agenda is not None else None
+    if not tareas or t is None:
+        return None
+    encontrada = False
+    for candidata in tareas:
+        if candidata == t or getattr(candidata, "asignacion", None) == getattr(
+            t, "asignacion", None
+        ):
+            encontrada = True
+        elif encontrada and not getattr(candidata, "cancelada", False):
+            return candidata
+    return None
 
 
 @register.simple_tag(takes_context=True)
 def datos_temporizador(context, fin=None, perfil=None, inicio=None, ahora=None):
-    """Calcula el tiempo restante hasta `fin` (PA1, PA5, PA6)."""
+    """Calcula el tiempo restante hasta `fin` y el aviso de poco tiempo (HU-07-01, HU-07-02)."""
     t = context.get("t")
     if fin is None and t is not None:
         fin = getattr(t, "fin", None)
@@ -57,6 +86,33 @@ def datos_temporizador(context, fin=None, perfil=None, inicio=None, ahora=None):
         getattr(perfil, "puede_ocultar_temporizador", False) if perfil is not None else False
     )
 
+    # HU-07-02 · Avisos de poco tiempo (5 min y 1 min) y sonido según sobrecarga sensorial.
+    aviso_5_min = getattr(perfil, "aviso_5_min", True) if perfil is not None else True
+    aviso_1_min = getattr(perfil, "aviso_1_min", True) if perfil is not None else True
+    sonidos_activos = getattr(perfil, "sonidos_activos", True) if perfil is not None else True
+    baja_sobrecarga = (
+        bool(
+            getattr(perfil, "baja_sobrecarga_sensorial", False)
+            or getattr(perfil, "paleta", "") == Paleta.SUAVE
+        )
+        if perfil is not None
+        else False
+    )
+    sonido_activo = bool(sonidos_activos and not baja_sobrecarga)
+
+    mostrar_aviso = False
+    texto_aviso = "¡Quedan 5 minutos!" if aviso_5_min else "¡Queda 1 minuto!"
+    if 0 < segundos_restantes <= UMBRAL_AVISO_1_SEG and (aviso_1_min or aviso_5_min):
+        mostrar_aviso = True
+        texto_aviso = "¡Queda 1 minuto!"
+    elif 0 < segundos_restantes <= UMBRAL_AVISO_5_SEG and aviso_5_min:
+        mostrar_aviso = True
+        if minutos_restantes > 1:
+            texto_aviso = f"¡Quedan {minutos_restantes} minutos!"
+        else:
+            texto_aviso = "¡Queda 1 minuto!"
+
+    siguiente_tarea = _resolver_siguiente_tarea(context, t)
     offset_radial = round(CIRCUNFERENCIA_RADIAL * (100 - porcentaje) / 100, 2)
 
     return {
@@ -72,4 +128,12 @@ def datos_temporizador(context, fin=None, perfil=None, inicio=None, ahora=None):
         "puede_ocultar": bool(puede_ocultar),
         "circunferencia": CIRCUNFERENCIA_RADIAL,
         "offset_radial": offset_radial,
+        "aviso_5_min": bool(aviso_5_min),
+        "aviso_1_min": bool(aviso_1_min),
+        "baja_sobrecarga": baja_sobrecarga,
+        "sonido_activo": sonido_activo,
+        "sonido_data_uri": SONIDO_AVISO_WAV,
+        "mostrar_aviso": mostrar_aviso,
+        "texto_aviso": texto_aviso,
+        "siguiente_tarea": siguiente_tarea,
     }
