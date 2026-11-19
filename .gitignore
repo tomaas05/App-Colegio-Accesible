@@ -21,9 +21,29 @@ media/
 
 # Resultados de pruebas de accesibilidad
 informe/
+a11y-informe/
 test-results/
 playwright-report/
 .lighthouseci/
+
+# Capturas locales de diseño (juego completo). La selección que se revisa va en docs/diseno/capturas/
+capturas/
+
+# Herramientas de Node para auditar (skill a11y-colegio)
+node_modules/
+
+# Certificado raíz de la demo con HTTPS: no se sube (docs/demo-https.md)
+*.crt
+
+# Claude Code: se comparten CLAUDE.md y las skills del proyecto; lo personal, no
+.claude/*
+!.claude/skills/
+CLAUDE.local.md
+
+# Skills de terceros instaladas con «npx skills add»: cada uno las instala
+# (ver .claude/skills/despega-maquetacion/SKILL.md)
+.agents/
+skills-lock.json
 
 # Editores y sistema
 .vscode/*
