@@ -200,3 +200,33 @@ def test_aviso_poco_tiempo_aparece_al_llegar_al_umbral_y_es_accesible(
     assert "Leer un cuento" in aviso.inner_text()
     assert page.locator("[data-temporizador]").get_attribute("data-sonido-reproducido") == "true"
     revisar(page, "tablet-horizontal")
+
+
+def test_tiempo_agotado_muestra_opciones_y_permite_seguir_en_tiempo_extra(
+    live_server, page, client, datos, monkeypatch
+):
+    """HU-07-03 PA1 y PA3 en navegador: al llegar a 0 s muestra opciones y permite seguir."""
+    monkeypatch.setattr(servicios, "ahora", lambda: a_las(12, 29, 59))
+    lucia = Estudiante.objects.get(codigo_estudiante="A01")
+    regar = lucia.asignaciones.get(tarea__nombre="Regar las plantas")
+    servicios.empezar(lucia, regar.pk)
+
+    con_sesion(page, live_server, client, lucia.usuario)
+    page.clock.install()
+    page.set_viewport_size({"width": 1280, "height": 800})
+    page.goto(live_server.url + reverse("agenda:detalle", args=[regar.pk]))
+
+    agotado = page.locator("[data-temporizador-agotado]")
+    assert not agotado.is_visible()
+
+    # Avanza 2 segundos hasta agotar el tiempo (0 s).
+    page.clock.run_for(2_000)
+    assert agotado.is_visible()
+    assert "Se acabó el tiempo." in agotado.inner_text()
+    revisar(page, "tablet-horizontal")
+
+    # Al pulsar «Seguir con la tarea» pasa a tiempo extra y oculta el aviso de agotado.
+    page.locator("[data-seguir-tarea]").click()
+    assert not agotado.is_visible()
+    assert "Tiempo extra:" in page.locator("[data-temporizador-texto]").inner_text()
+    revisar(page, "tablet-horizontal")

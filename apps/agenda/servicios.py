@@ -25,6 +25,7 @@ from typing import NamedTuple
 from django.db import transaction
 from django.utils import timezone
 
+from apps.comun.models import Notificacion, TipoAviso, avisar
 from apps.tareas import planificacion
 from apps.tareas.models import Ambito, Asignacion, Tarea
 
@@ -281,6 +282,25 @@ class Agenda:
     puede_ver_semana: bool = True
 
 
+def _registrar_tiempo_agotado(estudiante, t):
+    """HU-07-03 (PA2, PA4): registra que se agotó el tiempo sin terminar y avisa al tutor."""
+    ejecucion = t.ejecucion
+    if ejecucion is None or ejecucion.estado != EstadoEjecucion.EN_CURSO or t.ahora < t.fin:
+        return
+    ejecucion.estado = EstadoEjecucion.TIEMPO_AGOTADO
+    ejecucion.save(update_fields=["estado"])
+    tutor = getattr(estudiante, "tutor", None)
+    if tutor is not None:
+        mensaje = (
+            f"A {estudiante.usuario.first_name} se le ha acabado el tiempo en "
+            f"«{t.tarea.nombre}» sin terminarla."
+        )
+        if not Notificacion.objects.filter(
+            destinatario=tutor, tarea=t.tarea, mensaje=mensaje
+        ).exists():
+            avisar(tutor, mensaje, tipo=TipoAviso.CAMBIO, tarea=t.tarea)
+
+
 def tareas_del_dia(estudiante, fecha, ahora_):
     """Las tareas de un día con su ejecución, ordenadas por la hora de ese día.
 
@@ -293,10 +313,13 @@ def tareas_del_dia(estudiante, fecha, ahora_):
             asignacion__in=[o.asignacion for o in ocurrencias], fecha=fecha
         ).select_related("plan_b")
     }
-    return [
+    lista = [
         TareaDelDia(o.asignacion, ejecuciones.get(o.asignacion.pk), fecha, ahora_, ocurrencia=o)
         for o in ocurrencias
     ]
+    for t in lista:
+        _registrar_tiempo_agotado(estudiante, t)
+    return lista
 
 
 def agenda_del_dia(estudiante, ahora_=None):
@@ -442,7 +465,7 @@ def empezar(estudiante, asignacion_id, ahora_=None):
         ejecucion, _ = Ejecucion.objects.select_for_update().get_or_create(
             asignacion=t.asignacion, fecha=hoy
         )
-        if ejecucion.estado == EstadoEjecucion.EN_CURSO:
+        if ejecucion.estado in (EstadoEjecucion.EN_CURSO, EstadoEjecucion.TIEMPO_AGOTADO):
             return ejecucion  # cerró y reabrió la app: retoma con su hora original
         if t.cancelada:
             raise ErrorDeAgenda("Esta tarea se ha cancelado.")
@@ -481,7 +504,7 @@ def terminar(estudiante, asignacion_id, ahora_=None):
             raise ErrorDeAgenda("Primero tienes que empezar la tarea.") from None
         if ejecucion.estado == EstadoEjecucion.HECHA:
             return ejecucion
-        if ejecucion.estado != EstadoEjecucion.EN_CURSO:
+        if ejecucion.estado not in (EstadoEjecucion.EN_CURSO, EstadoEjecucion.TIEMPO_AGOTADO):
             raise ErrorDeAgenda("Esta tarea no se puede terminar.")
         _asegurar_pasos(ejecucion)
         pendientes = ejecucion.pasos.filter(estado=EstadoPaso.PENDIENTE).count()
