@@ -5,7 +5,8 @@ mes y quién se encarga del comedor cada día (boceto B67, «Tareas del centro»
 HU-05-04 · Anotar quién come (el estudiante encargado del comedor de hoy): las clases (B60)
 y los compañeros de cada clase (B61).
 HU-05-01 · Reprografía (tutor y administrador, boceto B66): los trabajos de hoy en adelante,
-crear uno, cambiarlo mientras el estudiante no lo empiece y ver sus fases.
+crear uno, cambiarlo mientras el estudiante no lo empiece y ver sus fases. Se entra desde
+«Tareas del centro», la opción del menú lateral que reúne las tareas del centro.
 """
 
 import re
@@ -351,6 +352,31 @@ def _tutor_o_admin(vista):
         return vista(request, *args, **kwargs)
 
     return envoltura
+
+
+# «Tareas del centro»: lo que sale dentro de esa opción del menú lateral, con el mismo
+# aspecto que las tarjetas del panel (B13). De momento solo la reprografía; las tareas del
+# centro que se hagan más adelante se añaden aquí: (texto, descripción, nombre de la URL,
+# icono de templates/_icono.html).
+TAREAS_DEL_CENTRO = [
+    (
+        "Reprografía",
+        "Poner a un estudiante a imprimir, fotocopiar o plastificar un trabajo.",
+        "centro:reprografia",
+        "impresora",
+    ),
+]
+
+
+@_tutor_o_admin
+@require_GET
+def tareas_del_centro(request):
+    """La página de «Tareas del centro»: una tarjeta por cada tarea del centro."""
+    opciones = [
+        {"texto": texto, "descripcion": descripcion, "url": reverse(url), "icono": icono}
+        for texto, descripcion, url, icono in TAREAS_DEL_CENTRO
+    ]
+    return render(request, "centro/tareas.html", {"opciones": opciones})
 
 
 def _fila(request, pk):

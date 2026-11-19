@@ -32,6 +32,7 @@ from apps.usuarios.models import Estudiante, Usuario
 
 pytestmark = pytest.mark.django_db
 
+TAREAS = reverse("centro:tareas")
 LISTA = reverse("centro:reprografia")
 NUEVA = reverse("centro:reprografia_nueva")
 FASES = reverse("centro:reprografia_fases")
@@ -545,7 +546,7 @@ def test_horas_cambiadas_solo_ese_dia_se_ven_y_se_respetan(client, tutor, lucia)
 
 
 def test_sin_sesion_a_la_portada(client, datos):
-    for url in (LISTA, NUEVA, FASES):
+    for url in (TAREAS, LISTA, NUEVA, FASES):
         respuesta = client.get(url)
         assert respuesta.status_code == 302 and "next=" in respuesta.url
 
@@ -553,12 +554,13 @@ def test_sin_sesion_a_la_portada(client, datos):
 @pytest.mark.parametrize("username", ["profesional", "familiar"])
 def test_otros_adultos_no_entran(client, datos, username):
     entrar(client, username)
-    for url in (LISTA, NUEVA, FASES):
+    for url in (TAREAS, LISTA, NUEVA, FASES):
         assert client.get(url).status_code == 403
 
 
 def test_el_estudiante_no_entra(client, lucia):
     client.force_login(lucia.usuario)
+    assert client.get(TAREAS).status_code in (302, 403)
     assert client.get(LISTA).status_code in (302, 403)
     assert client.get(NUEVA).status_code in (302, 403)
 
@@ -609,9 +611,53 @@ def test_la_lista_no_hace_una_consulta_por_trabajo(
         client.get(LISTA)
 
 
-def test_reprografia_en_el_panel_del_tutor_y_del_administrador(client, datos):
+# --- «Tareas del centro»: la opción del menú lateral, con la reprografía dentro ---------
+
+
+def lateral(pagina):
+    return pagina[pagina.index('<aside class="lateral"') : pagina.index("</aside>")]
+
+
+def test_tareas_del_centro_en_el_panel_del_tutor_y_del_administrador(client, datos):
+    """En el panel y en el menú lateral sale «Tareas del centro», no «Reprografía»."""
     for username in ("tutor", "admin"):
         entrar(client, username)
-        assert LISTA in html(client.get(reverse("usuarios:panel")))
-    entrar(client, "profesional")
-    assert LISTA not in html(client.get(reverse("usuarios:panel")))
+        pagina = html(client.get(reverse("usuarios:panel")))
+        assert f'href="{TAREAS}"' in pagina
+        assert re.search(rf'href="{TAREAS}"[^>]*>Tareas del centro<', lateral(pagina))
+        assert LISTA not in pagina and "Reprografía" not in lateral(pagina)
+    for username in ("profesional", "familiar"):
+        entrar(client, username)
+        assert TAREAS not in html(client.get(reverse("usuarios:panel")))
+
+
+@pytest.mark.parametrize("username", ["tutor", "admin"])
+def test_dentro_de_tareas_del_centro_esta_la_reprografia(client, datos, username):
+    entrar(client, username)
+    respuesta = client.get(TAREAS)
+    assert respuesta.status_code == 200
+    pagina = html(respuesta)
+    assert "<h1" in pagina and "Tareas del centro</h1>" in pagina
+    assert re.search(rf'<a class="panel__opcion" href="{LISTA}">', pagina)
+    assert "<b>Reprografía</b>" in pagina
+    # En el lateral, «Tareas del centro» es la página actual.
+    assert re.search(rf'href="{TAREAS}" aria-current="page">Tareas del centro<', lateral(pagina))
+
+
+def test_en_reprografia_se_marca_tareas_del_centro_y_se_vuelve_alli(client, tutor):
+    """Dentro de la reprografía, el lateral marca «Tareas del centro» como sección y el
+    botón de volver de la lista lleva a «Tareas del centro»."""
+    for url in (LISTA, NUEVA, FASES):
+        menu = lateral(html(client.get(url)))
+        assert re.search(rf'lateral__enlace--seccion" href="{TAREAS}">Tareas del centro<', menu)
+        assert 'aria-current="page"' not in menu
+    assert re.search(
+        rf'href="{TAREAS}"[^>]*aria-label="Volver a tareas del centro"', html(client.get(LISTA))
+    )
+
+
+def test_el_comedor_del_administrador_no_se_marca_como_tareas_del_centro(client, admin):
+    """/centro/comedor/ cuelga de /centro/, pero su sección es «Comedor y menú»."""
+    menu = lateral(html(client.get(reverse("centro:comedor"))))
+    assert 'aria-current="page">Comedor y menú<' in menu
+    assert not re.search(rf'lateral__enlace--seccion" href="{TAREAS}"', menu)

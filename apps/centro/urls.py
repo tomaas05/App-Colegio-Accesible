@@ -16,6 +16,9 @@ urlpatterns = [
         name="comedor_marcar",
     ),
     path("comedor/hoy/clase/<int:pk>/terminar/", views.comedor_terminar, name="comedor_terminar"),
+    # «Tareas del centro» (tutor y administrador): la entrada del menú lateral. Dentro, la
+    # reprografía; más adelante, las otras tareas del centro.
+    path("", views.tareas_del_centro, name="tareas"),
     # HU-05-01: el tutor o el administrador crea una tarea de reprografía.
     path("reprografia/", views.reprografia_lista, name="reprografia"),
     path("reprografia/nueva/", views.reprografia_nueva, name="reprografia_nueva"),

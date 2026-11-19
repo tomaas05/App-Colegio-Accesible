@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Tareas del centro · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}">{% endblock %}
+
+{# Tutor y administrador. La opción «Tareas del centro» del menú lateral (boceto B66):    #}
+{# una tarjeta por cada tarea del centro, como las del panel (B13). De momento solo la    #}
+{# reprografía (HU-05-01); las demás se añaden en TAREAS_DEL_CENTRO (apps/centro/views.py). #}
+{# Sin desplazamiento: si un día no caben, pasan de página (decisión 0005).               #}
+{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
+{% block h1 %}Tareas del centro{% endblock %}
+{% block sub %}<span class="barra__sub" id="tareas-que">¿Qué tarea quieres poner?</span>{% endblock %}
+
+{% block contenido %}
+<div class="encaja">
+  <ul class="panel__opciones" id="tareas-del-centro" aria-labelledby="tareas-que" data-paginar>
+    {% for opcion in opciones %}
+    <li>
+      <a class="panel__opcion" href="{{ opcion.url }}">
+        <span class="panel__icono">{% include "_icono.html" with nombre=opcion.icono only %}</span>
+        <span class="panel__texto"><b>{{ opcion.texto }}</b><span>{{ opcion.descripcion }}</span></span>
+        <span class="panel__ir">{% include "_icono.html" with nombre="der" only %}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% include "_paginador.html" with de="tareas-del-centro" que="Más tareas" only %}
+{% endblock %}

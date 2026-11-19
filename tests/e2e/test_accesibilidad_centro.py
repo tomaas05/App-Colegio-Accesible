@@ -205,11 +205,12 @@ def con_trabajos(datos, page, live_server, client, monkeypatch):
     return entrar
 
 
-@pytest.mark.parametrize("pantalla", ["lista", "nueva", "cambiar", "ver", "fases"])
+@pytest.mark.parametrize("pantalla", ["tareas", "lista", "nueva", "cambiar", "ver", "fases"])
 @pytest.mark.parametrize("nombre", RESOLUCIONES)
 def test_reprografia(live_server, page, con_trabajos, pantalla, nombre):
     trabajos = con_trabajos("tutor")
     url = {
+        "tareas": reverse("centro:tareas"),
         "lista": reverse("centro:reprografia"),
         "nueva": reverse("centro:reprografia_nueva"),
         "cambiar": reverse("centro:reprografia_cambiar", args=[trabajos[1].pk]),

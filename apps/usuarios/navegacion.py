@@ -36,9 +36,9 @@ OPCIONES_POR_ROL = {
             "centro:comedor",
         ),
         (
-            "Reprografía",
-            "Poner a un estudiante a imprimir, fotocopiar o plastificar un trabajo.",
-            "centro:reprografia",
+            "Tareas del centro",
+            "Poner a un estudiante una tarea del centro, como la reprografía.",
+            "centro:tareas",
         ),
     ],
     Rol.TUTOR: [
@@ -60,9 +60,9 @@ OPCIONES_POR_ROL = {
             "perfil:lista",
         ),
         (
-            "Reprografía",
-            "Poner a un alumno a imprimir, fotocopiar o plastificar un trabajo.",
-            "centro:reprografia",
+            "Tareas del centro",
+            "Poner a un alumno una tarea del centro, como la reprografía.",
+            "centro:tareas",
         ),
     ],
     Rol.PROFESIONAL: [
@@ -104,7 +104,7 @@ ICONOS = {
     "horario:cargar": "reloj",
     "usuarios:vinculos": "enlace",
     "centro:comedor": "calendario",
-    "centro:reprografia": "impresora",
+    "centro:tareas": "check",
     "tareas:crear_tarea": "mas",
     "tareas:catalogo": "archivo",
     "perfil:lista": "personas",

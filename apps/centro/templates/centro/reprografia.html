@@ -8,7 +8,7 @@
 {# Los trabajos de reprografía de hoy en adelante (PA1): día, estudiante y datos. «Cambiar»  #}
 {# solo mientras el estudiante no la ha empezado (PA4); si no, «Ver». Sin desplazamiento     #}
 {# (decisión 0005): la lista pasa con «Antes / Después».                                     #}
-{% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
+{% block volver %}{% url 'centro:tareas' as atras %}{% include "_volver.html" with url=atras texto="Tareas del centro" etiqueta="Volver a tareas del centro" only %}{% endblock %}
 {% block h1 %}Reprografía{% endblock %}
 
 {% block contenido %}

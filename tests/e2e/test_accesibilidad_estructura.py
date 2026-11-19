@@ -153,7 +153,7 @@ def test_recorrido_con_teclado_en_ordenador(live_server, page, client, datos):
         "Tareas creadas",
         "Tareas planificadas",
         "Alumnos",
-        "Reprografía",
+        "Tareas del centro",
         "Salir",
     ]
     # El primer Tab después de «Salir» ya está en el contenido.
