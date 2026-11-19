@@ -1,8 +1,15 @@
-"""Formulario del perfil visual y temporizador del estudiante (HU-04-01, HU-07-01)."""
+"""Formulario del perfil del estudiante (HU-04-01, HU-04-02, HU-07-01)."""
 
 from django import forms
 
-from .models import CreacionTareas, Perfil, TipoTemporizador
+from .models import (
+    AlcanceAgenda,
+    ContenidoBotones,
+    CreacionTareas,
+    MaxTarjetas,
+    Perfil,
+    TipoTemporizador,
+)
 
 
 class PerfilVisualForm(forms.ModelForm):
@@ -14,6 +21,9 @@ class PerfilVisualForm(forms.ModelForm):
             "tipo_letra",
             "tamano_letra",
             "tamano_botones",
+            "contenido_botones",
+            "alcance_agenda",
+            "max_tarjetas",
             "tipo_temporizador",
             "temporizador_visible",
             "puede_ocultar_temporizador",
@@ -26,15 +36,47 @@ class PerfilVisualForm(forms.ModelForm):
             "tipo_letra": forms.RadioSelect,
             "tamano_letra": forms.RadioSelect,
             "tamano_botones": forms.RadioSelect,
+            "contenido_botones": forms.RadioSelect,
+            "alcance_agenda": forms.RadioSelect,
+            "max_tarjetas": forms.RadioSelect,
             "tipo_temporizador": forms.RadioSelect,
             "creacion_tareas": forms.RadioSelect,
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["tipo_temporizador"].required = False
-        # Si no llega (formulario antiguo, otra pantalla), se queda como estaba.
-        self.fields["creacion_tareas"].required = False
+        for campo in (
+            "contenido_botones",
+            "alcance_agenda",
+            "max_tarjetas",
+            "tipo_temporizador",
+            "creacion_tareas",
+        ):
+            self.fields[campo].required = False
+
+    def clean_contenido_botones(self):
+        valor = self.cleaned_data.get("contenido_botones")
+        if valor:
+            return valor
+        if self.instance and self.instance.pk and self.instance.contenido_botones:
+            return self.instance.contenido_botones
+        return ContenidoBotones.AMBOS
+
+    def clean_alcance_agenda(self):
+        valor = self.cleaned_data.get("alcance_agenda")
+        if valor:
+            return valor
+        if self.instance and self.instance.pk and self.instance.alcance_agenda:
+            return self.instance.alcance_agenda
+        return AlcanceAgenda.SEMANA
+
+    def clean_max_tarjetas(self):
+        valor = self.cleaned_data.get("max_tarjetas")
+        if valor:
+            return valor
+        if self.instance and self.instance.pk and self.instance.max_tarjetas:
+            return self.instance.max_tarjetas
+        return MaxTarjetas.SEIS
 
     def clean_tipo_temporizador(self):
         valor = self.cleaned_data.get("tipo_temporizador")

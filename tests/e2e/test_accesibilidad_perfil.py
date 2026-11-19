@@ -16,7 +16,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.agenda import servicios
-from apps.perfil.models import Paleta, Tema, TipoTemporizador
+from apps.perfil.models import AlcanceAgenda, ContenidoBotones, Paleta, Tema, TipoTemporizador
 from apps.usuarios.models import Estudiante, Usuario
 
 pytestmark = pytest.mark.e2e
@@ -136,3 +136,41 @@ def test_temporizador_avanza_por_segundo_y_permite_ocultar_y_mostrar(
     boton.click()
     assert cuerpo.is_visible()
     assert boton.inner_text().strip() == "Ocultar tiempo"
+
+
+def test_maximo_3_tarjetas_nunca_muestra_mas_de_3_a_la_vez(
+    live_server, page, client, datos, monkeypatch
+):
+    """HU-04-02 PA4 en navegador real: con máximo de 3 tarjetas nunca se ven más de 3 a la vez."""
+    monkeypatch.setattr(servicios, "ahora", lambda: a_las(10, 35))
+    lucia = Estudiante.objects.get(codigo_estudiante="A01")
+    perfil = lucia.perfil
+    perfil.alcance_agenda = AlcanceAgenda.DIA
+    perfil.max_tarjetas = 3
+    perfil.save()
+
+    con_sesion(page, live_server, client, lucia.usuario)
+    page.set_viewport_size({"width": 1366, "height": 768})
+    page.goto(live_server.url + reverse("agenda:dia"))
+
+    visibles = page.locator("#tareas > li:visible").count()
+    assert 1 <= visibles <= 3
+    revisar(page, "ordenador")
+
+
+@pytest.mark.parametrize("contenido", ContenidoBotones.values)
+def test_contenido_botones_accesible_en_los_tres_modos(
+    live_server, page, client, datos, monkeypatch, contenido
+):
+    """HU-04-02 PA5 en navegador real: botones con imagen, texto o ambos accesibles con axe."""
+    monkeypatch.setattr(servicios, "ahora", lambda: a_las(12, 5))
+    lucia = Estudiante.objects.get(codigo_estudiante="A01")
+    perfil = lucia.perfil
+    perfil.contenido_botones = contenido
+    perfil.save()
+
+    regar = lucia.asignaciones.get(tarea__nombre="Regar las plantas")
+    con_sesion(page, live_server, client, lucia.usuario)
+    page.set_viewport_size({"width": 1280, "height": 800})
+    page.goto(live_server.url + reverse("agenda:detalle", args=[regar.pk]))
+    revisar(page, "tablet-horizontal")

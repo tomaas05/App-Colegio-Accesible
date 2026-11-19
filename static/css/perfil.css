@@ -302,3 +302,24 @@ html:not(.js) .perfil-panel {
   flex-direction: column;
   gap: var(--separacion);
 }
+/* Contenido de botones: muestra de cómo se ve con solo imagen, solo texto o ambos. */
+.muestra-boton {
+  flex: none;
+  margin-left: auto;
+  padding: 0.1rem 0.55rem;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+  background: var(--menta);
+  border: 2px solid var(--petroleo);
+  border-radius: var(--radio-boton);
+}
+.muestra-boton--imagen::before {
+  content: "▶";
+}
+.muestra-boton--texto::before {
+  content: "Empezar";
+}
+.muestra-boton--ambos::before {
+  content: "▶ Empezar";
+}

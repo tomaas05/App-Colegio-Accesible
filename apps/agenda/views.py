@@ -27,6 +27,12 @@ def _usa_lector(estudiante):
     return bool(perfil and perfil.usa_lector_pantalla)
 
 
+def _puede_ver_semana(estudiante):
+    perfil = getattr(estudiante, "perfil", None)
+    alcance = getattr(perfil, "alcance_agenda", "semana") if perfil else "semana"
+    return alcance == "semana"
+
+
 @estudiante_requerido
 @require_GET
 def dia(request):
@@ -267,6 +273,8 @@ def semana(request):
     """B30 · Los 7 días de esta semana con su nombre, su letra, su forma y su color, y en
     cada uno la hora y el pictograma de sus tareas (PA1 y PA2). Al tocar un día se abre
     entero (PA3). El horario de la clase está en «Mi horario de clase» (PA4 y PA5)."""
+    if not _puede_ver_semana(request.estudiante):
+        return redirect("agenda:dia")
     ahora = servicios.ahora()
     dias = servicios.semana(request.estudiante, ahora)
     return render(
@@ -287,6 +295,8 @@ def semana(request):
 def otro_dia(request, fecha):
     """HU-02-06, PA3 · Un día de esta semana, entero: sus tareas en la línea de tiempo, solo
     para ver (no se empiezan antes de su día). Hoy es la agenda de siempre."""
+    if not _puede_ver_semana(request.estudiante):
+        return redirect("agenda:dia")
     try:
         dia = date.fromisoformat(fecha)
     except ValueError:

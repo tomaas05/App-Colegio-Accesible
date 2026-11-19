@@ -276,6 +276,9 @@ class Agenda:
     visibles: list  # las que se pintan (máximo `max_tarjetas` del perfil)
     restantes: int  # cuántas quedan sin pintar después de las visibles
     aviso: TareaDelDia | None  # la siguiente, si empieza dentro de AVISO_MINUTOS (RF2.10.1)
+    en_alcance: list = None  # las que entran según `alcance_agenda` (HU-04-02)
+    alcance: str = "semana"
+    puede_ver_semana: bool = True
 
 
 def tareas_del_dia(estudiante, fecha, ahora_):
@@ -338,25 +341,51 @@ def agenda_del_dia(estudiante, ahora_=None):
 
     # Ventana de tarjetas (RNF2.3.2): como mucho el máximo del perfil. Siempre entra la
     # actual (o la siguiente) y, si cabe, la anterior; si caben todas, se ven todas.
+    # Ventana de tarjetas y alcance de la agenda (RNF2.3.2, RF4.2.1, RF4.2.2, HU-04-02).
     perfil = getattr(estudiante, "perfil", None)
     maximo = perfil.max_tarjetas if perfil else 6
-    visibles, restantes = [], 0
-    if tareas:
-        ancla = tareas.index(actual or siguiente or tareas[-1])
-        primera = ancla if maximo == 1 else max(ancla - 1, 0)
-        primera = max(0, min(primera, len(tareas) - maximo))
-        visibles = tareas[primera : primera + maximo]
-        restantes = len(tareas) - (primera + len(visibles))
+    alcance = (getattr(perfil, "alcance_agenda", None) if perfil else None) or "semana"
+    puede_ver_semana = alcance == "semana"
+
+    if alcance == "actual":
+        en_alcance = [actual] if actual else ([siguiente] if siguiente else [])
+        visibles = list(en_alcance)
+        restantes = 0
+    elif alcance == "actual_sig":
+        en_alcance = [t for t in (actual, siguiente) if t]
+        visibles = list(en_alcance)
+        restantes = 0
+    else:
+        en_alcance = list(tareas)
+        visibles, restantes = [], 0
+        if tareas:
+            ancla = tareas.index(actual or siguiente or tareas[-1])
+            primera = ancla if maximo == 1 else max(ancla - 1, 0)
+            primera = max(0, min(primera, len(tareas) - maximo))
+            visibles = tareas[primera : primera + maximo]
+            restantes = len(tareas) - (primera + len(visibles))
 
     aviso = None
     if (
-        siguiente
+        alcance != "actual"
+        and siguiente
         and siguiente.estado == EstadoEjecucion.PENDIENTE
         and ahora_ + timedelta(minutes=AVISO_MINUTOS) >= siguiente.inicio
     ):
         aviso = siguiente
 
-    return Agenda(tareas, actual, anterior, siguiente, visibles, restantes, aviso)
+    return Agenda(
+        tareas,
+        actual,
+        anterior,
+        siguiente,
+        visibles,
+        restantes,
+        aviso,
+        en_alcance,
+        alcance,
+        puede_ver_semana,
+    )
 
 
 def con_contexto(agenda, asignacion_id):

@@ -29,6 +29,7 @@
     tipo_letra: "fuente",
     tamano_letra: "letra",
     tamano_botones: "botones",
+    contenido_botones: "contenidoBotones",
   };
 
   function elegido(nombre) {
