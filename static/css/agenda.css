@@ -3,7 +3,7 @@
  * Sigue el boceto docs/iteracion-1/bocetos/despega_mockup_v3.html:
  *   B06 Tareas de hoy, B07 Tarea y B08 ¿Has terminado?
  * Los botones, la barra de título, la línea de tiempo y el paginador están en base.css.
- * Solo variables de tokens.css y rem, para que el perfil de cada estudiante
+ * Solo variables de tokens.css (letra con --letra-*, decisión 0007), para que el perfil de cada estudiante
  * (tema, letra, tamaño de botones) se aplique sin tocar este archivo.
  */
 
@@ -69,7 +69,7 @@ a.tarjeta:hover {
     aspect-ratio: 1;
   }
   .linea .tarjeta__nombre {
-    font-size: 1.15rem;
+    font-size: var(--letra-s);
   }
   .linea .chip {
     justify-self: center;
@@ -78,7 +78,7 @@ a.tarjeta:hover {
 .tarjeta__hora {
   font-family: var(--fuente-titulos);
   font-weight: 800;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--verde-oscuro);
 }
 .tarjeta__nombre {
@@ -96,7 +96,7 @@ a.tarjeta:hover {
   gap: 0.3rem;
   width: fit-content;
   padding: 0 0.6rem;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 700;
   color: var(--petroleo);
   background: var(--blanco);
@@ -155,7 +155,7 @@ a.tarjeta:hover {
 }
 .siguiente small {
   display: block;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--gris);
 }
 .siguiente b {
@@ -195,6 +195,14 @@ a.tarjeta:hover {
   .col {
     gap: var(--separacion);
   }
+  /* Sin hueco (acta del 19/11, c): «qué es» se centra en su columna y, si la tarea no tiene
+     pasos, la zona del botón también, a la misma altura. Con pasos, el botón sigue abajo. */
+  .col--que {
+    justify-content: safe center;
+  }
+  .col--hacer:not(:has(.pasos-zona)) .zona-botones {
+    margin-block: auto;
+  }
 }
 .ficha {
   display: flex;
@@ -215,8 +223,8 @@ a.tarjeta:hover {
 }
 @media (min-width: 48rem) {
   .ficha__imagen {
-    width: min(9rem, 22dvh);
-    height: min(9rem, 22dvh);
+    width: min(12rem, 26dvh);
+    height: min(12rem, 26dvh);
   }
 }
 .ficha__hora {
@@ -262,7 +270,7 @@ a.tarjeta:hover {
   }
 }
 .pasos__titulo {
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
 }
 .pasos {
   display: grid;
@@ -349,11 +357,24 @@ a.tarjeta:hover {
 .botones-tarea .boton--principal {
   width: 100%;
 }
+/* Lo que dice la zona del botón cuando no hay botón («Podrás empezar a las…», «¡Hecha!»):
+   grande y en una caja tranquila (no parece un botón: sin borde de píldora), en el mismo sitio
+   donde aparecerá «Empezar» (acta del 19/11, c). */
 .estado-grande {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  min-height: var(--toque-grande);
+  padding: 0.5rem 1rem;
   font-family: var(--fuente-titulos);
   font-weight: 800;
-  font-size: 1.25rem;
+  font-size: var(--letra-l);
+  line-height: 1.25;
+  text-align: center;
   color: var(--petroleo);
+  background: var(--menta);
+  border-radius: 1rem;
 }
 
 /* --- Un solo paso por pantalla (revisión con la profesora) ---
@@ -368,10 +389,10 @@ a.tarjeta:hover {
 .pasos__marca {
   display: inline-grid;
   place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.75em; /* em: crece con la letra */
+  height: 1.75em;
   font-family: var(--fuente-titulos);
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 800;
   line-height: 1;
   color: var(--petroleo);
@@ -396,7 +417,7 @@ a.tarjeta:hover {
   border-color: var(--petroleo);
 }
 .js .pasos > .paso .paso__texto {
-  font-size: 1.15rem;
+  font-size: var(--letra-s);
 }
 @media (min-width: 48rem) {
   .js .pasos > .paso {
@@ -413,13 +434,13 @@ a.tarjeta:hover {
   .js .pasos > .paso .paso__boton {
     min-height: var(--toque-grande);
     padding-inline: 1.5rem;
-    font-size: 1.25rem;
+    font-size: var(--letra-m);
   }
 }
 .confirmar__nombre {
   margin: 0;
   font-family: var(--fuente-titulos);
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   font-weight: 800;
   color: var(--petroleo);
 }
@@ -465,7 +486,7 @@ dialog.confirmar::backdrop {
 .confirmar h1,
 .confirmar h2 {
   margin: 0 0 1rem;
-  font-size: 1.5rem;
+  font-size: var(--letra-l);
 }
 .fila-botones {
   display: flex;
@@ -501,7 +522,7 @@ dialog.confirmar::backdrop {
 .tiempo .resto {
   font-family: var(--fuente-titulos);
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: var(--letra-s);
   color: var(--petroleo);
 }
 .tiempo .lineal {
@@ -547,7 +568,7 @@ dialog.confirmar::backdrop {
   position: absolute;
   font-family: var(--fuente-titulos);
   font-weight: 800;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--petroleo);
 }
 .temporizador-numerico {
@@ -555,7 +576,7 @@ dialog.confirmar::backdrop {
   padding: 0.25rem 0.8rem;
   font-family: var(--fuente-titulos);
   font-weight: 800;
-  font-size: 1.75rem;
+  font-size: var(--letra-2xl);
   color: var(--petroleo);
   background: var(--blanco);
   border: 2px solid var(--petroleo);
@@ -600,7 +621,7 @@ dialog.confirmar::backdrop {
   height: 2rem;
 }
 .tiempo__siguiente-texto {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--texto);
 }
 .tiempo__siguiente-texto b {
@@ -633,7 +654,7 @@ dialog.confirmar::backdrop {
 }
 .tiempo__agotado-texto {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--texto);
 }
 .tiempo__agotado-texto b {
@@ -674,7 +695,7 @@ dialog.confirmar::backdrop {
   color: var(--petroleo);
 }
 .plan-b-est__sub {
-  font-size: 1.15rem;
+  font-size: var(--letra-s);
   font-weight: 700;
   color: var(--petroleo);
 }
@@ -724,7 +745,7 @@ dialog.confirmar::backdrop {
     aspect-ratio: 1;
   }
   .plan-b-est__opcion .tarjeta__nombre {
-    font-size: 1.15rem;
+    font-size: var(--letra-s);
   }
 }
 
@@ -741,7 +762,7 @@ dialog.confirmar::backdrop {
   width: fit-content;
   padding: 0.3rem 0.8rem 0.3rem 0.4rem;
   font-family: var(--fuente-titulos);
-  font-size: 1.15rem;
+  font-size: var(--letra-s);
   font-weight: 800;
   color: var(--petroleo);
   background: color-mix(in srgb, var(--dia-c, var(--menta)) 30%, var(--blanco));
@@ -766,20 +787,21 @@ dialog.confirmar::backdrop {
   flex: 1 1 auto;
   min-height: 0;
 }
+/* Sin min-height: 0 (acta del 19/11, e): con él, las filas encogían por debajo de su contenido
+   y los días se montaban unos sobre otros en vez de pasar a la pantalla siguiente. */
 .semana__grupo {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
-  min-height: 0;
 }
 .semana__grupo > h2 {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
 }
 .semana__dias {
   display: grid;
   grid-auto-rows: minmax(var(--toque), auto);
-  gap: 0.6rem; /* ≥ 8 px entre días: no se pulsa el de al lado (WCAG 2.5.8) */
+  gap: var(--separacion); /* 12 px entre días: no se pulsa el de al lado */
   margin: 0;
   padding: 0;
   list-style: none;
@@ -837,7 +859,7 @@ dialog.confirmar::backdrop {
 }
 .semana-dia__nombre {
   font-family: var(--fuente-titulos);
-  font-size: 1.1rem;
+  font-size: var(--letra-s);
   font-weight: 800;
   line-height: 1.15;
   color: var(--petroleo);
@@ -858,7 +880,7 @@ dialog.confirmar::backdrop {
 }
 .semana-dia__cuenta,
 .semana-dia__hoy {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   white-space: nowrap;
 }
 .semana-dia__cuenta {
@@ -886,7 +908,7 @@ dialog.confirmar::backdrop {
 .semana-dia__hora {
   display: none;
   font-family: var(--fuente-titulos);
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 800;
   color: var(--verde-oscuro);
 }
@@ -896,7 +918,7 @@ dialog.confirmar::backdrop {
 }
 .semana-dia__mas {
   padding: 0 0.5rem;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 800;
   line-height: 1.5;
   color: var(--petroleo);
@@ -906,10 +928,16 @@ dialog.confirmar::backdrop {
   border-radius: 999px;
 }
 
-/* Hasta 64rem (móvil y tableta en vertical): un día por fila, lo más bajo posible; los
+/* La disposición depende del ancho medido en la LETRA del perfil, no en la pantalla
+   (container queries en em, decisión 0007): con la letra 32, una tableta de 1024 px se
+   comporta como una de 640 y los días no se aprietan en 7 columnas estrechas.
+   Hasta 48em de ancho (móvil y tableta en vertical): un día por fila, lo más bajo posible; los
    títulos de las partes, solo para el lector de pantalla (los días que no caben pasan a
    otra pantalla y un título se quedaría solo). El fin de semana, también un día por fila. */
-@media (max-width: 63.99rem) {
+.semana-zona {
+  container: semana / inline-size;
+}
+@container semana (max-width: 47.99em) {
   .semana__grupo > h2 {
     position: absolute;
     width: 1px;
@@ -928,12 +956,12 @@ dialog.confirmar::backdrop {
     display: none;
   }
   .semana-dia .dia-forma {
-    width: 2.1rem;
-    height: 2.1rem;
-    font-size: 1rem;
+    width: 2.1em;
+    height: 2.1em;
+    font-size: var(--letra-xs);
   }
   .semana-dia__nombre {
-    font-size: 1rem;
+    font-size: var(--letra-xs);
   }
   .semana-dia__tarea img {
     width: 1.6rem;
@@ -941,9 +969,9 @@ dialog.confirmar::backdrop {
   }
 }
 /* Con sitio a lo ancho (tableta en vertical), en la misma fila caben las 6 con su hora. */
-@media (min-width: 30rem) and (max-width: 63.99rem) {
+@container semana (min-width: 24em) and (max-width: 47.99em) {
   .semana-dia__info {
-    flex: 0 0 9rem;
+    flex: 0 0 7.5em;
   }
   .semana-dia__tareas {
     gap: 0.3rem 0.6rem;
@@ -962,9 +990,9 @@ dialog.confirmar::backdrop {
   }
 }
 
-/* Ancho (tableta en horizontal y ordenador): las dos partes una al lado de la otra, un día
-   por columna y, en cada uno, hasta 6 tareas con su hora. */
-@media (min-width: 64rem) {
+/* Ancho (tableta en horizontal y ordenador, con letra normal): las dos partes una al lado de
+   la otra, un día por columna y, en cada uno, hasta 6 tareas con su hora. */
+@container semana (min-width: 48em) {
   .semana {
     grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
   }
@@ -973,7 +1001,7 @@ dialog.confirmar::backdrop {
   }
   .semana__dias {
     flex: 1 1 auto;
-    grid-auto-rows: minmax(0, 1fr);
+    grid-auto-rows: minmax(auto, 1fr); /* reparte el alto, nunca menos que el contenido */
   }
   .semana-dia {
     flex-direction: column;
@@ -1003,6 +1031,46 @@ dialog.confirmar::backdrop {
   }
   .semana-dia__mas--largo {
     display: inline;
+  }
+}
+
+/* Pie de la agenda en el móvil y la tableta en vertical (acta del 19/11, g): «Mi semana» y
+   «Mi horario» en dos columnas iguales, debajo de «Antes / Después», sin descolocarse con la
+   letra grande (el texto se parte dentro del botón). Si no caben dos de 5em, una por fila. */
+@media (max-width: 47.99rem) {
+  .agenda .pie {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .agenda .pie__acciones {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.5em), 1fr));
+    margin-left: 0;
+  }
+  .agenda .pie__acciones > .boton {
+    container-type: inline-size;
+    padding-inline: 0.5rem;
+    line-height: 1.1;
+    text-align: center;
+  }
+  /* Si el botón es más estrecho que 7 veces su letra (letra 32 en un móvil de 360), el icono
+     deja el sitio al texto. No en el perfil «solo imagen», donde el icono es lo que se ve. */
+  @container (max-width: 7em) {
+    html:not([data-contenido-botones="imagen"]) .agenda .pie__acciones .icono-boton {
+      display: none;
+    }
+  }
+  .agenda .pie-siguiente {
+    grid-column: 1 / -1;
+  }
+}
+
+/* En el móvil el aviso de la zona del botón ocupa lo justo: con la letra 32 no cabría el paso. */
+@media (max-width: 47.99rem) {
+  .estado-grande {
+    min-height: 0;
+    padding: 0.35rem 0.6rem;
+    font-size: var(--letra-m);
   }
 }
 

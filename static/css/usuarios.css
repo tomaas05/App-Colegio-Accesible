@@ -2,14 +2,18 @@
  * Despega · Usuarios y acceso (Manu).
  * HU-01-07: B12 Entrar (adultos) y B13 Panel. HU-01-06: B01, B02, B03 y rejilla. Boceto:
  * docs/iteracion-1/bocetos/despega_mockup_v3.html.
- * Solo variables de tokens.css y rem.
+ * Solo variables de tokens.css; la letra con --letra-* (decisión 0007).
  */
 
-/* --- B12 · Entrar --- */
+/* --- B12 · Entrar ---
+ * Centrado en vertical y en horizontal en todos los tamaños, no arrimado arriba (acta del
+ * 19/11, i). «safe»: si no cabe (letra muy grande), empieza arriba y no se corta. */
 .acceso {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
+  justify-content: safe center;
   gap: 1rem;
 }
 .acceso > * {
@@ -73,7 +77,7 @@
   margin: 0;
 }
 .aviso-error__ico {
-  font-size: 1.6rem;
+  font-size: var(--letra-xl);
   line-height: 1;
 }
 
@@ -84,7 +88,7 @@
 }
 .panel h2 {
   margin-bottom: 0.5rem;
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
 }
 .panel__opciones {
   display: grid;
@@ -144,11 +148,11 @@
 }
 .panel__texto b {
   font-family: var(--fuente-titulos);
-  font-size: 1.15rem;
+  font-size: var(--letra-s);
   color: var(--petroleo);
 }
 .panel__texto span {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--gris);
 }
 .panel__seccion {
@@ -192,7 +196,7 @@
 }
 .entrada-adulto .boton {
   min-height: var(--toque);
-  font-size: 1rem;
+  font-size: var(--letra-xs);
 }
 
 /* Losetas: botones grandes con dibujo y nombre (Estudiante/Adulto, clases, avatares).
@@ -253,7 +257,7 @@
 }
 .loseta__nombre--acceso {
   max-width: 100%;
-  font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
+  font-size: var(--letra-xs); /* mínimo 16 px (RNF4.1.6) */
   overflow-wrap: normal;
   hyphens: auto; /* «estre-lla» y no «estrell-a» (lang="es" en base.html) */
 }
@@ -295,17 +299,17 @@
 .loseta__dibujo {
   display: grid;
   place-items: center;
-  font-size: clamp(3rem, 16vw, 6rem);
+  font-size: clamp(3rem, 1rem + 14vw, 6rem); /* rem + vw: el zoom sigue funcionando */
   line-height: 1;
 }
 .loseta__sub {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 600;
   color: var(--texto);
 }
 .loseta__nombre {
   font-family: var(--fuente-titulos);
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   font-weight: 800;
   line-height: 1.2;
   color: var(--petroleo);
@@ -348,7 +352,7 @@
   place-items: center;
   width: 2rem;
   height: 2rem;
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   font-weight: 800;
   color: var(--blanco);
   background: var(--petroleo);
@@ -366,12 +370,17 @@
 
 .quien {
   font-family: var(--fuente-titulos);
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   font-weight: 800;
   color: var(--petroleo);
 }
 .formulario--estudiante {
   width: 100%;
+}
+/* Con contraseña (no con las 12 imágenes, que llenan la pantalla): el campo y «Entrar»,
+   juntos y en el centro, como la entrada de los adultos. */
+.formulario--estudiante:not(:has(.rejilla-acceso)) {
+  justify-content: safe center;
 }
 .formulario--estudiante .campo {
   width: min(26rem, 100%);
@@ -388,7 +397,7 @@
 }
 .aviso-error--estudiante {
   align-items: center;
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   font-weight: 700;
 }
 .aviso-error__picto {
@@ -400,7 +409,7 @@
   text-align: center;
 }
 .aviso-vacio {
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
 }
 
 /* --- HU-01-01 · Pantallas del administrador (B20 Usuarios, B21 Crear cuenta, cargar lista) --- */
@@ -427,7 +436,7 @@
 }
 .admin__cab h1 {
   flex: 1 1 8em;
-  font-size: 1.75rem;
+  font-size: var(--letra-2xl);
 }
 .admin__acciones,
 .admin__botonera,
@@ -444,7 +453,7 @@
 .boton--mediano {
   min-height: var(--toque);
   padding: 0.4rem 1.25rem;
-  font-size: 1.1rem;
+  font-size: var(--letra-s);
 }
 .admin__tarjeta {
   display: flex;
@@ -485,7 +494,7 @@
 }
 .admin__nota,
 .helptext {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--gris);
 }
 .admin__nota p + p {
@@ -722,7 +731,7 @@
 }
 .tabla__sub {
   display: block;
-  font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
+  font-size: var(--letra-xs); /* mínimo 16 px (RNF4.1.6) */
   font-weight: 400;
   color: var(--gris);
 }
@@ -790,7 +799,7 @@
   min-height: var(--toque);
   padding: 0.4rem 0.75rem;
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   letter-spacing: 0.05em;
   color: var(--texto);
   background: var(--blanco);
@@ -822,12 +831,12 @@
   flex: 1 1 12em;
 }
 .admin__titulo h1 {
-  font-size: 1.75rem;
+  font-size: var(--letra-2xl);
 }
 .admin__seccion h3 {
   margin: 0;
   font-family: var(--fuente-titulos);
-  font-size: 1.2rem;
+  font-size: var(--letra-m);
   color: var(--petroleo);
 }
 /* Cambios sin guardar y aviso de cambio de tutor: texto y borde, no solo color. */
@@ -853,7 +862,7 @@
   gap: 0.75rem 1rem;
 }
 .vinculos__ficha h2 {
-  font-size: 1.4rem;
+  font-size: var(--letra-l);
 }
 .vinculos__avatar {
   flex: none;
@@ -938,7 +947,7 @@
   color: var(--petroleo);
 }
 .panel__estudiante span span {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--gris);
 }
 /* HU-06-03: en el panel del familiar, cada estudiante es un enlace a su día. Toda la
@@ -952,7 +961,7 @@
 .panel__estudiante--enlace::after {
   content: "›";
   margin-left: auto;
-  font-size: 1.75rem;
+  font-size: var(--letra-2xl);
   color: var(--petroleo);
 }
 .panel__estudiante--enlace:hover {
@@ -968,7 +977,7 @@
   margin-top: 0.15rem;
 }
 .panel__fecha {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--gris);
 }
 
@@ -1099,7 +1108,7 @@ fieldset.elegir__lista {
   gap: 0.5rem;
   min-width: 0;
   margin: 0;
-  font-size: 1.15rem;
+  font-size: var(--letra-s);
 }
 /* En el móvil los botones de día son solo la flecha (el nombre lo lleva el lector). */
 @media (max-width: 30rem) {
@@ -1114,7 +1123,7 @@ fieldset.elegir__lista {
     padding-inline: 0.6rem;
   }
   .consulta__fecha {
-    font-size: 1rem;
+    font-size: var(--letra-xs);
   }
 }
 .consulta__tareas,
@@ -1140,7 +1149,7 @@ fieldset.elegir__lista {
   margin: 0;
 }
 .consulta__tarea h3 {
-  font-size: 1.15rem;
+  font-size: var(--letra-s);
 }
 .consulta__tarea > img,
 .consulta__horario img {
@@ -1161,7 +1170,7 @@ fieldset.elegir__lista {
 }
 .consulta__estado,
 .consulta__quien {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
 }
 .consulta__estado {
   display: flex;
@@ -1174,7 +1183,7 @@ fieldset.elegir__lista {
 }
 .consulta__marca {
   padding: 0 0.6rem;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 700;
   color: var(--petroleo);
   background: var(--menta);
@@ -1236,7 +1245,7 @@ fieldset.elegir__lista {
 .parte--peligro > h2 {
   margin: 0;
   font-family: var(--fuente-titulos);
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   font-weight: 800;
   color: var(--petroleo);
 }
@@ -1249,7 +1258,7 @@ dialog.baja[open] {
 }
 .baja h2 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: var(--letra-l);
 }
 .baja p {
   margin: 0;

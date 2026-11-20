@@ -5,6 +5,7 @@ Datos de prueba: 5 franjas (9:00 a 14:30), 7 asignaturas y talleres, y el horari
 completo de PTVAL 1 y PTVAL 2 de lunes a viernes.
 """
 
+import re
 from datetime import date, time
 
 import pytest
@@ -55,13 +56,14 @@ def quitar(client, clase, dia, franja):
 
 
 def test_pa1_elijo_la_clase_y_veo_su_horario(client, admin, ptval1):
-    respuesta = client.get(URL, {"clase": ptval1.pk})
+    respuesta = client.get(URL, {"clase": ptval1.pk, "dia": 1})
     assert respuesta.status_code == 200
     html = respuesta.content.decode()
-    assert "Horario de PTVAL 1" in html
-    for dia in ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]:
-        assert f'<th scope="col">{dia}</th>' in html
-    assert html.count("Quitar</button>") == 25  # 5 franjas × 5 días, todo ocupado
+    assert "Lunes · PTVAL 1" in html
+    # Un día cada vez (acta del 19/11): se elige con L, M, X, J y V, como en «Mi horario».
+    for dia in range(1, 6):
+        assert f'href="?clase={ptval1.pk}&amp;dia={dia}"' in html
+    assert html.count('class="boton--aux boton--papelera"') == 5  # 5 franjas, todo ocupado
 
 
 def test_pa1_pongo_una_asignatura_en_una_casilla_libre(client, admin, ptval1):
@@ -72,7 +74,7 @@ def test_pa1_pongo_una_asignatura_en_una_casilla_libre(client, admin, ptval1):
 
     respuesta = poner(client, ptval1, 1, franja, huerto)
     assert respuesta.status_code == 302
-    assert respuesta["Location"] == f"{URL}?clase={ptval1.pk}"
+    assert respuesta["Location"] == f"{URL}?clase={ptval1.pk}&dia=1"  # vuelve al mismo día
     assert casilla(ptval1, 1, franja).asignatura == huerto
     html = client.get(respuesta["Location"]).content.decode()
     assert "Guardado: Huerto el lunes de 09:00 a 10:00." in html
@@ -160,9 +162,10 @@ def test_mi_horario_marca_el_dia_de_hoy_y_no_repite_el_dia_elegido(client, datos
 def test_pa2_todas_las_clases_tienen_las_mismas_franjas(client, admin, datos):
     franjas = [f"{f.hora_inicio:%H:%M} – {f.hora_fin:%H:%M}" for f in Franja.objects.all()]
     for clase in Clase.objects.all():
-        html = client.get(URL, {"clase": clase.pk}).content.decode()
-        for texto in franjas:
-            assert f'<th scope="row">{texto}</th>' in html
+        for dia in range(1, 6):
+            html = client.get(URL, {"clase": clase.pk, "dia": dia}).content.decode()
+            for texto in franjas:
+                assert f'<b class="horario__hora">{texto}</b>' in html
 
 
 def test_pa2_la_rejilla_tiene_una_fila_por_franja_y_una_columna_por_dia(ptval1):
@@ -225,10 +228,47 @@ def test_pa3_el_sabado_no_se_puede_poner(client, admin, ptval1):
 
 
 def test_pa4_cada_casilla_tiene_imagen_y_nombre(client, admin, ptval1):
-    html = client.get(URL, {"clase": ptval1.pk}).content.decode()
-    for c in HorarioClase.objects.filter(clase=ptval1).select_related("asignatura"):
-        assert c.asignatura.imagen.url in html
-        assert c.asignatura.nombre in html
+    for dia in range(1, 6):
+        html = client.get(URL, {"clase": ptval1.pk, "dia": dia}).content.decode()
+        casillas = HorarioClase.objects.filter(clase=ptval1, dia_semana=dia)
+        for c in casillas.select_related("asignatura"):
+            assert c.asignatura.imagen.url in html
+            assert c.asignatura.nombre in html
+
+
+# --- Acta del 19/11 (h): un día cada vez, elegido con L, M, X, J y V ---
+
+
+def test_por_defecto_se_ve_hoy_o_el_lunes_en_fin_de_semana(client, admin, ptval1, monkeypatch):
+    from apps.horario import views
+
+    for hoy, esperado in [(date(2026, 11, 19), "Jueves"), (date(2026, 11, 21), "Lunes")]:
+        monkeypatch.setattr(views.timezone, "localdate", lambda hoy=hoy: hoy)
+        html = client.get(URL, {"clase": ptval1.pk}).content.decode()
+        assert f"{esperado} · PTVAL 1" in html
+
+
+def test_el_dia_elegido_va_marcado_y_ensena_todas_sus_franjas(client, admin, ptval1):
+    franja = primera_franja()
+    quitar(client, ptval1, 3, franja)
+    html = client.get(URL, {"clase": ptval1.pk, "dia": 3}).content.decode()
+    assert f'href="?clase={ptval1.pk}&amp;dia=3" aria-current="page"' in html
+    assert len(re.findall(r'class="mi-horario__dia"[^>]*aria-current="page"', html)) == 1
+    assert html.count('class="horario__franja"') == Franja.objects.count()
+    assert "Libre" in html  # la franja que se ha quitado sigue en la lista
+
+
+def test_poner_propone_el_dia_que_se_esta_viendo(client, admin, ptval1):
+    html = client.get(URL, {"clase": ptval1.pk, "dia": 4}).content.decode()
+    assert '<option value="4" selected>Jueves</option>' in html
+
+
+def test_la_papelera_dice_que_quita_y_de_cuando(client, admin, ptval1):
+    franja = primera_franja()
+    c = casilla(ptval1, 2, franja)
+    html = client.get(URL, {"clase": ptval1.pk, "dia": 2}).content.decode()
+    nombre = f"Quitar {c.asignatura.nombre} del martes a las {franja.hora_inicio:%H:%M}"
+    assert f'<span class="visualmente-oculto">{nombre}</span>' in html
 
 
 def test_pa4_el_estudiante_tambien_ve_imagen_y_nombre(client, ptval1):

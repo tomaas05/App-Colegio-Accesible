@@ -37,7 +37,7 @@
               {# extremos «Subir» o «Bajar» no hacen nada y lo dicen (aria-disabled).       #}
               <button class="boton boton--aux" type="submit" name="accion" value="subir"{% if forloop.first %} aria-disabled="true"{% endif %}{% if alt.pk == foco_id and foco_accion == "subir" %} data-enfocar{% endif %}>Subir<span class="visualmente-oculto"> «{{ alt.nombre }}»</span></button>
               <button class="boton boton--aux" type="submit" name="accion" value="bajar"{% if forloop.last %} aria-disabled="true"{% endif %}{% if alt.pk == foco_id and foco_accion == "bajar" %} data-enfocar{% endif %}>Bajar<span class="visualmente-oculto"> «{{ alt.nombre }}»</span></button>
-              <button class="boton boton--aux boton--peligro-suave" type="submit" name="accion" value="quitar">Quitar<span class="visualmente-oculto"> «{{ alt.nombre }}» del plan B</span></button>
+              <button class="boton boton--aux boton--papelera" type="submit" name="accion" value="quitar"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="papelera" only %}</span><span class="visualmente-oculto">Quitar «{{ alt.nombre }}» del plan B</span></button>
             </form>
           </li>
           {% endwith %}

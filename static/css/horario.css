@@ -1,7 +1,7 @@
 /*
  * Despega · Horario escolar (Javi). HU-03-11: B37 (administrador) y «Mi horario»
  * (estudiante). Boceto: docs/iteracion-1/bocetos/despega_mockup_v3.html.
- * Solo variables de tokens.css y rem.
+ * Solo variables de tokens.css; la letra con --letra-* (decisión 0007).
  */
 
 /* --- B37 · Administrador --- */
@@ -50,135 +50,142 @@
 .horario__titulo {
   flex: none;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
+}
+/* El día con sus franjas y, detrás, «Poner». En pantallas anchas, «Poner» en una columna a
+   la derecha: así la lista del día se queda con todo el alto (acta del 19/11, h). */
+.horario__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--separacion);
+  min-width: 0;
+}
+.horario__dia-zona {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  container: horario-dia / inline-size;
+}
+.js .horario__cuerpo,
+.js .horario__dia-zona {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+@media (min-width: 64rem) {
+  .horario__cuerpo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+    align-items: stretch;
+  }
+  .horario__poner {
+    align-self: start;
+  }
+}
+/* Los días (L M X J V): las mismas píldoras que «Mi horario» (.mi-horario__dia, abajo). */
+.horario__dias {
+  flex: none;
+}
+/* Si en la columna no caben los cinco con su nombre, solo la letra y repartidos (como «Mi
+   horario» en el móvil); el día elegido lo dice el título de debajo. */
+@container horario-dia (max-width: 36em) {
+  .horario__dias .mi-horario__dias li {
+    flex: 1 1 0;
+    min-width: 3rem; /* nunca menos de 48 px: si no caben, saltan de fila */
+  }
+  .horario__dias .mi-horario__dia {
+    width: 100%;
+    min-width: 0;
+    padding: 0.2rem;
+  }
+  .horario__dias .mi-horario__dia .dia-forma {
+    width: min(2.4em, 100%);
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .horario__dias :is(.mi-horario__dia-nombre, .mi-horario__dia-hoy) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 .horario__caja {
   overflow: hidden;
   border: 2px solid var(--menta);
   border-radius: 1rem;
 }
-.horario__tabla {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+/* Un día: una franja por fila, con su hora, la asignatura (imagen y nombre) y la papelera. */
+.horario__franjas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.horario__tabla th,
-.horario__tabla td {
-  padding: 0.35rem 0.4rem;
-  vertical-align: top;
-  text-align: left;
-  border-top: 1px solid var(--menta);
-  overflow-wrap: normal;
-  hyphens: auto;
+/* Una fila: hora · asignatura · papelera. Si la columna es estrecha para la letra, la hora va
+   encima (container query en em, abajo). */
+.horario__franja {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.35rem var(--separacion);
+  min-height: calc(var(--toque) + 0.7rem);
+  padding: 0.35rem 0.75rem;
+  border-top: 2px solid var(--menta);
 }
-.horario__tabla thead th {
-  padding-block: 0.2rem;
+.horario__franja:first-child {
+  border-top: 0;
+}
+.horario__hora {
   font-family: var(--fuente-titulos);
+  font-size: var(--letra-s);
   color: var(--petroleo);
-  background: var(--menta);
-}
-.horario__tabla thead th:first-child {
-  width: 7.5rem;
-}
-.horario__tabla tbody th {
-  font-size: 1rem;
-  color: var(--petroleo);
-}
-.horario__tabla td form {
-  margin-top: 0.25rem;
+  white-space: nowrap;
 }
 .horario__asignatura {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 1rem;
+  gap: 0.5rem;
+  min-width: 0;
   font-weight: 700;
   line-height: 1.25;
 }
 .horario__asignatura img {
   flex: none;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25em; /* em: crece con la letra */
+  height: 2.25em;
   border-radius: 0.4rem;
 }
 .horario__quitar {
-  font-size: 1rem;
-  padding-inline: 0.75rem;
-  white-space: nowrap;
+  margin: 0;
 }
 .horario__libre {
+  grid-column: 2 / -1;
   color: var(--gris);
   font-style: italic;
 }
-.horario__dia {
-  display: none;
+@container horario-dia (max-width: 20em) {
+  .horario__franja {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .horario__hora,
+  .horario__libre {
+    grid-column: 1 / -1;
+  }
 }
-/* En el móvil cada franja es una tarjeta: su hora y debajo los 5 días, uno por línea, con
-   la forma y la letra del día (como en «Mi horario»). Se ve una franja cada vez. */
 @media (max-width: 47.99rem) {
-  .horario__tabla thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-  }
-  .horario__tabla,
-  .horario__tabla tbody,
-  .horario__tabla tr,
-  .horario__tabla tbody th,
-  .horario__tabla td {
-    display: block;
-  }
-  .horario__tabla tr {
-    padding: 0.25rem 0.6rem;
-  }
-  .horario__tabla tbody th {
-    padding: 0 0 0.25rem;
-    font-family: var(--fuente-titulos);
-    font-size: 1.15rem;
-    border: 0;
-  }
-  .horario__tabla td {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: var(--toque);
-    padding: 0;
-  }
-  .horario__tabla td form {
-    margin: 0 0 0 auto;
-  }
-  .horario__dia {
-    display: inline-flex;
-  }
-  .horario__dia .dia-forma {
-    width: 2.1rem;
-    height: 2.1rem;
-    font-size: 1rem;
-  }
-  .horario__asignatura {
-    min-width: 0;
-  }
   .horario__clase select {
     max-width: none;
-  }
-  /* La clase ya se ve en su lista: el título solo se lee. */
-  .horario__titulo {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-  }
-  .horario__tabla td {
-    min-height: 2.75rem;
   }
   .horario__poner .admin__nota {
     display: none;
   }
-  /* Con «Poner» abierto, la lista de clases también se esconde (el resumen dice cuál es). */
-  .js .pantalla:has(.horario__poner[open]) .horario__clase {
+  /* Con «Poner» abierto ocupa la pantalla: la lista de clases y el día se esconden (el resumen
+     dice la clase). Al cerrarlo vuelven. */
+  .js .pantalla:has(.horario__poner[open]) :is(.horario__clase, .horario__dia-zona) {
     display: none;
   }
 }
@@ -197,7 +204,7 @@
 .mi-horario__dias {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--separacion);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -261,18 +268,22 @@
   .mi-horario__cab nav {
     width: 100%;
   }
-  /* Los cinco días en una fila, aunque el perfil pida botones de 80 px: se reparten el ancho. */
-  .mi-horario__dias {
-    flex-wrap: nowrap;
-  }
+  /* Los cinco días en una fila, aunque el perfil pida botones de 80 px: se reparten el ancho,
+     pero ninguno baja de 48 px (si no caben, el último salta de fila). */
   .mi-horario__dias li {
     flex: 1 1 0;
-    min-width: 0;
+    min-width: 3rem;
   }
   .mi-horario__dia {
     width: 100%;
     min-width: 0;
     padding: 0.2rem;
+  }
+  /* La forma crece con la letra pero nunca más que su botón (con letra 32, a 360 px). */
+  .mi-horario__dia .dia-forma {
+    width: min(2.4em, 100%);
+    height: auto;
+    aspect-ratio: 1;
   }
   /* En el móvil los botones llevan solo la letra: el nombre del día elegido se ve escrito. */
   .mi-horario__hoy {
@@ -285,7 +296,7 @@
     height: auto;
     overflow: visible;
     clip: auto;
-    font-size: 1.25rem;
+    font-size: var(--letra-l);
     white-space: normal;
   }
   /* «hoy» no cabe junto a la letra: lo dice el título de debajo («Lunes ▶ Hoy»). */
@@ -299,5 +310,5 @@
   }
 }
 .mi-horario__vacio {
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
 }

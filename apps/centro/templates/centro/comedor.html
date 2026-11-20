@@ -44,7 +44,7 @@
   <div class="pie pie--pasos">
     {% include "_paginador.html" with de="partes-reparto" que="Partes del formulario" final=True only %}
     <div class="pie__acciones">
-      {% if reparto.asignacion %}<button class="boton--aux" type="submit" form="quitar" name="accion" value="quitar_reparto">Quitar<span class="visualmente-oculto"> a {{ reparto.asignacion.estudiante.usuario.get_full_name }} del reparto</span></button>{% endif %}
+      {% if reparto.asignacion %}<button class="boton--aux boton--papelera" type="submit" form="quitar" name="accion" value="quitar_reparto"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="papelera" only %}</span><span class="visualmente-oculto">Quitar a {{ reparto.asignacion.estudiante.usuario.get_full_name }} del reparto</span></button>{% endif %}
       <button class="boton--principal boton--mediano" type="submit" name="accion" value="reparto" data-solo-ultima="partes-reparto">Guardar</button>
     </div>
   </div>
@@ -63,7 +63,7 @@
     <p class="admin__nota">PDF o imagen, hasta 5 MB. Lo verá el familiar en el día del estudiante.{% if menu %} Sustituye al que hay ahora.{% endif %}</p>
   </div>
   <div class="pie"><div class="pie__acciones">
-    {% if menu %}<button class="boton--aux" type="submit" form="quitar" name="accion" value="quitar_menu">Quitar<span class="visualmente-oculto"> el menú de {{ nombre_mes }}</span></button>{% endif %}
+    {% if menu %}<button class="boton--aux boton--papelera" type="submit" form="quitar" name="accion" value="quitar_menu"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="papelera" only %}</span><span class="visualmente-oculto">Quitar el menú de {{ nombre_mes }}</span></button>{% endif %}
     <button class="boton--principal boton--mediano" type="submit" name="accion" value="menu">Subir</button>
   </div></div>
 </form>
@@ -91,7 +91,7 @@
   <div class="pie pie--pasos">
     {% include "_paginador.html" with de="partes-comedor" que="Partes del formulario" final=True only %}
     <div class="pie__acciones">
-      {% if comedor_abierto %}<button class="boton--aux" type="submit" form="quitar" name="accion" value="quitar_comedor">Quitar<span class="visualmente-oculto"> a {{ comedor_abierto.asignacion.estudiante.usuario.get_full_name }} del comedor del {{ texto_dia_abierto }}</span></button>{% endif %}
+      {% if comedor_abierto %}<button class="boton--aux boton--papelera" type="submit" form="quitar" name="accion" value="quitar_comedor"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="papelera" only %}</span><span class="visualmente-oculto">Quitar a {{ comedor_abierto.asignacion.estudiante.usuario.get_full_name }} del comedor del {{ texto_dia_abierto }}</span></button>{% endif %}
       <button class="boton--principal boton--mediano" type="submit" name="accion" value="comedor" data-solo-ultima="partes-comedor">Guardar</button>
     </div>
   </div>

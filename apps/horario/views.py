@@ -28,26 +28,35 @@ def _numero(valor):
 @login_required
 @require_http_methods(["GET", "POST"])
 def cargar_horario(request):
-    """B37 · Horario escolar de una clase (PA1, PA2, PA3 y PA4). Solo el administrador."""
+    """B37 · Horario escolar de una clase (PA1, PA2, PA3 y PA4). Solo el administrador.
+
+    Un día cada vez (?dia=1…5; por defecto hoy o el lunes), con todas sus franjas: se elige
+    el día con L, M, X, J y V, como en «Mi horario» (acta del 19/11).
+    """
     if request.user.rol != Rol.ADMINISTRADOR:
         raise PermissionDenied("Solo el administrador carga el horario escolar.")
 
     clases = Clase.objects.order_by("nombre")
     datos = request.POST if request.method == "POST" else request.GET
     clase = clases.filter(pk=_numero(datos.get("clase"))).first() or clases.first()
+    hoy = timezone.localdate().isoweekday()
+    dia_visto = servicios.dia_por_defecto(_numero(datos.get("dia")), hoy)
     error = None
     elegido = {}
 
     if request.method == "POST" and clase:
         dia = _numero(request.POST.get("dia"))
         franja = Franja.objects.filter(pk=_numero(request.POST.get("franja"))).first()
+        if dia in DiaLectivo.values:
+            dia_visto = dia  # después de poner o quitar se ve el día en el que se ha hecho
+        volver = f"{reverse('horario:cargar')}?clase={clase.pk}&dia={dia_visto}"
         if dia not in DiaLectivo.values or franja is None:
             error = "Elige un día de lunes a viernes y una franja."
         elif "quitar" in request.POST:
             asignatura = servicios.quitar(clase, dia, franja)
             if asignatura:
                 messages.success(request, f"Quitada «{asignatura.nombre}».")
-            return redirect(f"{reverse('horario:cargar')}?clase={clase.pk}")
+            return redirect(volver)
         else:
             asignatura = Asignatura.objects.filter(
                 pk=_numero(request.POST.get("asignatura"))
@@ -62,7 +71,7 @@ def cargar_horario(request):
                     error = str(e)
                 else:
                     messages.success(request, f"Guardado: {servicios.texto_de(casilla)}.")
-                    return redirect(f"{reverse('horario:cargar')}?clase={clase.pk}")
+                    return redirect(volver)
 
     return render(
         request,
@@ -70,7 +79,9 @@ def cargar_horario(request):
         {
             "clases": clases,
             "clase": clase,
-            "filas": servicios.rejilla(clase) if clase else [],
+            "dia": DiaLectivo(dia_visto),
+            "hoy": hoy,
+            "franjas_del_dia": servicios.franjas_del_dia(clase, dia_visto) if clase else [],
             "dias": servicios.dias(),
             "franjas": Franja.objects.order_by("orden"),
             "asignaturas": Asignatura.objects.order_by("nombre"),
@@ -89,9 +100,7 @@ def mi_horario(request):
     Por defecto, hoy (o el lunes si es fin de semana); ?dia=1…5 para otro día.
     """
     hoy = timezone.localdate().isoweekday()
-    dia = _numero(request.GET.get("dia"))
-    if dia not in DiaLectivo.values:
-        dia = hoy if hoy in DiaLectivo.values else DiaLectivo.LUNES
+    dia = servicios.dia_por_defecto(_numero(request.GET.get("dia")), hoy)
     clase = request.estudiante.clase
     return render(
         request,

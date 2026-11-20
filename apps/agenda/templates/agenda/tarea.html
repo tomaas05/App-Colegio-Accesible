@@ -22,7 +22,9 @@
 {# paginar.js enseña una cada vez: primero «qué es» y después «hacerla» (o al revés si ya  #}
 {# está en marcha), con los mismos botones de pasar página que el resto de pantallas.      #}
 <div class="encaja">
-<div class="ejec" id="partes" data-paginar data-estado="Parte {n} de {total}">
+{# data-pag-variable: las dos partes miden muy distinto («Hacerla» es mucho más alta) y cada #}
+{# una se mide por separado; si una no cabe sola, se desplaza <main> en vez de solaparse.   #}
+<div class="ejec" id="partes" data-paginar data-pag-variable data-estado="Parte {n} de {total}">
   <div class="col col--que" data-titulo="Qué es">
     <div class="ficha">
       <img class="ficha__imagen" src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">

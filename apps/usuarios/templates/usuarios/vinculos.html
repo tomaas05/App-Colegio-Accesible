@@ -72,7 +72,7 @@
           {% if familiar %}
           <li class="vinculos__persona">
             <span><b>{{ familiar.get_full_name }}</b><span class="admin__nota">Usuario: {{ familiar.username }}</span></span>
-            <button class="boton--aux" type="submit" name="accion" value="quitar">Quitar<span class="visualmente-oculto"> el vínculo con {{ familiar.get_full_name }}</span></button>
+            <button class="boton--aux boton--papelera" type="submit" name="accion" value="quitar"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="papelera" only %}</span><span class="visualmente-oculto">Quitar el vínculo con {{ familiar.get_full_name }}</span></button>
           </li>
           {% else %}
           <li class="vinculos__persona vinculos__persona--vacio">Sin familiar vinculado.</li>

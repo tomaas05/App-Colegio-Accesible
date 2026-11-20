@@ -38,12 +38,12 @@
     <div id="siguiente" class="pie-siguiente" role="status">{% include "agenda/_aviso_siguiente.html" %}</div>
     {# HU-02-06 y HU-04-02: su semana (B30), solo cuando el alcance es la semana completa. #}
     {% if agenda.puede_ver_semana %}
-    <a class="boton boton--aux" href="{% url 'agenda:semana' %}">Mi semana</a>
+    <a class="boton boton--aux" href="{% url 'agenda:semana' %}"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="calendario" only %}</span> Mi semana</a>
     {% endif %}
     {# HU-03-11, PA1 (Javi): el estudiante ve el horario de su clase. #}
     {# En el móvil se ve «Mi horario» para que quepa al lado de «Mi semana»; el nombre     #}
     {# completo se sigue leyendo (y empieza igual, WCAG 2.5.3).                            #}
-    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}">Mi horario<span class="solo-ancho"> de clase</span></a>
+    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="reloj" only %}</span> Mi horario<span class="solo-ancho"> de clase</span></a>
   </div>
 </div>
 {% endblock %}

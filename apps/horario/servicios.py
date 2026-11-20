@@ -47,6 +47,28 @@ def rejilla(clase):
     ]
 
 
+def franjas_del_dia(clase, dia):
+    """Todas las franjas del centro en un día de la clase, con lo que tiene en cada una.
+
+    Para el administrador (acta del 19/11): un día cada vez, con sus franjas libres también,
+    en lugar de una franja con los cinco días.
+    """
+    casillas = {
+        c.franja_id: c
+        for c in HorarioClase.objects.filter(clase=clase, dia_semana=dia).select_related(
+            "asignatura"
+        )
+    }
+    return [(franja, casillas.get(franja.pk)) for franja in Franja.objects.order_by("orden")]
+
+
+def dia_por_defecto(dia, hoy):
+    """El día pedido si es lectivo; si no, hoy o, en fin de semana, el lunes."""
+    if dia in DiaLectivo.values:
+        return dia
+    return hoy if hoy in DiaLectivo.values else DiaLectivo.LUNES
+
+
 def del_dia(clase, dia):
     """Las casillas de un día de la clase, por orden de franja."""
     return (
