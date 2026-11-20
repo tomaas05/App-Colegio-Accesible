@@ -27,7 +27,7 @@ playwright-report/
 .lighthouseci/
 
 # Capturas locales de diseño (juego completo). La selección que se revisa va en docs/diseno/capturas/
-capturas/
+/capturas/
 
 # Herramientas de Node para auditar (skill a11y-colegio)
 node_modules/
