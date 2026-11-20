@@ -88,6 +88,7 @@
       por: 1,
       pagina: 0,
       primero: -1, // índice del primer elemento visible: se conserva al cambiar de tamaño
+      sinEncaje: false, // ni un elemento cabe: la zona crece y se desplaza <main>
       ancho: 0,
       alto: 0,
     };
@@ -139,7 +140,10 @@
     var items = hijos(e.lista);
     var total = items.length;
     var zona = e.zona;
+    // Se mide sin la marca (con el alto de verdad); al final se vuelve a poner si esta lista u
+    // otra de la misma zona la necesita (una tarea tiene sus partes y, dentro, sus pasos).
     zona.classList.remove("sin-encaje");
+    e.sinEncaje = false;
 
     if (inicial || e.primero < 0) {
       e.primero = 0;
@@ -164,7 +168,7 @@
         it.hidden = false;
       });
       por = Math.max(1, total);
-      zona.classList.add("sin-encaje");
+      e.sinEncaje = true;
     } else if (e.fijo) {
       por = e.fijo;
       e.nav.hidden = total <= por;
@@ -199,9 +203,9 @@
           cortes.push(j);
           k = j;
         }
-        if (estrecho) zona.classList.add("sin-encaje"); // un bloque no cabe solo: se desplaza <main>
+        if (estrecho) e.sinEncaje = true; // un bloque no cabe solo: se desplaza <main>
       } else if (!caben(zona)) {
-        zona.classList.add("sin-encaje");
+        e.sinEncaje = true;
       }
       e.cortes = cortes;
       por = 1;
@@ -219,7 +223,7 @@
           n--;
           items[n].hidden = true;
         }
-        if (!caben(zona)) zona.classList.add("sin-encaje"); // ni uno cabe: se desplaza <main>
+        if (!caben(zona)) e.sinEncaje = true; // ni uno cabe: se desplaza <main>
       }
       por = Math.max(1, n);
     }
@@ -238,9 +242,18 @@
     e.total = total;
     e.paginas = e.cortes ? e.cortes.length - 1 : Math.max(1, Math.ceil(total / por));
     e.pagina = Math.min(e.paginas - 1, paginaDe(e, e.primero));
+    marcarZona(zona);
     e.ancho = zona.clientWidth;
     e.alto = zona.clientHeight;
     pintar(e, items);
+  }
+
+  // La zona lleva «sin-encaje» si alguna de sus listas no cabe ni con un elemento.
+  function marcarZona(zona) {
+    var alguna = listas.some(function (otra) {
+      return otra.zona === zona && otra.sinEncaje;
+    });
+    zona.classList.toggle("sin-encaje", alguna);
   }
 
   function pintar(e, items) {

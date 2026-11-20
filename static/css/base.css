@@ -17,6 +17,7 @@ html {
 
 body {
   margin: 0;
+  min-height: 100vh; /* respaldo para navegadores sin dvh */
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -120,7 +121,7 @@ button:hover,
   text-align: right;
 }
 .cabecera__quien span {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--gris);
 }
 /* La fecha puede partirse (con letra de 32 px en el móvil no cabe en una línea). */
@@ -146,7 +147,7 @@ button:hover,
   }
   .cabecera__quien {
     min-width: 0;
-    font-size: 1rem;
+    font-size: var(--letra-xs);
   }
 }
 /* El botón «Menú» solo sirve con JavaScript: html.js se pone antes de pintar (base.js),
@@ -190,7 +191,8 @@ main:focus {
   display: none !important;
 }
 .js body {
-  height: 100dvh;
+  height: 100vh; /* respaldo */
+  height: 100dvh; /* el alto real, con las barras del navegador del móvil */
   min-height: 0;
   overflow: hidden;
 }
@@ -198,6 +200,7 @@ main:focus {
   min-height: 0;
 }
 .js main {
+  position: relative; /* los textos «solo para el lector» (absolute) se quedan dentro de <main> */
   min-height: 0;
   overflow: auto;
 }
@@ -231,8 +234,9 @@ main:focus {
   flex: 1 1 0;
   min-height: 0;
 }
-.js .encaja.sin-encaje {
-  flex: 1 0 auto;
+.js .encaja.sin-encaje,
+.js .encaja:has(.sin-encaje) {
+  flex: 1 0 auto; /* y las zonas que la contienen también crecen: nada se sale bajo el pie */
 }
 .encaja--centro {
   justify-content: safe center;
@@ -274,7 +278,7 @@ main:focus {
 }
 .barra__titulo {
   display: flex;
-  flex: 1 1 8em;
+  flex: 1 1 4em; /* comparte fila con «Salir» o «Volver»: el título se parte antes que bajar */
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 0.75rem;
@@ -282,14 +286,14 @@ main:focus {
 }
 .barra__titulo h1 {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: var(--letra-xl);
 }
 .barra__titulo h1:focus {
   outline: none;
 }
 .barra__sub {
   font-family: var(--fuente-titulos);
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 800;
   color: var(--gris);
 }
@@ -301,15 +305,15 @@ main:focus {
 }
 .barra__persona img {
   flex: none;
-  width: 2rem;
-  height: 2rem;
+  width: 2em; /* em: crece con la letra */
+  height: 2em;
   border-radius: 50%;
 }
 .barra__acciones {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--separacion);
 }
 .barra__datos {
   display: flex;
@@ -322,7 +326,7 @@ main:focus {
   color: var(--petroleo);
 }
 .barra__fecha {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
 }
 .barra__quien {
   display: inline-flex;
@@ -331,8 +335,8 @@ main:focus {
 }
 .barra__quien img {
   flex: none;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2em; /* em: el avatar crece con la letra del perfil */
+  height: 2em;
   background: #ffffff;
   border: 2px solid var(--petroleo);
   border-radius: 50%;
@@ -359,7 +363,7 @@ main:focus {
     padding: 0.35rem 0.5rem;
   }
   .barra__titulo h1 {
-    font-size: 1.35rem;
+    font-size: var(--letra-l);
   }
   /* En el móvil del adulto el subtítulo no cabe en una línea: solo se deja el de «de
      quién es la pantalla». */
@@ -370,7 +374,14 @@ main:focus {
   .barra__datos {
     flex: 1 1 100%;
     justify-content: space-between;
-    font-size: 1rem;
+    row-gap: 0;
+    font-size: var(--letra-xs);
+    line-height: 1.25; /* con la letra 32, la hora baja de línea: que ocupe lo justo */
+  }
+  /* Entre la lista (tarjetas que se pulsan) y el pie («Antes / Después»), los 12 px de
+     separación del proyecto, aunque el resto de la pantalla vaya más junto. */
+  .pantalla > :is(.pie, .paginador) {
+    margin-top: calc(var(--separacion) - 0.5rem);
   }
   .barra__fecha-larga {
     display: none;
@@ -379,8 +390,8 @@ main:focus {
     display: inline;
   }
   .barra__quien img {
-    width: 2rem;
-    height: 2rem;
+    width: 1.6em;
+    height: 1.6em;
   }
 }
 
@@ -399,7 +410,7 @@ a.boton {
 .boton--principal {
   min-height: var(--toque-grande);
   padding: 0.5rem 2rem;
-  font-size: 1.5rem;
+  font-size: var(--letra-l);
   color: var(--blanco);
   background: var(--petroleo);
 }
@@ -409,7 +420,7 @@ a.boton {
 .boton--mediano {
   min-height: var(--toque);
   padding: 0.4rem 1.25rem;
-  font-size: 1.1rem;
+  font-size: var(--letra-s);
 }
 button:disabled,
 .boton[aria-disabled="true"] {
@@ -424,7 +435,7 @@ button:disabled,
   flex: none;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem 0.75rem;
+  gap: var(--separacion);
 }
 .paginador__estado {
   flex: 1;
@@ -442,18 +453,30 @@ button:disabled,
 .paginador__estado {
   white-space: nowrap;
 }
-/* Lo pone paginar.js cuando no caben en una fila: el texto arriba y los botones debajo. */
+/* Lo pone paginar.js cuando «Anterior», el texto y «Siguiente» no caben en una fila (letra y
+   botones muy grandes en el móvil). Sin «order» (decisión 0007): el texto («2 de 4») se sigue
+   leyendo, y se anuncia al pasar de página, pero no se ve; los dos botones se quedan en una
+   fila, «Anterior» a la izquierda y «Siguiente» a la derecha. Que es la primera o la última
+   página lo dice el botón desactivado. Si ni los dos caben, «Siguiente» baja, a la derecha. */
 .paginador--apilado {
   flex-wrap: wrap;
+  row-gap: var(--separacion);
 }
 .paginador--apilado .paginador__estado {
-  flex: 1 1 100%;
-  order: -1;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 .paginador--apilado button {
-  flex: 1 1 0;
-  min-width: 0;
-  padding-inline: 0.25rem;
+  flex: 1 1 auto;
+  min-width: var(--toque);
+  padding-inline: 0.5rem;
+}
+.paginador--apilado [data-pag="1"] {
+  margin-left: auto;
 }
 /* El texto del centro se lee pero no se ve: los botones ya dicen a dónde llevan. */
 .paginador--sin-estado .paginador__estado {
@@ -491,7 +514,7 @@ button:disabled,
   flex: none;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 0.75rem;
+  gap: var(--separacion); /* ≥ 12 px entre botones, también cuando bajan de fila */
 }
 .pie > .paginador {
   flex: 1 1 16rem;
@@ -502,14 +525,14 @@ button:disabled,
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--separacion);
   margin-left: auto;
 }
 /* «Hay cambios sin guardar»: una línea encima del pie, a la derecha, sobre «Guardar». */
 .pie__estado {
   flex: none;
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 700;
   line-height: 1.5;
   color: var(--petroleo);
@@ -582,7 +605,7 @@ button:disabled,
   margin: 0;
   padding: 0;
   font-family: var(--fuente-titulos);
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   font-weight: 800;
   color: var(--petroleo);
 }
@@ -623,7 +646,7 @@ fieldset.parte:not(.parte--caja) {
   display: flex;
   flex: none;
   align-items: flex-end;
-  gap: 0.5rem;
+  gap: var(--separacion);
 }
 .parte__pie > .paginador {
   flex: 1 1 0;
@@ -777,10 +800,10 @@ fieldset.parte:not(.parte--caja) {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.4em; /* em: la forma crece con la letra (decisión 0007) */
+  height: 2.4em;
   font-family: var(--fuente-titulos);
-  font-size: 1.05rem;
+  font-size: var(--letra-xs);
   font-weight: 800;
   line-height: 1;
   color: var(--t);
@@ -821,7 +844,7 @@ fieldset.parte:not(.parte--caja) {
 }
 .dia-forma--6 > span,
 .dia-forma--7 > span {
-  margin-top: 0.3rem;
+  margin-top: 0.3em;
 }
 
 /* --- Panel lateral de los adultos --- */
@@ -881,13 +904,54 @@ fieldset.parte:not(.parte--caja) {
 }
 .lateral__credito {
   margin: 1rem 0 0;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   line-height: 1.3;
   color: var(--gris);
 }
 /* «Salir» del estudiante, en la fila del título de su agenda. */
 .salir-est {
   margin: 0;
+}
+
+/* Icono SVG dentro de un botón (templates/_icono.html): en em, crece con la letra del botón.
+   Va en un <span aria-hidden="true">: el perfil «solo texto» lo oculta y «solo imagen» deja
+   solo él a la vista (tokens.css). */
+.icono-boton {
+  display: inline-flex;
+  flex: none;
+  vertical-align: middle;
+}
+.icono-boton .icono {
+  display: block;
+  width: 1.15em;
+  height: 1.15em;
+}
+:is(button, .boton):has(> .icono-boton) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+}
+
+/* «Quitar» con papelera (acta del 19/11, j; lo pidió el profesor). Solo el icono a la vista:
+   el nombre accesible completo («Quitar … del …») va en un texto .visualmente-oculto dentro
+   del botón. Rojo de la paleta (--error): 5,4:1 sobre blanco (4,9:1 sobre --error-fondo al pasar el ratón), más de 3:1 en icono y borde
+   (1.4.11). Al menos 48 px y separado de la acción principal por --separacion. */
+.boton--papelera {
+  flex: none;
+  min-width: var(--toque);
+  min-height: var(--toque);
+  padding: 0.25rem;
+  color: var(--error);
+  background: var(--blanco);
+  border: 2px solid var(--error);
+}
+.boton--papelera:hover {
+  background: var(--error-fondo);
+}
+.boton--papelera .icono {
+  width: 1.4em;
+  height: 1.4em;
 }
 @media (min-width: 64rem) {
   .con-lateral .marco {

@@ -61,11 +61,36 @@ Despega la usan estudiantes con pulsador (barrido), poca precisión o dificultad
 
 - **Encuadre:** el contenido no se arrima arriba. Pantallas de una sola cosa (entrar, contraseña, vacío): `.encaja.encaja--centro` (`justify-content: safe center`). Pantallas con zona principal y botón: columna en rejilla `grid-template-rows: auto 1fr auto`, con el botón principal siempre abajo y en el mismo sitio.
 - **Listas de tarjetas:** `grid-template-columns: repeat(auto-fit, minmax(min(100%, 14em), 1fr))`. El ancho mínimo va en `em` para que con letra 32 haya menos columnas, no texto partido. `auto-fill` solo si quieres conservar los huecos de las columnas vacías.
-- **Container queries:** solo cuando una tarjeta deba cambiar de disposición según su caja y no según la pantalla (`container-type: inline-size` en la lista; `@container (min-width: 30em)`).
-- **Píldoras y chips de estado:** `white-space: nowrap`, `width: fit-content`, borde con `--petroleo` o `--error` (no `--naranja`). Si no caben, se acorta el texto visible (`.solo-ancho`) y el nombre completo se sigue leyendo.
-- **Iconos:** SVG de `templates/_icono.html` (trazos de Lucide), nunca emojis ni glifos Unicode raros en `::before`, porque en Android salen como un cuadrado vacío (pasó con «⏻ Salir»).
-- **Acción destructiva («Quitar»):** papelera SVG en `--error`, `aria-label="Quitar …"`, ≥ `var(--toque)`, separada de la acción principal.
-- **Días de la semana:** siempre `_dia_forma.html` (letra + forma + color).
+- **Container queries en `em` para cambiar de disposición según la letra.** Una media query en `rem` mira la pantalla. Con letra 32, una tableta de 1024 px tiene el sitio de una de 640. En la condición de una container query, el `em` es la letra del contenedor, es decir, la del perfil:
+
+  ```css
+  .semana-zona { container: semana / inline-size; }          /* en el padre */
+  @container semana (min-width: 48em) { .semana { grid-template-columns: 5fr 2fr; } }
+  ```
+
+  Ejemplos: «Mi semana» (7 columnas solo si caben con esa letra) y el pie de la agenda (el icono de «Mi semana» se oculta si el botón mide menos de 7 veces su letra, salvo en el perfil «solo imagen»).
+- **Paginador sin sitio** (`.paginador--apilado`, lo pone `paginar.js`): el texto «2 de 4» se sigue leyendo pero no se ve, y los dos botones quedan en una fila. No se usa `order`.
+- **Píldoras y chips de estado:** `white-space: nowrap` y `width: fit-content`. El borde va con `--petroleo` o `--error`, nunca con `--naranja`. Si no caben, se acorta el texto visible (`.solo-ancho`) y el nombre completo se sigue leyendo.
+- **Aviso en el sitio del botón** («Podrás empezar a las…»): `.estado-grande` (`--letra-l`, caja menta sin forma de píldora, para que no parezca un botón).
+- **Iconos:** SVG de `templates/_icono.html` (trazos de Lucide), nunca emojis ni glifos Unicode raros en `::before`: en Android salen como un cuadrado vacío (pasó con «⏻ Salir»). Dentro de un botón:
+
+  ```html
+  <button …><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="salir" only %}</span> Salir</button>
+  ```
+
+  `.icono-boton` mide en `em`. El perfil «solo texto» lo oculta y «solo imagen» deja solo el icono.
+- **Acción destructiva («Quitar»):** papelera roja con todo su nombre en un texto oculto a la vista (no en `aria-label`, así un texto que cambia con JavaScript sigue valiendo):
+
+  ```html
+  <button class="boton--aux boton--papelera" …><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="papelera" only %}</span><span class="visualmente-oculto">Quitar Música del lunes a las 09:00</span></button>
+  ```
+
+  Mide ≥ `var(--toque)`, va en `--error` (5,4:1 sobre blanco) y se separa de la acción principal con `--separacion`. No añade confirmación (el boceto solo permite ventanas en 3 casos).
+- **Listas paginadas de alto muy distinto** (las partes de una tarea): `data-pag-variable`, para
+  que cada una se mida sola. Sin él, `paginar.js` mide con la primera y la grande se desborda.
+  Dos listas pueden compartir una `.encaja`: cada una lleva su propio «no cabe».
+- **Textos «solo para el lector» dentro de `<main>`:** `.js main` es `position: relative`. Si no, un `position: absolute` por debajo del pliegue alarga el documento.
+- **Días de la semana:** siempre `_dia_forma.html` (letra + forma + color), que mide en `em`.
 
 ## Qué no aplicar de `responsive-design`
 
@@ -90,7 +115,7 @@ Si quieres consultarla: `npx skills add https://github.com/wshobson/agents --ski
   - axe sin fallos (etiquetas `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`);
   - `document.scrollingElement` y `<main>` sin desplazamiento;
   - ningún elemento se sale de su caja;
-  - objetivos ≥ 48 px.
+  - objetivos ≥ 48 px y ningún par de objetivos se tapa.
   
   Las ayudas comunes están en `tests/e2e/ayudas.py`.
 - Antes de dar una pantalla por buena: skill `a11y-colegio` (en Windows, `CHROME_PATH` al Chrome instalado; la salida va a `a11y-informe/`, que no se sube) y mira el orden de barrido numerado.

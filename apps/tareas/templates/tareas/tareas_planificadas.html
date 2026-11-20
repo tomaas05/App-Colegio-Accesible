@@ -32,7 +32,7 @@
     {% with a=o.asignacion %}
     <li class="planificada{% if o.cancelada %} planificada--cancelada{% endif %}">
       <div class="planificada__cab">
-        <img src="{{ a.tarea.imagen.url }}" alt="" width="64" height="64" loading="lazy">
+        <img src="{{ a.tarea.imagen.url }}" alt="" width="64" height="64">
         <div>
           <h2 class="planificada__nombre">{{ a.tarea.nombre }}</h2>
           <p class="planificada__datos">{{ a.estudiante.usuario.get_full_name }} · De {{ o.hora_inicio|time:"H:i" }} a {{ o.hora_fin|time:"H:i" }}{% if o.cambiada %} · <b>cambiada ese día</b>{% endif %}</p>

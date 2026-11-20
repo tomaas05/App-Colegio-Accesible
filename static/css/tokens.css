@@ -2,7 +2,8 @@
  * Despega · Variables de diseño (tokens)
  * Paleta y tipografía tomadas del boceto (docs/iteracion-1/bocetos/).
  * La personalización por estudiante (RF4.1.x) sobrescribirá estas variables
- * desde el perfil; por eso todo el CSS de la app debe usar var(--...) y rem.
+ * desde el perfil; por eso todo el CSS de la app usa var(--...). Letra: --letra-* o em, nunca
+ * rem ni px (decisión 0007); espacios y anchos en rem.
  *
  * Contraste comprobado sobre blanco (#FFF) y menta (#E3F4EF), WCAG 2.2:
  *   --texto        14,57:1  AAA
@@ -88,7 +89,7 @@
   --blanco: #ffffff;
   --focus: #0b57d0;
 
-  /* Tipografía (RF4.1.2: 16, 20, 24 o 32 px → se cambia en html{font-size}) */
+  /* Tipografía (RF4.1.2: 16, 20, 24 o 32 px → data-letra cambia --tamano-base) */
   --fuente-texto: "Open Sans", Arial, sans-serif;
   --fuente-titulos: "Nunito", Arial, sans-serif;
   --tamano-base: 1.25rem; /* 20 px con la raíz a 16 px */
@@ -222,6 +223,23 @@
   --tamano-base: 2rem;
 }
 
+/* --- Escala de letra (decisión 0007) ---
+ * Todo font-size de los componentes sale de aquí (o va en em): así crece con la letra del
+ * perfil. Un rem NO crece con el perfil: data-letra solo cambia --tamano-base.
+ * Se declara también en [data-letra] porque una variable con var() se resuelve donde se
+ * declara: la tarjeta del perfil visual (con su propio data-letra) recalcula la escala.
+ * Con la letra por defecto (20 px): xs 16 · s 18 · m 20 · l 24 · xl 26 · 2xl 28 px.
+ * Las dos más pequeñas nunca bajan de 16 px (RNF4.1.6), tampoco con la letra de 16. */
+:root,
+[data-letra] {
+  --letra-xs: max(1rem, calc(var(--tamano-base) * 0.8));
+  --letra-s: max(1rem, calc(var(--tamano-base) * 0.9));
+  --letra-m: var(--tamano-base);
+  --letra-l: calc(var(--tamano-base) * 1.2);
+  --letra-xl: calc(var(--tamano-base) * 1.3);
+  --letra-2xl: calc(var(--tamano-base) * 1.4);
+}
+
 /* Tamaño de los botones (RF4.1.3: 48, 64 u 80 px) */
 [data-botones="48"] {
   --toque: 3rem;
@@ -240,15 +258,7 @@
   padding-block: 0.2rem;
 }
 /* Contenido de los botones del estudiante (RF4.2.4, HU-04-02: imagen, texto o ambos) */
-html[data-contenido-botones] .salir-est button::before {
-  content: "⏻ ";
-}
-html[data-contenido-botones] .pie__acciones a[href*="/semana/"]::before {
-  content: "📅 ";
-}
-html[data-contenido-botones] .pie__acciones a[href*="/mi-horario/"]::before {
-  content: "🕒 ";
-}
+/* «Salir», «Mi semana» y «Mi horario» llevan su icono SVG en el marcado (.icono-boton). */
 html[data-contenido-botones] .botones-tarea form button.boton--principal::before {
   content: "▶ ";
 }
@@ -294,5 +304,5 @@ html[data-contenido-botones="imagen"] :is(button:not(.tarjeta), .boton) > span[a
 }
 html[data-contenido-botones="imagen"] .boton--principal::before,
 html[data-contenido-botones="imagen"] .boton--principal > span[aria-hidden="true"] {
-  font-size: 1.5rem;
+  font-size: var(--letra-l);
 }

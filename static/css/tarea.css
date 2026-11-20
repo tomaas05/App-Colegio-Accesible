@@ -1,7 +1,7 @@
 /*
 - Despega · Crear, ver y asignar tareas (Úrsula): HU-03-01 y HU-03-03.
 - Bocetos B40, B41 y B43. Se carga después de usuarios.css, de donde salen los botones,
-- los campos (.campo) y las tarjetas (.admin__tarjeta). Solo tokens y rem.
+- los campos (.campo) y las tarjetas (.admin__tarjeta). Solo tokens; la letra con --letra-* (decisión 0007).
  */
 .tarea-form {
   width: min(48rem, 100%);
@@ -30,7 +30,7 @@
 .grupo > legend {
   padding: 0 0.4rem;
   font-family: var(--fuente-titulos);
-  font-size: 1.2rem;
+  font-size: var(--letra-m);
   font-weight: 800;
   color: var(--petroleo);
 }
@@ -61,7 +61,7 @@
 .tarea-form legend {
   padding: 0 0.5rem;
   font-family: var(--fuente-titulos);
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   font-weight: 800;
   color: var(--petroleo);
 }
@@ -78,7 +78,7 @@
 .campo__ayuda {
   margin: 0;
   font-family: var(--fuente-texto);
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 400;
   color: var(--gris);
 }
@@ -137,7 +137,7 @@
 }
 .pictos legend {
   padding: 0;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
 }
 .pictos__lista {
   display: grid;
@@ -290,9 +290,9 @@
   }
 }
 .casillas--dias .dia-forma {
-  width: 2.1rem;
-  height: 2.1rem;
-  font-size: 1rem;
+  width: 2.1em;
+  height: 2.1em;
+  font-size: var(--letra-xs);
 }
 
 /* --- Catálogo de tareas --- */
@@ -345,15 +345,15 @@
   margin: 0;
 }
 .catalogo__texto h2 {
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
 }
 .catalogo__datos {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   color: var(--gris);
 }
 /* La descripción ya viene recortada del servidor (90 letras y «…»): el texto no se corta. */
 .catalogo__desc {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   line-height: 1.35;
 }
 
@@ -449,13 +449,13 @@
 }
 .planificada__nombre {
   font-family: var(--fuente-titulos);
-  font-size: 1.15rem;
+  font-size: var(--letra-s);
   font-weight: 800;
   color: var(--petroleo);
   overflow-wrap: anywhere;
 }
 .planificada__datos {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
 }
 .planificada__estado {
   margin: 0;
@@ -478,7 +478,7 @@
 }
 .planificada__alcance legend {
   margin-bottom: 0.25rem;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 700;
 }
 .planificada__alcance .casilla {
@@ -504,9 +504,9 @@
   gap: 0.25rem;
 }
 .dias-serie .dia-forma {
-  width: 1.8rem;
-  height: 1.8rem;
-  font-size: 1rem;
+  width: 1.8em;
+  height: 1.8em;
+  font-size: var(--letra-xs);
 }
 
 /* Confirmar «Cancelar tarea»: el pictograma de la tarea junto a la pregunta. */
@@ -553,7 +553,7 @@
   min-width: 0;
 }
 .plan-b__orden {
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   font-weight: 700;
   color: var(--petroleo);
 }

@@ -28,7 +28,7 @@ Aplicación web para que el alumnado del Colegio de Educación Especial Purísim
 
 Cuando se fusione tu historia, añade aquí sus pantallas.
 
-Los adultos tienen una barra con el logotipo (lleva a su pantalla principal) y un panel lateral con sus opciones: [decisión 0003](docs/decisiones/0003-estructura-y-navegacion.md). Todas las pantallas tienen además una barra de título (dónde estoy, la fecha de hoy y, el estudiante, su nombre y la hora) y ninguna se desplaza: lo que no cabe pasa de pantalla con «Anterior / Siguiente» ([decisión 0005](docs/decisiones/0005-sin-desplazamiento-y-revision-profesora.md)). La auditoría de interfaz está en [docs/iteracion-1/auditoria-ui.md](docs/iteracion-1/auditoria-ui.md).
+Los adultos tienen una barra con el logotipo (lleva a su pantalla principal) y un panel lateral con sus opciones: [decisión 0003](docs/decisiones/0003-estructura-y-navegacion.md). Todas las pantallas tienen además una barra de título (dónde estoy, la fecha de hoy y, el estudiante, su nombre y la hora) y ninguna se desplaza: lo que no cabe pasa de pantalla con «Anterior / Siguiente» ([decisión 0005](docs/decisiones/0005-sin-desplazamiento-y-revision-profesora.md)). La letra de las pantallas sale del perfil del estudiante y la maquetación se comprueba en 6 tamaños con el peor perfil ([decisión 0007](docs/decisiones/0007-letra-del-perfil-y-encuadre.md); guía en [.claude/skills/despega-maquetacion](.claude/skills/despega-maquetacion/SKILL.md)). La auditoría de interfaz está en [docs/iteracion-1/auditoria-ui.md](docs/iteracion-1/auditoria-ui.md).
 
 ## Tecnologías
 
