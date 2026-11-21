@@ -336,3 +336,97 @@
     line-height: 1.15;
   }
 }
+
+/* --- Por dónde vamos (retrospectiva del 19/11) ---
+ * Hoy: la clase de ahora destacada (borde grueso, fondo menta y «▶ Ahora»), las que ya han
+ * pasado más apagadas y con «✓ Ya ha pasado» en borde discontinuo, las que vienen con
+ * «○ Después». Otro día: una frase con la forma de hoy. Nunca solo el color. */
+.mi-horario__casilla--pasada {
+  border-style: dashed;
+}
+.mi-horario__casilla--pasada .tarjeta__imagen {
+  opacity: 0.6;
+}
+.chip--pasada {
+  color: var(--petroleo);
+  border-style: dashed;
+}
+.mi-horario .linea .chip {
+  justify-self: center;
+}
+.mi-horario__donde {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  font-family: var(--fuente-titulos);
+  font-size: var(--letra-s);
+  font-weight: 800;
+  color: var(--petroleo);
+  background: var(--menta);
+  border-radius: 1rem;
+}
+.mi-horario__donde-corto {
+  display: none;
+}
+/* En el móvil el título del día se ve: la frase va en corto a su lado («Lunes, hoy no hay
+   clase») y la caja de la frase larga no se pinta, para que quepa al menos una clase. */
+@media (max-width: 47.99rem) {
+  .mi-horario__donde {
+    display: none;
+  }
+  .mi-horario__donde-corto {
+    display: inline;
+    font-size: var(--letra-xs);
+    font-weight: 700;
+    color: var(--texto);
+  }
+}
+@media (max-width: 30rem) {
+  html:is([data-letra="24"], [data-letra="32"]) .mi-horario__hoy:has(.mi-horario__donde-corto) {
+    font-size: var(--letra-m);
+    column-gap: 0.4rem;
+  }
+}
+/* La frase de «por dónde vamos», la etiqueta de cada clase y el sitio de la flecha ocupan
+   alto: en horizontal el dibujo se ajusta para que la línea quepa entera. */
+@media (min-width: 48rem) {
+  .mi-horario .linea .tarjeta__imagen {
+    width: min(100%, 9rem, 16dvh);
+  }
+}
+/* Móvil con letra 24 o 32: lo justo para que quepa la clase de ahora. Hoy, el título del día
+   no se ve (la barra ya dice la fecha y el día está marcado arriba; se sigue leyendo) y la
+   clase de ahora se distingue por su borde grueso, el fondo y la flecha; la etiqueta solo se lee. */
+@media (max-width: 30rem) {
+  html:is([data-letra="24"], [data-letra="32"]) .mi-horario__hoy--hoy {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  html:is([data-letra="24"], [data-letra="32"]) .mi-horario .linea .chip {
+    position: absolute; /* no se ve, pero se sigue leyendo («Ahora», «Ya ha pasado») */
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+/* La frase de otro día, en una línea tranquila (no quita sitio a la línea de clases). */
+@media (min-width: 48rem) {
+  .mi-horario__donde {
+    padding-block: 0.2rem;
+    font-size: var(--letra-xs);
+  }
+  .mi-horario__donde .dia-forma {
+    width: 1.8em;
+    height: 1.8em;
+    font-size: 1em;
+  }
+}

@@ -331,3 +331,62 @@ def test_17_el_tutor_busca_entre_sus_alumnos(client, datos):
     assert "Sofía" in lista and "Hugo" not in lista
     html = client.get(reverse("perfil:lista"), {"q": "nadie"}).content.decode()
     assert "Ningún alumno coincide" in html
+
+
+# --- 4 (cont.) · Mi horario dice por dónde vamos ---
+
+
+def un_lunes(hora, minuto=0):
+    from datetime import timedelta
+
+    hoy = timezone.localdate()
+    lunes = hoy - timedelta(days=hoy.weekday())
+    return timezone.make_aware(datetime.combine(lunes, time(hora, minuto)))
+
+
+def test_4_hoy_cada_clase_dice_si_ha_pasado_si_es_ahora_o_si_viene(client, lucia, monkeypatch):
+    from apps.horario import servicios as horario
+
+    monkeypatch.setattr(horario, "ahora", lambda: un_lunes(10, 30))
+    html = client.get(reverse("horario:mi_horario")).content.decode()
+    assert html.count("Ya ha pasado") == 1  # Matemáticas, de 9 a 10
+    assert "▶</span> Ahora" in html and "Después" in html
+    assert 'data-ahora="10:30"' in html and 'mi-horario__donde"' not in html
+
+
+def test_4_otro_dia_lo_dice_en_una_frase(client, lucia, monkeypatch):
+    from apps.horario import servicios as horario
+
+    monkeypatch.setattr(horario, "ahora", lambda: un_lunes(10, 30))
+    html = client.get(reverse("horario:mi_horario"), {"dia": 3}).content.decode()
+    assert "Aún no ha llegado. Hoy es lunes." in html and "data-ahora" not in html
+    monkeypatch.setattr(horario, "ahora", lambda: un_lunes(10, 30) + timedelta_dias(5))
+    html = client.get(reverse("horario:mi_horario")).content.decode()
+    assert "Hoy es sábado: no hay clase." in html
+
+
+def timedelta_dias(n):
+    from datetime import timedelta
+
+    return timedelta(days=n)
+
+
+def test_7_si_se_empieza_antes_tiene_lo_que_dura_la_tarea(client, lucia, hora):
+    """Captura del 21/11: «Leer un cuento» (17:00-17:30) empezada a las 12:22 decía «Quedan
+    308 min». Tiene 30 minutos desde que empieza: hasta las 12:52."""
+    cuento = lucia.asignaciones.get(tarea__nombre="Leer un cuento")
+    servicios.empezar(lucia, cuento.pk, a_las(12, 22))
+    t = servicios.tarea_del_dia(lucia, cuento.pk, a_las(12, 30))
+    assert t.fin_tarea == a_las(12, 52) and t.estado == "en_curso"
+    hora(12, 30)
+    html = client.get(reverse("agenda:detalle", args=[cuento.pk])).content.decode()
+    assert 'data-restante-seg="1320"' in html  # 22 minutos
+    assert "tienes hasta las 12:52" in html
+    t = servicios.tarea_del_dia(lucia, cuento.pk, a_las(12, 53))
+    assert t.estado == "tiempo_agotado"
+
+
+def test_7_si_se_empieza_a_su_hora_o_tarde_el_final_no_se_mueve(lucia):
+    regar = lucia.asignaciones.get(tarea__nombre="Regar las plantas")  # 12:00-12:30
+    servicios.empezar(lucia, regar.pk, a_las(12, 10))
+    assert servicios.tarea_del_dia(lucia, regar.pk, a_las(12, 15)).fin_tarea == a_las(12, 30)

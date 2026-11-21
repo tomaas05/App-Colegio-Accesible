@@ -139,3 +139,24 @@ def test_plan_b_con_teclado(live_server, page, client, datos):
     assert tarjeta.get_attribute("aria-pressed") == "true"
     assert tarjeta.evaluate("e => e === document.activeElement")
     assert [a.nombre for a in regar.alternativas] == ["Escuchar música"]
+
+
+@pytest.mark.parametrize("tamano", RESOLUCIONES)
+@pytest.mark.parametrize("estudiante", ESTUDIANTES, indirect=True)
+def test_mi_horario_de_hoy_dice_por_donde_vamos(live_server, page, estudiante, tamano, monkeypatch):
+    """Un lunes a las 10:30: Matemáticas ya ha pasado, Educación física es ahora (con la
+    flecha) y la página se abre por ella."""
+    from datetime import timedelta
+
+    from apps.horario import servicios as horario
+
+    hoy = timezone.localdate()
+    lunes = timezone.make_aware(datetime.combine(hoy - timedelta(days=hoy.weekday()), time(10, 30)))
+    monkeypatch.setattr(horario, "ahora", lambda: lunes)
+    page.set_viewport_size(dict(zip(("width", "height"), RESOLUCIONES[tamano], strict=True)))
+    page.goto(live_server.url + reverse("horario:mi_horario"))
+    ahora = page.locator("li.linea__ahora")
+    ahora.wait_for()
+    assert "Educación física" in ahora.inner_text() and "Ahora" in ahora.inner_text()
+    assert ahora.locator(".linea__flecha").count() == 1
+    revisar(page, letra=estudiante.codigo_estudiante == PEOR_PERFIL)

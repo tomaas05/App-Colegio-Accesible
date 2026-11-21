@@ -12,6 +12,7 @@
 from dataclasses import dataclass
 
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from .models import DiaLectivo, Franja, HorarioClase
 
@@ -127,3 +128,45 @@ def choca_con_horario_escolar(dias_semana, hora_inicio, hora_fin):
 
 def texto_de(casilla):
     return f"{casilla.asignatura.nombre} {_texto_casilla(casilla.dia_semana, casilla.franja)}"
+
+
+# --- «Por dónde vamos» en Mi horario (retrospectiva del 19/11) ---
+
+
+def ahora():
+    """Hora actual en la zona del centro. Las pruebas la sustituyen (monkeypatch)."""
+    return timezone.localtime()
+
+
+NOMBRES_DIA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
+
+def momentos(casillas, hora):
+    """[(casilla, momento)] de hoy: «pasada», «ahora» o «despues» según la hora."""
+    resultado = []
+    for casilla in casillas:
+        if casilla.franja.hora_fin <= hora:
+            momento = "pasada"
+        elif casilla.franja.hora_inicio <= hora:
+            momento = "ahora"
+        else:
+            momento = "despues"
+        resultado.append((casilla, momento))
+    return resultado
+
+
+def donde_estamos(dia, hoy):
+    """Frase para cuando el día que se ve no es hoy: así se sabe por dónde vamos."""
+    de_hoy = NOMBRES_DIA[hoy - 1]
+    if hoy not in DiaLectivo.values:
+        return f"Hoy es {de_hoy}: no hay clase."
+    if dia < hoy:
+        return f"Ya ha pasado. Hoy es {de_hoy}."
+    return f"Aún no ha llegado. Hoy es {de_hoy}."
+
+
+def donde_estamos_corto(dia, hoy):
+    """La misma idea en pocas palabras, junto al nombre del día en el móvil."""
+    if hoy not in DiaLectivo.values:
+        return "hoy no hay clase"
+    return "ya ha pasado" if dia < hoy else "aún no ha llegado"
