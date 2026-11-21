@@ -37,10 +37,10 @@ Otros hallazgos de la auditoría:
 | 1 | Contraseña del alumno que destaque | Recuadro menta con borde de 4 px, campo de 64 px y letra grande. En las 3 imágenes, la elegida lleva borde grueso continuo, fondo menta y un ✓ grande en SVG |
 | 2 | Error de contraseña abajo | El aviso va debajo del campo (o de la rejilla), justo encima de «Entrar». Sigue con `role="alert"` |
 | 3 | Avatares distintos de las contraseñas | Galería propia (`static/img/avatares/`, 18 caras alegres «Fun Emoji», CC BY 4.0) y `apps/usuarios/avatares.py`. El administrador la elige al crear o editar una cuenta (o sube un dibujo). Ningún nombre coincide con las 12 imágenes de la contraseña |
-| 4 | Ver en qué hora estamos (valor añadido) | Flecha «Ahora» que avanza por la línea de «Tareas de hoy» y de «Mi horario» (de hoy): dentro de la tarea de ahora según lo que lleva y, entre dos, en el hueco. Decorativa (`aria-hidden`), se recoloca cada 30 s |
+| 4 | Ver en qué hora estamos (valor añadido) | Flecha «Ahora» que avanza por la línea de «Tareas de hoy» y de «Mi horario» (de hoy): dentro de la tarea de ahora según lo que lleva y, entre dos, en el hueco. Decorativa (`aria-hidden`), se recoloca cada 30 s. En «Mi horario» de hoy, además, cada clase dice «✓ Ya ha pasado», «▶ Ahora» o «○ Después» y la página se abre por la de ahora; otro día, una frase («Hoy es sábado: no hay clase», «Ya ha pasado. Hoy es miércoles», «Aún no ha llegado…») |
 | 5 | Por defecto, el horario | El estudiante entra a «Mi horario» (de hoy, con «Salir»); «Tareas de hoy» es un botón al pie. Afecta a HU-01-06 PA3/PA4 (a dónde lleva al entrar) |
 | 6 | Logo del día en la barra | La forma del día (`_dia_forma.html`) junto a la fecha. En la tableta en vertical, con la fecha corta; en el móvil con letra 24 o 32 no cabe y se quita (la fecha sigue escrita) |
-| 7 | No tan estrictos con la hora | Se puede empezar una tarea en cualquier momento del día hasta su hora de fin, si no hay otra en marcha. `MARGEN_EMPEZAR_ANTES = None`. **Cambia la prueba de aceptación de HU-02-03** («Antes de la hora de inicio no puedo confirmar el inicio»): hay que actualizarla en Jira y en el Product Backlog |
+| 7 | No tan estrictos con la hora | Se puede empezar una tarea en cualquier momento del día hasta su hora de fin, si no hay otra en marcha. `MARGEN_EMPEZAR_ANTES = None`. Si se empieza antes, tiene lo que dura la tarea desde que empieza (`fin_tarea`): una de 30 min empezada a las 12:22 acaba a las 12:52, no a su hora de fin prevista (antes salía «Quedan 308 min»). Empezada a su hora o tarde, el final no se mueve (RF2.7.2). **Cambia la prueba de aceptación de HU-02-03** («Antes de la hora de inicio no puedo confirmar el inicio»): hay que actualizarla en Jira y en el Product Backlog |
 | 8 | Plan B más sencillo (valor añadido) | Opción A elegida por el equipo, con el buscador arriba: «así lo verá el alumno» numerado y las tarjetas de la biblioteca; tocar = añadir o quitar (`aria-pressed`), «Primera» lo pone el primero, «+ Nueva» es una tarjeta más. Sin desplegables ni Subir / Bajar |
 | 9 | Fecha de hoy al asignar | «Desde» sale con la fecha de hoy (formato ISO para `<input type="date">`) |
 | 10 | El alumno personaliza su perfil | **No se hace:** es HU-04-05 (Could, iteración 3) |
@@ -69,13 +69,14 @@ perfil por defecto y con el peor (Sofía).
 - **Paradas de barrido:** «Mi horario» 8 (la de «Tareas de hoy» es la octava, tras los 5 días),
   «¡Bravo!» 3, contraseña 2. En adultos, 15–30 (la biblioteca, por los 3 botones de cada tarea).
 - **No verificable aquí:** VoiceOver y TalkBack reales, y un pulsador físico.
+- **Revisión del 21/11 (capturas del equipo):** al cerrar el `@media` de `tarea.css` se activó `width: 100% !important` en todos los `input`, también en las casillas: en «Asignar» del móvil desaparecían los nombres de los alumnos y los días se montaban. Ahora solo afecta a los campos de texto. En pantallas anchas, «Miércoles», «Viernes» y «Domingo» se salían de su casilla: el ancho mínimo pasa a `11.5em`.
 - **Pendiente (ya lo estaba):** la tarea en marcha con el peor perfil en móviles de 360–412 px
   sigue desplazando `<main>` (último recurso de la decisión 0005); ahora los pasos tienen toda la
   pantalla, pero con letra 32 y botones de 80 el paso no cabe entero.
 
 ## 4. Pruebas
 
-- `tests/test_retrospectiva_19_11.py` (24) y `tests/e2e/test_retrospectiva_19_11.py` (81).
+- `tests/test_retrospectiva_19_11.py` (28) y `tests/e2e/test_retrospectiva_19_11.py` (93).
 - Actualizadas las que dependían de la hora de empezar, de a dónde se entra y del Plan B.
-- Unitarias: 917 pasan (fallan las 2 de `test_profesional_tareas.py`, igual que en `main`).
-  Navegador: 557 pasan y 3 fallos conocidos (`xfail`).
+- Unitarias: 921 pasan (fallan las 2 de `test_profesional_tareas.py`, igual que en `main`).
+  Navegador: 569 pasan y 3 fallos conocidos (`xfail`).

@@ -153,6 +153,29 @@ class TareaDelDia:
         return _momento(self.fecha, hora)
 
     @cached_property
+    def inicio_tarea(self):
+        """Cuándo empezó de verdad si la empezó antes de su hora; si no, su hora de inicio."""
+        ejecucion = self.ejecucion
+        if ejecucion and ejecucion.inicio_real and ejecucion.inicio_real < self.inicio:
+            return ejecucion.inicio_real
+        return self.inicio
+
+    @cached_property
+    def fin_tarea(self):
+        """Hasta cuándo tiene para hacerla (temporizador y «se acabó el tiempo»).
+
+        Retrospectiva del 19/11: se puede empezar en cualquier momento. Si la empieza antes de
+        su hora, tiene lo que dura la tarea desde que empieza (una de 30 minutos empezada a las
+        12:22 acaba a las 12:52), no hasta su hora de fin prevista. Si la empieza a su hora o
+        más tarde, el final no se mueve (RF2.7.2).
+        """
+        return self.inicio_tarea + (self.fin - self.inicio)
+
+    @property
+    def empezada_antes(self):
+        return self.inicio_tarea < self.inicio
+
+    @cached_property
     def estado(self):
         guardado = self.ejecucion.estado if self.ejecucion else EstadoEjecucion.PENDIENTE
         # Cancelada (HU-03-05): solo si no la había empezado (no se cancela lo empezado).
@@ -160,7 +183,7 @@ class TareaDelDia:
             return EstadoEjecucion.CANCELADA
         if guardado == EstadoEjecucion.PENDIENTE and self.ahora >= self.fin:
             return EstadoEjecucion.VENCIDA
-        if guardado == EstadoEjecucion.EN_CURSO and self.ahora >= self.fin:
+        if guardado == EstadoEjecucion.EN_CURSO and self.ahora >= self.fin_tarea:
             return EstadoEjecucion.TIEMPO_AGOTADO
         return guardado
 
@@ -288,7 +311,7 @@ class Agenda:
 def _registrar_tiempo_agotado(estudiante, t):
     """HU-07-03 (PA2, PA4): registra que se agotó el tiempo sin terminar y avisa al tutor."""
     ejecucion = t.ejecucion
-    if ejecucion is None or ejecucion.estado != EstadoEjecucion.EN_CURSO or t.ahora < t.fin:
+    if ejecucion is None or ejecucion.estado != EstadoEjecucion.EN_CURSO or t.ahora < t.fin_tarea:
         return
     ejecucion.estado = EstadoEjecucion.TIEMPO_AGOTADO
     ejecucion.save(update_fields=["estado"])

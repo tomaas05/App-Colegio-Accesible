@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static fechas %}
 
 {% block titulo %}Mi horario · {{ dia.label }} · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}"><link rel="stylesheet" href="{% static 'css/horario.css' %}">{% endblock %}
@@ -25,19 +25,28 @@
   {# El día elegido, escrito. Con sitio para los nombres (tableta y ordenador) ya lo dice el #}
   {# botón marcado y este título queda solo para el lector de pantalla; en el móvil, donde  #}
   {# los botones llevan solo la letra, se ve.                                              #}
-  <h2 class="mi-horario__hoy" id="dia-titulo">{{ dia.label }}{% if es_hoy %} <span class="chip"><span aria-hidden="true">▶</span> Hoy</span>{% endif %}</h2>
+  <h2 class="mi-horario__hoy{% if es_hoy %} mi-horario__hoy--hoy{% endif %}" id="dia-titulo">{{ dia.label }}{% if donde_corto %}<span class="mi-horario__donde-corto"><span class="visualmente-oculto">, </span>{{ donde_corto }}</span>{% endif %}{% if es_hoy %} <span class="chip"><span aria-hidden="true">▶</span> Hoy</span>{% endif %}</h2>
 </div>
+{% if donde_estamos %}
+{# Retrospectiva del 19/11: el día que se ve no es hoy; se dice para saber por dónde vamos. #}
+{# En el móvil va en corto junto al nombre del día (arriba) y esta frase no se pinta.      #}
+<p class="mi-horario__donde">{% dia_semana as numero_hoy %}{% include "_dia_forma.html" with numero=numero_hoy only %}<span>{{ donde_estamos }}</span></p>
+{% endif %}
 
 <div class="encaja encaja--centro">
   {% if casillas %}
   <ol class="linea" id="casillas" aria-labelledby="dia-titulo" data-paginar{% if es_hoy %} data-ahora="{{ ahora|time:'H:i' }}"{% endif %}>
-    {% for casilla in casillas %}
-    {# data-inicio/fin: para la flecha «Ahora» que avanza por la línea (agenda.js). #}
-    <li data-inicio="{{ casilla.franja.hora_inicio|time:'H:i' }}" data-fin="{{ casilla.franja.hora_fin|time:'H:i' }}">
-      <div class="tarjeta mi-horario__casilla">
+    {% for casilla, momento in filas %}
+    {# data-inicio/fin: para la flecha «Ahora» que avanza por la línea (agenda.js). Hoy, la #}
+    {# página empieza en la clase de ahora (o la siguiente): se abre por donde vamos.        #}
+    <li data-inicio="{{ casilla.franja.hora_inicio|time:'H:i' }}" data-fin="{{ casilla.franja.hora_fin|time:'H:i' }}"{% if momento == "ahora" %} class="linea__ahora"{% endif %}{% if casilla == inicio %} data-pag-inicio{% endif %}>
+      <div class="tarjeta mi-horario__casilla{% if momento == 'ahora' %} tarjeta--ahora{% elif momento == 'pasada' %} mi-horario__casilla--pasada{% endif %}">
         <span class="tarjeta__hora">De {{ casilla.franja.hora_inicio|time:"H:i" }} a {{ casilla.franja.hora_fin|time:"H:i" }}</span>
         <img class="tarjeta__imagen" src="{{ casilla.asignatura.imagen.url }}" alt="" width="96" height="96">
         <b class="tarjeta__nombre">{{ casilla.asignatura.nombre }}</b>
+        {% if momento == "ahora" %}<span class="chip chip--en_curso"><span aria-hidden="true">▶</span> Ahora</span>
+        {% elif momento == "pasada" %}<span class="chip chip--pasada"><span aria-hidden="true">✓</span> Ya ha pasado</span>
+        {% elif momento == "despues" %}<span class="chip chip--pendiente"><span aria-hidden="true">○</span> Después</span>{% endif %}
       </div>
     </li>
     {% endfor %}

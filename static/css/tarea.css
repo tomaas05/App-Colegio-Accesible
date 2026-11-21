@@ -263,8 +263,10 @@
   outline: var(--foco-grosor) solid var(--focus);
   outline-offset: var(--foco-separacion);
 }
+/* En em: casilla + forma + «Miércoles» caben enteros con cualquier letra (10,5rem se
+   quedaba corto y el nombre se salía del recuadro). */
 .casillas--dias {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11.5em), 1fr));
 }
 .casilla span {
   overflow-wrap: normal; /* «Miércoles» entero, no partido por letras */
@@ -633,7 +635,9 @@
   }
 
   /* Asegurar que los textareas e inputs no sobresalgan del ancho del dispositivo */
-  .formulario input,
+  /* Solo campos de texto: las casillas y los botones de opción conservan su tamaño (con
+     width: 100% empujaban el nombre del alumno y del día fuera de su recuadro). */
+  .formulario input:not([type="checkbox"], [type="radio"], [type="hidden"]),
   .formulario textarea,
   .formulario select,
   .campo textarea {
