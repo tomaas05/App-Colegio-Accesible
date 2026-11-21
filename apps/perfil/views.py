@@ -10,6 +10,7 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods
@@ -44,12 +45,24 @@ def _mis_estudiantes(tutor):
 @tutor_requerido
 @require_GET
 def elegir_estudiante(request):
-    """«Alumnos»: los estudiantes del tutor; al pulsar uno se abre su perfil visual."""
+    """«Alumnos»: los estudiantes del tutor; al pulsar uno se abre su perfil visual.
+
+    Retrospectiva del 19/11: buscador por nombre, apellidos o código (se aplica al pulsar
+    «Buscar», WCAG 3.2.2).
+    """
+    texto = (request.GET.get("q") or "").strip()[:80]
     estudiantes = _mis_estudiantes(request.user)
+    total = estudiantes.count()
+    if texto:
+        estudiantes = estudiantes.filter(
+            Q(usuario__first_name__icontains=texto)
+            | Q(usuario__last_name__icontains=texto)
+            | Q(codigo_estudiante__icontains=texto)
+        )
     return render(
         request,
         "perfil/estudiantes.html",
-        {"estudiantes": estudiantes},
+        {"estudiantes": estudiantes, "texto": texto, "total": total},
     )
 
 

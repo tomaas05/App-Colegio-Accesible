@@ -114,7 +114,7 @@ def test_pa3_con_imagenes_veo_la_rejilla(client, datos):
 def test_pa3_entro_con_mis_3_imagenes_en_cualquier_orden(client, datos, orden):
     respuesta = client.post(url_entrar("A01"), {"imagenes": ids(*orden)})
     assert respuesta.status_code == 302
-    assert respuesta["Location"] == reverse("agenda:dia")
+    assert respuesta["Location"] == reverse("horario:mi_horario")  # inicio: su horario (19/11)
     assert sesion_de(client) == str(lucia().pk)
 
 
@@ -137,7 +137,7 @@ def test_pa4_con_contrasena_veo_el_campo_y_no_la_rejilla(client, datos):
 def test_pa4_entro_con_mi_contrasena(client, datos):
     respuesta = client.post(url_entrar("A02"), {"password": "mateo2026"})
     assert respuesta.status_code == 302
-    assert respuesta["Location"] == reverse("agenda:dia")
+    assert respuesta["Location"] == reverse("horario:mi_horario")  # inicio: su horario (19/11)
     assert sesion_de(client) == str(Estudiante.objects.get(codigo_estudiante="A02").usuario.pk)
 
 
@@ -232,7 +232,7 @@ def test_pa7_entrando_como_estudiante_veo_mi_agenda(client, datos):
 def test_pa7_un_estudiante_no_entra_en_el_panel_de_los_adultos(client, datos):
     client.post(url_entrar("A01"), {"imagenes": ids("perro", "sol", "flor")})
     respuesta = client.get(reverse("usuarios:panel"))
-    assert respuesta["Location"] == reverse("agenda:dia")
+    assert respuesta["Location"] == reverse("horario:mi_horario")  # inicio: su horario (19/11)
 
 
 # --- Recorrido y seguridad ---
@@ -251,7 +251,7 @@ def test_no_redirige_a_otra_web(client, datos):
         url_entrar("A01"),
         {"imagenes": ids("perro", "sol", "flor"), "next": "https://otra-web.example/"},
     )
-    assert respuesta["Location"] == reverse("agenda:dia")
+    assert respuesta["Location"] == reverse("horario:mi_horario")  # inicio: su horario (19/11)
 
 
 def test_un_codigo_que_no_existe_da_404(client, datos):

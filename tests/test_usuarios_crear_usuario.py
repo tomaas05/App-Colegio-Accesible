@@ -97,7 +97,7 @@ def test_pa1_el_estudiante_nuevo_entra_con_sus_imagenes(admin, client):
         reverse("usuarios:entrar_estudiante", args=[codigo]),
         {"imagenes": ids("casa", "luna", "pez")},
     )
-    assert respuesta["Location"] == reverse("agenda:dia")
+    assert respuesta["Location"] == reverse("horario:mi_horario")
 
 
 def test_pa1_el_estudiante_nuevo_puede_entrar_con_contrasena(admin, client):
@@ -114,7 +114,7 @@ def test_pa1_el_estudiante_nuevo_puede_entrar_con_contrasena(admin, client):
         reverse("usuarios:entrar_estudiante", args=[estudiante.codigo_estudiante]),
         {"password": "noa1"},
     )
-    assert respuesta["Location"] == reverse("agenda:dia")
+    assert respuesta["Location"] == reverse("horario:mi_horario")
 
 
 def test_pa1_se_puede_subir_un_avatar_dibujado(admin):

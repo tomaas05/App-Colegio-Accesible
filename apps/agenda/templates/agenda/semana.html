@@ -16,7 +16,7 @@
 
 {% block contenido %}
 <p class="semana-hoy semana-hoy--{{ hoy.numero }}">{% include "_dia_forma.html" with numero=hoy.numero only %}<span>Hoy es <b>{{ hoy.nombre|lower }}</b>, {{ hoy_fecha }}</span></p>
-<div class="encaja">
+<div class="encaja semana-zona">
   <div class="semana" id="semana" data-paginar data-pag-variable data-items=".semana__dias > li" data-estado="{n} de {total}">
     <section class="semana__grupo semana__grupo--lab" aria-labelledby="semana-lab">
       <h2 id="semana-lab">De lunes a viernes</h2>
@@ -33,10 +33,11 @@
   </div>
 </div>
 <div class="pie">
-  {% include "_paginador.html" with de="semana" que="Más días de la semana" only %}
+  {# «Antes / Después», como en «Tareas de hoy»: caben en una fila también con la letra 32. #}
+  {% include "_paginador.html" with de="semana" que="Más días de la semana" anterior="Antes" siguiente="Después" only %}
   <div class="pie__acciones">
     {# PA4 y PA5: el horario de la clase, de hoy y de la semana, solo para ver (HU-03-11, Javi). #}
-    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}">Mi horario de clase</a>
+    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="reloj" only %}</span> Mi horario<span class="solo-ancho"> de clase</span></a>
   </div>
 </div>
 {% endblock %}

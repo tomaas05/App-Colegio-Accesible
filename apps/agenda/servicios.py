@@ -34,10 +34,11 @@ from .models import Ejecucion, EjecucionPaso, EstadoEjecucion, EstadoPaso
 # La siguiente tarea se anuncia al pie 10 minutos antes (RF2.10.1, boceto B06).
 AVISO_MINUTOS = 10
 
-# Cuánto antes de su hora se puede empezar una tarea: 15 minutos (decisión del equipo, que
-# cambia RF2.3.2). Solo cuando no hay otra tarea en curso ni otra a la que le toque ahora
-# (una cosa cada vez). Con timedelta(0) vuelve a ser como decía RF2.3.2.
-MARGEN_EMPEZAR_ANTES = timedelta(minutes=15)
+# Cuánto antes de su hora se puede empezar una tarea. Retrospectiva del 19/11 (la profesora):
+# no hay que ser tan estrictos con la hora; si quiere empezar ya una tarea que tiene dentro de
+# un rato, puede, en cualquier momento del día. Solo hace falta que no tenga otra en marcha
+# (una cosa cada vez). Antes eran 15 minutos; con timedelta(0) sería como decía RF2.3.2.
+MARGEN_EMPEZAR_ANTES = None  # None = desde el principio del día
 
 # (símbolo, texto), los mismos del boceto v3. El color nunca es la única señal (RNF4.1.3).
 ETIQUETAS_ESTADO = {
@@ -169,6 +170,8 @@ class TareaDelDia:
 
     @property
     def se_puede_empezar_desde(self):
+        if MARGEN_EMPEZAR_ANTES is None:
+            return self.inicio.replace(hour=0, minute=0, second=0, microsecond=0)
         return self.inicio - MARGEN_EMPEZAR_ANTES
 
     @property
@@ -233,8 +236,8 @@ class TareaDelDia:
 
     @property
     def puede_empezar(self):
-        """HU-02-03: desde MARGEN_EMPEZAR_ANTES antes de su hora hasta la hora de fin, y
-        sin otra tarea en marcha ni otra a la que le toque ahora."""
+        """HU-02-03: en cualquier momento del día hasta su hora de fin (retrospectiva del
+        19/11), si no hay otra tarea en marcha."""
         return (
             self.estado == EstadoEjecucion.PENDIENTE
             and self.se_puede_empezar_desde <= self.ahora < self.fin
@@ -343,19 +346,12 @@ def agenda_del_dia(estudiante, ahora_=None):
         anteriores = [t for t in activas if t.fin <= ahora_]
         anterior = anteriores[-1] if anteriores else None
 
-    # Empezar antes de la hora solo si no hay otra en marcha ni otra a la que le toque ahora.
+    # Empezar antes de la hora solo si no hay otra en marcha (una cosa cada vez). Desde la
+    # retrospectiva del 19/11 ya no espera a la que le toca ahora: elige el estudiante.
     for t in activas:
         if ahora_ < t.inicio:
             t.bloqueada_por = next(
-                (
-                    o
-                    for o in activas
-                    if o is not t
-                    and (
-                        o.estado == EstadoEjecucion.EN_CURSO
-                        or (o.estado == EstadoEjecucion.PENDIENTE and o.en_su_hora)
-                    )
-                ),
+                (o for o in activas if o is not t and o.estado == EstadoEjecucion.EN_CURSO),
                 None,
             )
     for tarea, momento in ((actual, "actual"), (siguiente, "siguiente"), (anterior, "anterior")):
@@ -453,8 +449,8 @@ def _asegurar_pasos(ejecucion):
 def empezar(estudiante, asignacion_id, ahora_=None):
     """HU-02-03: registra la hora real de inicio. Repetirlo no cambia la hora original.
 
-    Se puede desde MARGEN_EMPEZAR_ANTES antes de la hora de inicio, si no hay otra tarea
-    en marcha ni otra a la que le toque ahora. El tiempo que queda se sigue contando hasta
+    Se puede en cualquier momento del día antes de su hora de fin (retrospectiva del 19/11),
+    si no hay otra tarea en marcha. El tiempo que queda se sigue contando hasta
     la hora de fin prevista (RF2.7.2): empezar antes da más tiempo, no mueve el final.
     """
     ahora_ = ahora_ or ahora()

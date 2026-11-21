@@ -14,7 +14,7 @@
     </span>
     {% if total %}
     <span class="semana-dia__tareas" aria-hidden="true">
-      {% for t in d.tareas|slice:":6" %}<span class="semana-dia__tarea"><span class="semana-dia__hora">{{ t.inicio|time:"H:i" }}</span><img src="{{ t.tarea.imagen.url }}" alt="" width="32" height="32" loading="lazy"></span>{% endfor %}
+      {% for t in d.tareas|slice:":6" %}<span class="semana-dia__tarea"><span class="semana-dia__hora">{{ t.inicio|time:"H:i" }}</span><img src="{{ t.tarea.imagen.url }}" alt="" width="32" height="32"></span>{% endfor %}
       {% if total > 3 %}<span class="semana-dia__mas semana-dia__mas--corto">+{{ total|add:-3 }} más ›</span>{% endif %}
       {% if total > 6 %}<span class="semana-dia__mas semana-dia__mas--largo">+{{ total|add:-6 }} más ›</span>{% endif %}
     </span>

@@ -167,6 +167,11 @@ def con_trabajos(datos, page, live_server, client, monkeypatch):
     hoy = timezone.localdate()
     dia = next(hoy + timedelta(days=n) for n in range(7) if (hoy + timedelta(days=n)).weekday() < 5)
     monkeypatch.setattr(servicios, "hoy", lambda: dia)
+    # También la hora: los trabajos son de 13:00 a 13:30 y Lucía empieza a las 13:05. Sin esto,
+    # lanzadas después de las 13:30 fallaban con «hoy esa hora ya ha pasado».
+    monkeypatch.setattr(
+        agenda, "ahora", lambda: timezone.make_aware(datetime.combine(dia, time(13, 10)))
+    )
     tutor = Usuario.objects.get(username="tutor")
     trabajos = []
     for i, (codigo, trabajos_, color) in enumerate(

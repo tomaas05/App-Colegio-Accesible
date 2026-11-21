@@ -1,7 +1,7 @@
 /*
  * Despega · Tareas del centro (Javi). HU-05-03: «Comedor y menú» del administrador.
  * Boceto: docs/iteracion-1/bocetos/despega_mockup_v3.html (B67).
- * Solo variables de tokens.css y rem.
+ * Solo variables de tokens.css; la letra con --letra-* (decisión 0007).
  */
 
 /* --- Cambiar de mes --- */
@@ -14,7 +14,7 @@
 }
 .centro__mes {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
   text-align: center;
 }
 
@@ -64,16 +64,21 @@ a.centro__tarjeta[href]:hover {
   height: 2rem;
   border-radius: 50%;
 }
-/* «Pendiente de asignar»: símbolo y texto, nunca solo color (RNF4.1.3). */
+/* «Pendiente de asignar»: símbolo y texto, nunca solo color (RNF4.1.3). En una sola línea
+   (acta del 19/11, b): en el móvil ya se acorta a «Pendiente» (.centro__largo). El borde es
+   petróleo: el naranja es solo adorno (tokens.css) y no llega a 3:1 sobre el fondo de aviso. */
 .centro__pendiente {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
+  width: fit-content;
+  max-width: 100%;
   padding: 0 0.6rem;
   font-weight: 700;
+  white-space: nowrap;
   color: var(--texto);
   background: var(--aviso-fondo);
-  border: 2px dashed var(--naranja);
+  border: 2px dashed var(--petroleo);
   border-radius: var(--radio-boton);
 }
 .centro__en-linea {
@@ -108,7 +113,7 @@ a.centro__tarjeta[href]:hover {
 .centro__titulo {
   flex: none;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--letra-m);
 }
 .centro__caja {
   overflow: hidden;
@@ -147,6 +152,16 @@ a.centro__tarjeta[href]:hover {
 /* Los días que ya han pasado sin estudiante: solo texto, sin recuadro. */
 .centro__sin {
   color: var(--gris);
+}
+/* Si la tarjeta es estrecha para su letra (letra del navegador muy grande), la píldora dice
+   solo «Pendiente», como en el móvil: no se parte ni se sale (container query en em). */
+.centro__tarjeta {
+  container-type: inline-size;
+}
+@container (max-width: 15em) {
+  .centro__pendiente .centro__largo {
+    display: none;
+  }
 }
 .centro__dia .centro__pendiente {
   flex-grow: 0;
@@ -271,7 +286,7 @@ button.comedor__companero {
   .comedor__pie .boton--principal {
     min-height: var(--toque);
     padding: 0.4rem 0.75rem;
-    font-size: 1.1rem;
+    font-size: var(--letra-s);
   }
   .comedor__marca:not(.comedor__marca--come, .comedor__marca--no-come) .comedor__texto-marca {
     position: absolute;
@@ -332,7 +347,7 @@ button.comedor__companero {
 }
 .repro__estado--pendiente {
   background: var(--aviso-fondo);
-  border: 2px dashed var(--naranja);
+  border: 2px dashed var(--petroleo); /* como «Pendiente» del comedor: el naranja es solo adorno */
 }
 .repro__copias input {
   max-width: 8rem;

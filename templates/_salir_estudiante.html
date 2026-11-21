@@ -1,5 +1,7 @@
 {# «Salir» del estudiante: siempre a la vista en su agenda y su horario. Con POST (decisión 0002). #}
 <form class="salir-est" method="post" action="{% url 'usuarios:salir' %}">
   {% csrf_token %}
-  <button class="boton--aux" type="submit">Salir</button>
+  {# El icono es un SVG (en Android el glifo «⏻» salía como un cuadrado vacío). El nombre #}
+  {# accesible es el texto «Salir»; con el perfil «solo imagen» se oculta a la vista.      #}
+  <button class="boton--aux" type="submit"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="salir" only %}</span> Salir</button>
 </form>

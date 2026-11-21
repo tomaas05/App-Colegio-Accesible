@@ -133,12 +133,13 @@ def test_el_estudiante_tiene_salir_en_su_agenda(client, datos):
     html = pagina(client, "est-a01", reverse("agenda:dia"))
     fila = re.search(r'<header class="barra">.*?</header>', html, re.S).group(0)
     assert f'method="post" action="{reverse("usuarios:salir")}"' in fila
-    assert ">Salir</button>" in fila and fila.index("Salir") < fila.index("<h1")
+    # «Salir» lleva delante su icono SVG (acta del 19/11): el texto sigue siendo el nombre.
+    assert " Salir</button>" in fila and fila.index("Salir</button>") < fila.index("<h1")
 
 
 def test_sin_sesion_no_hay_lateral_ni_salir(client, db):
     html = client.get(reverse("inicio")).content.decode()
-    assert lateral(html) == "" and ">Salir</button>" not in html
+    assert lateral(html) == "" and "Salir</button>" not in html
 
 
 # --- Regiones y pie ---------------------------------------------------------------

@@ -88,3 +88,6 @@ escolar.
 - Herramienta de medida usada en la revisión: todas las pantallas a 360×640, 768×1024, 1024×768,
   1280×800 y 1366×768 sin desplazamiento, también con errores, con el formulario plegable abierto y
   con varios pasos añadidos.
+- **Ampliación (19/11, decisión 0007):** se añaden 393×659 (iPhone 15 con las barras de Safari) y
+  412×780 (Android con las barras de Chrome), y el peor perfil del estudiante (letra 32, botones 80,
+  alto contraste). Las comprobaciones comunes están en `tests/e2e/ayudas.py` (`revisar`).

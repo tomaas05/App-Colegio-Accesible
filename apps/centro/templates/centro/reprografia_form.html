@@ -46,7 +46,7 @@
   <div class="pie pie--pasos">
     {% include "_paginador.html" with de="partes-repro" que="Partes del formulario" final=True only %}
     <div class="pie__acciones">
-      {% if fila %}<button class="boton--aux" type="submit" form="quitar" name="accion" value="quitar">Quitar<span class="visualmente-oculto"> la reprografía de la agenda de {{ fila.estudiante.usuario.get_full_name }}</span></button>{% endif %}
+      {% if fila %}<button class="boton--aux boton--papelera" type="submit" form="quitar" name="accion" value="quitar"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="papelera" only %}</span><span class="visualmente-oculto">Quitar la reprografía de la agenda de {{ fila.estudiante.usuario.get_full_name }}</span></button>{% endif %}
       <button class="boton--principal boton--mediano" type="submit" name="accion" value="guardar" data-solo-ultima="partes-repro">{% if fila %}Guardar{% else %}Crear{% endif %}</button>
     </div>
   </div>

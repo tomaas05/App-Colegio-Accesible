@@ -1,13 +1,16 @@
 /*
  * Despega · Perfil visual del estudiante (Jorge, HU-04-01).
- * Boceto B52 · Tutor · Perfil visual. Solo variables de tokens.css y rem.
+ * Boceto B52 · Tutor · Perfil visual. Solo variables de tokens.css; la letra con --letra-* (decisión 0007).
  */
 
 /* --- Lista de estudiantes del tutor (/perfil/) --- */
+/* auto-fit y ancho mínimo en em (acta del 19/11, f): las columnas vacías no ocupan sitio, las
+   tarjetas se reparten el ancho y, con letra más grande, hay menos columnas (no texto partido). */
 .perfil-estudiantes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7em), 1fr));
+  grid-auto-rows: 1fr; /* todas las tarjetas igual de altas */
+  gap: var(--separacion);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -22,6 +25,7 @@
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
+  justify-content: center;
   min-height: var(--toque-grande);
   padding: 0.6rem 0.5rem;
   color: var(--texto);
@@ -48,12 +52,12 @@
 }
 .perfil-estudiante-card__info b {
   font-family: var(--fuente-titulos);
-  font-size: 1.1rem;
+  font-size: var(--letra-s);
   line-height: 1.2;
   color: var(--petroleo);
 }
 .perfil-estudiante-card__info span {
-  font-size: 1rem; /* mínimo 16 px (RNF4.1.6) */
+  font-size: var(--letra-xs); /* mínimo 16 px (RNF4.1.6) */
   line-height: 1.3;
   color: var(--gris);
 }
@@ -64,7 +68,18 @@
 }
 @media (min-width: 48rem) {
   .perfil-estudiantes {
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14em), 1fr));
+  }
+  .perfil-estudiante-card {
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+  .perfil-estudiante-card__avatar {
+    width: min(7rem, 15dvh);
+    height: min(7rem, 15dvh);
+  }
+  .perfil-estudiante-card__info b {
+    font-size: var(--letra-m);
   }
 }
 
@@ -86,7 +101,7 @@
 .grupo-opciones__ayuda {
   flex: none;
   margin: 0 0 0.6rem;
-  font-size: 1rem;
+  font-size: var(--letra-xs);
   line-height: 1.4;
   color: var(--gris);
 }
@@ -215,6 +230,30 @@
 }
 .opciones-grupo {
   display: contents;
+}
+/* Temporizador: tres grupos con título (tipo, avisos, qué ve el estudiante). Cada uno ocupa la
+   fila entera y reparte sus opciones en columnas. Al paginar por opciones, el grupo sin
+   ninguna opción a la vista se esconde con su título (como los grupos de «Crear tarea»). */
+.perfil-subgrupo {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: var(--separacion);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.perfil-subgrupo > legend {
+  margin-bottom: 0.25rem;
+  padding: 0;
+  font-family: var(--fuente-titulos);
+  font-size: var(--letra-m);
+  font-weight: 800;
+  color: var(--petroleo);
+}
+.js .perfil-subgrupo:not(:has(:is(.opcion-radio, .opcion-check):not([hidden]))) {
+  display: none;
 }
 .perfil-panel .opcion-radio,
 .perfil-panel .opcion-check {

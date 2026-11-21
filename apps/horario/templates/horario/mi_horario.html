@@ -8,7 +8,9 @@
 {# Boceto B05. Un día cada vez, en la misma línea de tiempo que las tareas (sin partir).  #}
 {# Cada día lleva su letra, su forma y su color, como en el boceto B30.                   #}
 {% block pantalla %}pantalla--ancha mi-horario{% endblock %}
-{% block volver %}{% url 'agenda:dia' as atras %}{% include "_volver.html" with url=atras texto="Tareas" etiqueta="Volver a las tareas" only %}{% endblock %}
+{# Retrospectiva del 19/11: es la pantalla de inicio del estudiante (su horario de clase de #}
+{# hoy). Por eso lleva «Salir», como «Tareas de hoy», y sus tareas están a un botón.       #}
+{% block volver %}{% include "_salir_estudiante.html" %}{% endblock %}
 {% block h1 %}Mi horario{% endblock %}
 
 {% block contenido %}
@@ -28,9 +30,10 @@
 
 <div class="encaja encaja--centro">
   {% if casillas %}
-  <ol class="linea" id="casillas" aria-labelledby="dia-titulo" data-paginar>
+  <ol class="linea" id="casillas" aria-labelledby="dia-titulo" data-paginar{% if es_hoy %} data-ahora="{{ ahora|time:'H:i' }}"{% endif %}>
     {% for casilla in casillas %}
-    <li>
+    {# data-inicio/fin: para la flecha «Ahora» que avanza por la línea (agenda.js). #}
+    <li data-inicio="{{ casilla.franja.hora_inicio|time:'H:i' }}" data-fin="{{ casilla.franja.hora_fin|time:'H:i' }}">
       <div class="tarjeta mi-horario__casilla">
         <span class="tarjeta__hora">De {{ casilla.franja.hora_inicio|time:"H:i" }} a {{ casilla.franja.hora_fin|time:"H:i" }}</span>
         <img class="tarjeta__imagen" src="{{ casilla.asignatura.imagen.url }}" alt="" width="96" height="96">
@@ -43,5 +46,12 @@
   <p class="mi-horario__vacio vacio">Este día no hay clase.</p>
   {% endif %}
 </div>
-{% include "_paginador.html" with de="casillas" que="Más clases del día" anterior="Antes" siguiente="Después" only %}
+<div class="pie">
+  {% include "_paginador.html" with de="casillas" que="Más clases del día" anterior="Antes" siguiente="Después" only %}
+  <div class="pie__acciones">
+    <a class="boton boton--aux" href="{% url 'agenda:dia' %}"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="lista" only %}</span> Tareas de hoy</a>
+  </div>
+</div>
 {% endblock %}
+
+{% block scripts %}<script src="{% static 'js/agenda.js' %}" defer></script>{% endblock %}

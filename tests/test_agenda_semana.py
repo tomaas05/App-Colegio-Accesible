@@ -202,7 +202,9 @@ def test_el_horario_de_clase_no_se_puede_cambiar(client, lucia):
     """PA5: solo para ver: ni formularios ni se acepta un POST."""
     url = reverse("horario:mi_horario")
     html = client.get(url, {"dia": 1}).content.decode()
-    assert "<form" not in html.split("<main", 1)[1]
+    # El único formulario es «Salir» (es su pantalla de inicio, retrospectiva del 19/11).
+    principal = html.split("<main", 1)[1]
+    assert principal.count("<form") == 1 and 'class="salir-est"' in principal
     assert Franja.objects.exists() and lucia.clase.horario.exists()
     assert client.post(url, {"dia": 1}).status_code == 405
 

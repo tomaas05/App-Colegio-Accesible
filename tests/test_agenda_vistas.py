@@ -19,8 +19,9 @@ def a_las(hora, minuto=0):
 
 
 def desde(hora, minuto=0):
-    """Desde cuándo se puede empezar una tarea de esa hora (resta el margen)."""
-    return a_las(hora, minuto) - servicios.MARGEN_EMPEZAR_ANTES
+    """Desde cuándo se puede empezar una tarea de esa hora (resta el margen, si lo hay)."""
+    margen = servicios.MARGEN_EMPEZAR_ANTES
+    return a_las(0, 0) if margen is None else a_las(hora, minuto) - margen
 
 
 @pytest.fixture
@@ -161,9 +162,19 @@ def test_empezar_y_terminar_con_confirmacion(client, lucia, hora):
     assert "¡Hecha!" in client.get(detalle).content.decode()
 
 
-def test_empezar_antes_de_la_hora_da_aviso_y_no_registra(client, lucia, hora):
+def test_se_puede_empezar_antes_de_la_hora(client, lucia, hora):
+    """Retrospectiva del 19/11: el cuento de las 17:00 se puede empezar a las 12:00."""
     hora(12, 0)
-    # Cuento: 17:00. El botón no se ofrece y, si se fuerza, el servidor lo rechaza.
+    html = client.get(url_de(lucia, "Leer un cuento")).content.decode()
+    assert "Empezar</button>" in html and "Podrás empezar a las" not in html
+    client.post(url_de(lucia, "Leer un cuento", "empezar"))
+    assert de_hoy().get().estado == EstadoEjecucion.EN_CURSO
+
+
+def test_con_un_margen_antes_de_la_hora_da_aviso_y_no_registra(client, lucia, hora, monkeypatch):
+    """Si el centro vuelve a poner un margen (MARGEN_EMPEZAR_ANTES), se respeta."""
+    monkeypatch.setattr(servicios, "MARGEN_EMPEZAR_ANTES", timedelta(minutes=15))
+    hora(12, 0)
     html = client.get(url_de(lucia, "Leer un cuento")).content.decode()
     assert f"Podrás empezar a las {desde(17):%H:%M}" in html and "Empezar</button>" not in html
     respuesta = client.post(url_de(lucia, "Leer un cuento", "empezar"), follow=True)
@@ -255,7 +266,8 @@ def test_en_la_tarea_un_solo_paso_por_pantalla(client, lucia, hora):
     assert 'id="lista-pasos" role="list" data-paginar data-por-pagina="1"' in html
 
 
-def test_antes_de_la_hora_la_zona_del_boton_se_actualiza_sola(client, lucia, hora):
+def test_antes_de_la_hora_la_zona_del_boton_se_actualiza_sola(client, lucia, hora, monkeypatch):
+    monkeypatch.setattr(servicios, "MARGEN_EMPEZAR_ANTES", timedelta(minutes=15))
     antes = desde(17) - timedelta(minutes=5)
     hora(antes.hour, antes.minute)
     html = client.get(url_de(lucia, "Leer un cuento")).content.decode()
@@ -265,12 +277,12 @@ def test_antes_de_la_hora_la_zona_del_boton_se_actualiza_sola(client, lucia, hor
     assert "Empezar</button>" in html and 'every 30s" hx-swap="outerHTML' not in html
 
 
-def test_si_otra_tarea_va_primero_se_dice_cual(client, lucia, hora, monkeypatch):
+def test_con_otra_tarea_en_su_hora_tambien_se_puede_empezar(client, lucia, hora, monkeypatch):
+    """Retrospectiva del 19/11: ya no espera a la que le toca ahora (elige el estudiante)."""
     monkeypatch.setattr(servicios, "MARGEN_EMPEZAR_ANTES", timedelta(minutes=15))
     cuento = lucia.asignaciones.get(tarea__nombre="Leer un cuento")
     cuento.hora_inicio, cuento.hora_fin = time(12, 30), time(13, 0)
     cuento.save()
     hora(12, 20)
     html = client.get(url_de(lucia, "Leer un cuento")).content.decode()
-    assert "Ahora toca «Regar las plantas»." in html and "Empezar</button>" not in html
-    assert 'hx-trigger="every 30s"' in html
+    assert "Ahora toca «Regar las plantas»." not in html and "Empezar</button>" in html

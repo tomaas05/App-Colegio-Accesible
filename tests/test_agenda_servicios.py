@@ -175,10 +175,10 @@ def seguidas(lucia):
     return asignacion(lucia, "Regar las plantas"), cuento
 
 
-def test_no_se_empieza_antes_si_a_otra_le_toca_ahora(lucia, seguidas, margen_15):
+def test_se_puede_empezar_antes_aunque_a_otra_le_toque_ahora(lucia, seguidas, margen_15):
+    """Retrospectiva del 19/11: elige el estudiante; ya no espera a la que le toca ahora."""
     regar, cuento = seguidas
-    with pytest.raises(ErrorDeAgenda, match="Ahora toca «Regar las plantas»"):
-        servicios.empezar(lucia, cuento.pk, a_las(12, 20))
+    assert servicios.empezar(lucia, cuento.pk, a_las(12, 20)).inicio_real == a_las(12, 20)
 
 
 def test_no_se_empieza_antes_si_otra_esta_en_curso(lucia, seguidas, margen_15):
@@ -274,9 +274,10 @@ def test_una_asignacion_que_no_toca_hoy_no_se_abre(lucia):
         servicios.tarea_del_dia(lucia, cuento.pk, a_las(17, 5))
 
 
-def test_por_defecto_se_puede_empezar_15_minutos_antes(lucia):
-    """RF2.3.2 cambiado: se puede empezar desde 15 minutos antes de la hora de inicio."""
-    manos = asignacion(lucia, "Lavarse las manos")  # 10:30
-    with pytest.raises(ErrorDeAgenda, match="10:15"):
-        servicios.empezar(lucia, manos.pk, a_las(10, 14))
-    assert servicios.empezar(lucia, manos.pk, a_las(10, 15)).inicio_real == a_las(10, 15)
+def test_por_defecto_se_puede_empezar_en_cualquier_momento_del_dia(lucia):
+    """Retrospectiva del 19/11: no tan estrictos con la hora. Una tarea de las 10:30 se puede
+    empezar a las 8:00 (si no hay otra en marcha) y nunca después de su hora de fin."""
+    manos = asignacion(lucia, "Lavarse las manos")  # 10:30 a 10:45
+    t = servicios.tarea_del_dia(lucia, manos.pk, a_las(8, 0))
+    assert t.puede_empezar and not t.aun_no_es_la_hora
+    assert servicios.empezar(lucia, manos.pk, a_las(8, 0)).inicio_real == a_las(8, 0)

@@ -7,7 +7,7 @@
 {# Boceto B43 · Asignar a estudiantes. HU-03-03. Solo salen los estudiantes de quien asigna. #}
 {# Sin desplazamiento (decisión 0005): qué tarea, a quién, a qué hora y qué días son bloques  #}
 {# y en cada pantalla se ven los que caben. «Guardar» está en la última, donde «Siguiente».  #}
-{% block volver %}{% url 'tareas:catalogo' as atras %}{% include "_volver.html" with url=atras texto="Tareas creadas" etiqueta="Volver a Tareas creadas" only %}{% endblock %}
+{% block volver %}{% url 'tareas:catalogo' as atras %}{% include "_volver.html" with url=atras texto="Biblioteca" etiqueta="Biblioteca de tareas: volver" only %}{% endblock %}
 {% block h1 %}Asignar{% if tarea %} «{{ tarea.nombre }}»{% else %} una tarea{% endif %}{% endblock %}
 
 {% block contenido %}
@@ -69,7 +69,7 @@
     </div>
   </div>
 
-  {# Para dejarlo sin asignar, «‹ Tareas creadas» de la barra de título. #}
+  {# Para dejarlo sin asignar, «‹ Biblioteca de tareas» de la barra de título. #}
   <div class="pie pie--pasos">
     {% include "_paginador.html" with de="bloques" que="Partes del formulario" final=True only %}
     <div class="pie__acciones">

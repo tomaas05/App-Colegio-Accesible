@@ -5,9 +5,10 @@
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/horario.css' %}">{% endblock %}
 
 {# Boceto B37 · Administrador · Horario escolar. HU-03-11 (AGENDA-222).                      #}
-{# Sin desplazamiento (decisión 0005): la tabla de la semana enseña las franjas que caben y  #}
-{# el resto con «Antes / Después». En el móvil cada franja es una tarjeta con sus 5 días.    #}
-{# «Poner una asignatura» está plegado en el móvil; al abrirlo ocupa el sitio de la tabla.  #}
+{# Un día cada vez (acta del 19/11): se elige con L, M, X, J y V, como en «Mi horario», y se #}
+{# ven todas sus franjas. Sin desplazamiento (decisión 0005): las franjas que no caben pasan #}
+{# a otra pantalla con «Antes / Después». «Poner una asignatura» va detrás: a la derecha en  #}
+{# pantallas anchas y plegado en el móvil, donde al abrirlo ocupa el sitio de las franjas.    #}
 {% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
 {% block h1 %}Horario escolar{% endblock %}
 
@@ -33,10 +34,54 @@
   <select id="clase" name="clase">
     {% for c in clases %}<option value="{{ c.pk }}"{% if c.pk == clase.pk %} selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
   </select>
+  <input type="hidden" name="dia" value="{{ dia.value }}">
   <button class="boton--aux" type="submit">Ver<span class="visualmente-oculto"> su horario</span></button>
 </form>
 
-{% if filas %}
+{% if franjas_del_dia %}
+{# El día y sus franjas y, después, «Poner» (a la derecha en pantallas anchas). En este orden #}
+{# en el DOM, que es el del barrido: primero se ve el horario y después se cambia.           #}
+<div class="horario__cuerpo">
+<div class="horario__dia-zona">
+{# Los días con su letra, su forma y su color (B30). El elegido, marcado con borde y fondo. #}
+<nav class="horario__dias" aria-label="Elegir día">
+  <ul class="mi-horario__dias">
+    {% for valor, nombre in dias %}
+    <li><a class="mi-horario__dia" href="?clase={{ clase.pk }}&amp;dia={{ valor }}"{% if valor == dia.value %} aria-current="page"{% endif %}>{% include "_dia_forma.html" with numero=valor only %}<span class="mi-horario__dia-nombre">{{ nombre }}</span>{% if valor == hoy %}<span class="mi-horario__dia-hoy"><span class="visualmente-oculto">, </span>hoy</span>{% endif %}</a></li>
+    {% endfor %}
+  </ul>
+</nav>
+
+<h2 class="horario__titulo" id="horario-dia">{{ dia.label }} · {{ clase.nombre }}</h2>
+<div class="encaja horario__caja">
+  {# Todas las franjas del centro (PA2), también las libres. PA4: imagen y nombre. #}
+  <ol class="horario__franjas" id="franjas" aria-labelledby="horario-dia" data-paginar data-estado="Franjas {desde} a {hasta} de {de}">
+    {% for franja, casilla in franjas_del_dia %}
+    <li class="horario__franja">
+      <b class="horario__hora">{{ franja.hora_inicio|time:"H:i" }} – {{ franja.hora_fin|time:"H:i" }}</b>
+      {% if casilla %}
+      <span class="horario__asignatura">
+        <img src="{{ casilla.asignatura.imagen.url }}" alt="" width="40" height="40">
+        <span>{{ casilla.asignatura.nombre }}</span>
+      </span>
+      <form method="post" class="horario__quitar">
+        {% csrf_token %}
+        <input type="hidden" name="clase" value="{{ clase.pk }}">
+        <input type="hidden" name="dia" value="{{ dia.value }}">
+        <input type="hidden" name="franja" value="{{ franja.pk }}">
+        {# Papelera (acta del 19/11, j): el nombre accesible dice qué se quita y de cuándo. #}
+        <button class="boton--aux boton--papelera" type="submit" name="quitar" value="1"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="papelera" only %}</span><span class="visualmente-oculto">Quitar {{ casilla.asignatura.nombre }} del {{ dia.label|lower }} a las {{ franja.hora_inicio|time:'H:i' }}</span></button>
+      </form>
+      {% else %}
+      <span class="horario__libre">Libre</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% include "_paginador.html" with de="franjas" que="Más franjas" anterior="Antes" siguiente="Después" only %}
+</div>
+
 <details class="plegable plegable--solo horario__poner"{% if error %} open{% else %} data-abrir-ancho{% endif %}>
   <summary>Poner una asignatura o taller<span class="horario__en"> en {{ clase.nombre }}</span></summary>
   <form method="post" class="horario__form">
@@ -45,7 +90,8 @@
     <div class="campo">
       <label for="dia">Día</label>
       <select id="dia" name="dia" required>
-        {% for valor, nombre in dias %}<option value="{{ valor }}"{% if valor == elegido.dia %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+        {# Por defecto, el día que se está viendo. #}
+        {% for valor, nombre in dias %}<option value="{{ valor }}"{% if valor == elegido.dia or not elegido and valor == dia.value %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
       </select>
     </div>
     <div class="campo">
@@ -65,51 +111,7 @@
   </form>
   {% if not error %}<p class="admin__nota">Las asignaturas, los talleres y sus imágenes se crean en la administración.</p>{% endif %}
 </details>
-
-<h2 class="horario__titulo" id="horario-tabla">Horario de {{ clase.nombre }}</h2>
-<div class="encaja horario__caja">
-  <table class="horario__tabla" aria-labelledby="horario-tabla">
-    <caption class="visualmente-oculto">Franjas horarias del centro (las mismas todos los días) y lo que tiene {{ clase.nombre }} en cada una.</caption>
-    <thead>
-      <tr>
-        <th scope="col">Franja</th>
-        {% for valor, nombre in dias %}<th scope="col">{{ nombre }}</th>{% endfor %}
-      </tr>
-    </thead>
-    <tbody id="franjas" data-paginar data-estado="Franjas {desde} a {hasta} de {de}">
-      {% for fila in filas %}
-      <tr>
-        <th scope="row">{{ fila.franja.hora_inicio|time:"H:i" }} – {{ fila.franja.hora_fin|time:"H:i" }}</th>
-        {% for casilla in fila.casillas %}
-        {% with dia=dias|slice:forloop.counter|last %}
-        <td data-columna="{{ dia.1 }}">
-          {# El día, con su letra y su forma, solo se ve en el móvil (en el ordenador está la cabecera). #}
-          <span class="horario__dia">{% include "_dia_forma.html" with numero=dia.0 only %} <span class="visualmente-oculto">{{ dia.1 }}</span></span>
-          {% if casilla %}
-          {# PA4: cada asignatura o taller con su imagen y su nombre. #}
-          <div class="horario__asignatura">
-            <img src="{{ casilla.asignatura.imagen.url }}" alt="" width="40" height="40">
-            <span>{{ casilla.asignatura.nombre }}</span>
-          </div>
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="clase" value="{{ clase.pk }}">
-            <input type="hidden" name="dia" value="{{ casilla.dia_semana }}">
-            <input type="hidden" name="franja" value="{{ fila.franja.pk }}">
-            <button class="boton--aux horario__quitar" type="submit" name="quitar" value="1" aria-label="Quitar {{ casilla.asignatura.nombre }} del {{ casilla.get_dia_semana_display|lower }} a las {{ fila.franja.hora_inicio|time:'H:i' }}">Quitar</button>
-          </form>
-          {% else %}
-          <span class="horario__libre">Libre</span>
-          {% endif %}
-        </td>
-        {% endwith %}
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
 </div>
-{% include "_paginador.html" with de="franjas" que="Más franjas" anterior="Antes" siguiente="Después" only %}
 {% else %}
 <p class="aviso-vacio">Todavía no hay franjas horarias. Créalas en la administración («Franjas horarias»).</p>
 {% endif %}

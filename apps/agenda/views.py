@@ -161,12 +161,53 @@ def terminar(request, pk):
             servicios.terminar(request.estudiante, pk)
         except servicios.ErrorDeAgenda as error:
             messages.error(request, str(error))
-        return redirect("agenda:detalle", pk=pk)
+            return redirect("agenda:detalle", pk=pk)
+        # Retrospectiva del 19/11: al terminarla bien, una pantalla de «¡Bravo!».
+        return redirect("agenda:bravo", pk=pk)
     if not t.puede_terminar:
         if t.en_curso:
             messages.error(request, "Todavía te faltan pasos por hacer.")
         return redirect("agenda:detalle", pk=pk)
     return _confirmar(request, t, "¿Has terminado?", reverse("agenda:terminar", args=[pk]))
+
+
+@estudiante_requerido
+@require_GET
+def bravo(request, pk):
+    """«¡Bravo!» tras terminar una tarea (retrospectiva del 19/11).
+
+    Una pantalla de enhorabuena con el pictograma de la tarea, sin sonido ni animación que no
+    pueda pararse (baja sobrecarga, prefers-reduced-motion), y dos salidas: la siguiente tarea
+    de hoy, si la hay, y «Mis tareas». Si la tarea no está hecha, vuelve a la tarea.
+    """
+    ahora = servicios.ahora()
+    agenda = servicios.agenda_del_dia(request.estudiante, ahora)
+    try:
+        t, _, _ = servicios.con_contexto(agenda, pk)
+    except Asignacion.DoesNotExist:
+        raise Http404 from None
+    if t.estado != "hecha":
+        return redirect("agenda:detalle", pk=pk)
+    siguiente = next(
+        (
+            o
+            for o in agenda.tareas
+            if o is not t and o.estado == "pendiente" and o.fin > ahora and o.inicio >= t.inicio
+        ),
+        None,
+    )
+    hechas = sum(1 for o in agenda.tareas if o.estado == "hecha")
+    return render(
+        request,
+        "agenda/bravo.html",
+        {
+            "t": t,
+            "siguiente": siguiente,
+            "hechas": hechas,
+            "total": sum(1 for o in agenda.tareas if o.estado != "cancelada"),
+            "estudiante": request.estudiante,
+        },
+    )
 
 
 def _confirmar(request, t, pregunta, accion):

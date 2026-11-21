@@ -12,3 +12,4 @@ Se escribe una cuando la decisión afecta a más de un objetivo o es difícil de
 | 0004 | [Pictogramas de ARASAAC](0004-pictogramas-arasaac.md) | Propuesta (sin probar contra ARASAAC real) |
 | 0005 | [Pantallas sin desplazamiento y revisión de la profesora](0005-sin-desplazamiento-y-revision-profesora.md) | Propuesta |
 | 0006 | [Cambiar o cancelar un solo día, avisos y plan B ordenado](0006-planificacion-por-dias-y-plan-b.md) | Propuesta |
+| 0007 | [La letra sale del perfil y las pantallas se encuadran](0007-letra-del-perfil-y-encuadre.md) | Propuesta |

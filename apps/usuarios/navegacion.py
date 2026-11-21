@@ -48,7 +48,7 @@ OPCIONES_POR_ROL = {
             "seguimiento:hoy",
         ),
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
-        ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
+        ("Biblioteca de tareas", "Busca y asigna las tareas que ya existen.", "tareas:catalogo"),
         (
             "Tareas planificadas",
             "Modificar o cancelar una tarea, en un día o en toda la serie.",
@@ -82,7 +82,7 @@ OPCIONES_POR_ROL = {
             "tareas:tareas_planificadas",
         ),
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
-        ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
+        ("Biblioteca de tareas", "Busca y asigna las tareas que ya existen.", "tareas:catalogo"),
     ],
     Rol.FAMILIAR: [
         (
@@ -91,7 +91,7 @@ OPCIONES_POR_ROL = {
             "seguimiento:familiar",
         ),
         ("Crear una tarea", "Con su imagen y sus pasos.", "tareas:crear_tarea"),
-        ("Tareas creadas", "Las tareas que ya existen.", "tareas:catalogo"),
+        ("Biblioteca de tareas", "Busca y asigna las tareas que ya existen.", "tareas:catalogo"),
     ],
 }
 
@@ -148,12 +148,13 @@ def lista_estudiantes_en_el_panel(rol):
 def inicio_de(usuario):
     """La pantalla principal de cada uno: es a donde lleva el logotipo.
 
-    El estudiante a su agenda, el adulto a su panel y quien no ha entrado a la portada.
+    El estudiante a su horario de clase (retrospectiva del 19/11), el adulto a su panel y
+    quien no ha entrado a la portada.
     """
     if not getattr(usuario, "is_authenticated", False):
         return reverse("inicio")
     if usuario.es_estudiante:
-        return reverse("agenda:dia")
+        return reverse("horario:mi_horario")
     return reverse("usuarios:panel")
 
 

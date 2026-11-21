@@ -35,6 +35,10 @@
           <img src="{{ cuenta.estudiante.avatar.url }}" alt="" width="64" height="64">
           <span>Su avatar ahora</span>
         </div>
+      </fieldset>
+      <fieldset class="parte parte--caja">
+        <legend>{{ form.avatar_galeria.label }}</legend>
+        {% include "usuarios/_galeria_avatares.html" with campo=form.avatar_galeria only %}
         <div class="campo">{{ form.avatar.as_field_group }}</div>
       </fieldset>
       {% else %}

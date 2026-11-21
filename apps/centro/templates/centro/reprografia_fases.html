@@ -20,7 +20,7 @@
   </ol>
 </div>
 {% include "_paginador.html" with de="fases" que="Más fases" only %}
-<p class="admin__nota">{% if puede_cambiar %}Si las cambias, cambian para todos los trabajos de reprografía.{% else %}Las fases las cambia el tutor, en «Tareas creadas».{% endif %}</p>
+<p class="admin__nota">{% if puede_cambiar %}Si las cambias, cambian para todos los trabajos de reprografía.{% else %}Las fases las cambia el tutor, en la «Biblioteca de tareas».{% endif %}</p>
 {% if puede_cambiar %}
 <div class="pie"><div class="pie__acciones">
   <a class="boton boton--principal boton--mediano" href="{% url 'tareas:editar_pasos_tarea' tarea.pk %}">Cambiar las fases</a>

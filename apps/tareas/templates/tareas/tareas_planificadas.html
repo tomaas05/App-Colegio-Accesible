@@ -31,11 +31,13 @@
     {% for o in filas %}
     {% with a=o.asignacion %}
     <li class="planificada{% if o.cancelada %} planificada--cancelada{% endif %}">
+      {# Retrospectiva del 19/11: de quién es cada tarea se ve a la primera (avatar + nombre). #}
+      <p class="planificada__quien"><img src="{{ a.estudiante.avatar.url }}" alt="" width="40" height="40"><span><span class="visualmente-oculto">Para </span>{{ a.estudiante.usuario.get_full_name }}</span></p>
       <div class="planificada__cab">
-        <img src="{{ a.tarea.imagen.url }}" alt="" width="64" height="64" loading="lazy">
+        <img src="{{ a.tarea.imagen.url }}" alt="" width="64" height="64">
         <div>
           <h2 class="planificada__nombre">{{ a.tarea.nombre }}</h2>
-          <p class="planificada__datos">{{ a.estudiante.usuario.get_full_name }} · De {{ o.hora_inicio|time:"H:i" }} a {{ o.hora_fin|time:"H:i" }}{% if o.cambiada %} · <b>cambiada ese día</b>{% endif %}</p>
+          <p class="planificada__datos">De {{ o.hora_inicio|time:"H:i" }} a {{ o.hora_fin|time:"H:i" }}{% if o.cambiada %} · <b>cambiada ese día</b>{% endif %}</p>
           <p class="planificada__serie">{% include "tareas/_dias.html" with dias=a.dias_semana only %}</p>
         </div>
       </div>

@@ -135,7 +135,7 @@ def test_el_404_tiene_pagina_con_enlace_al_inicio(client, datos):
     html = respuesta.content.decode()
     assert respuesta.status_code == 404
     assert "No encontramos esta página" in html
-    assert f'href="{reverse("agenda:dia")}">Ir al inicio</a>' in html
+    assert f'href="{reverse("horario:mi_horario")}">Ir al inicio</a>' in html
 
 
 def test_el_500_se_pinta_sin_contexto():

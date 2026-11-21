@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block titulo %}Tareas creadas · Despega{% endblock %}
+{% block titulo %}Biblioteca de tareas · Despega{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'css/usuarios.css' %}"><link rel="stylesheet" href="{% static 'css/tarea.css' %}">{% endblock %}
 
 {# Catálogo de tareas del centro (HU-03-01). Boceto B40, paso «Buscar en el catálogo».      #}
 {# Sin desplazamiento (decisión 0005): las tareas que no caben pasan de página.            #}
 {% block volver %}{% url 'usuarios:panel' as atras %}{% include "_volver.html" with url=atras texto="Inicio" etiqueta="Volver al inicio" only %}{% endblock %}
-{% block h1 %}Tareas creadas{% endblock %}
+{% block h1 %}Biblioteca de tareas{% endblock %}
 {% block acciones %}
 <div class="barra__acciones">
   <a class="boton boton--aux" href="{% url 'tareas:asignar_tarea' %}">Asignar<span class="visualmente-oculto"> una tarea</span></a>
@@ -18,12 +18,35 @@
 {% block contenido %}
 {% include "usuarios/_mensajes.html" %}
 
+{# Buscador (retrospectiva del 19/11): por nombre o descripción y por ámbito. Se aplica al  #}
+{# pulsar «Buscar» (WCAG 3.2.2). Plegado en el móvil; en pantallas anchas, abierto.         #}
+<details class="plegable plegable--solo catalogo__filtros" data-abrir-ancho{% if con_filtros %} open{% endif %}>
+  <summary>Buscar tareas · <span id="cuantas-tareas">{{ tareas|length }} tarea{{ tareas|length|pluralize }}{% if con_filtros %} con este filtro{% endif %}</span></summary>
+  <form class="admin__filtros" method="get" role="search" aria-label="Buscar en la biblioteca de tareas">
+    <div class="campo">
+      <label for="filtro-q">Buscar</label>
+      <input type="search" id="filtro-q" name="q" value="{{ texto }}" maxlength="80" placeholder="Nombre o descripción">
+    </div>
+    <div class="campo">
+      <label for="filtro-ambito">Ámbito</label>
+      <select id="filtro-ambito" name="ambito">
+        <option value="">Todos</option>
+        {% for valor, nombre in ambitos %}<option value="{{ valor }}"{% if valor == ambito %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="admin__filtros-botones">
+      <button class="boton--aux" type="submit">Buscar</button>
+      {% if con_filtros %}<a class="boton boton--aux" href="{% url 'tareas:catalogo' %}">Quitar filtro</a>{% endif %}
+    </div>
+  </form>
+</details>
+
 <div class="encaja">
   {% if tareas %}
   <ul class="catalogo" id="catalogo" aria-labelledby="titulo" data-paginar data-estado="{desde} a {hasta} de {de}">
     {% for tarea in tareas %}
     <li class="catalogo__tarea">
-      {% if tarea.imagen %}<img class="catalogo__imagen" src="{{ tarea.imagen.url }}" alt="{{ tarea.descripcion_imagen }}" width="96" height="96" loading="lazy">{% endif %}
+      {% if tarea.imagen %}<img class="catalogo__imagen" src="{{ tarea.imagen.url }}" alt="{{ tarea.descripcion_imagen }}" width="96" height="96">{% endif %}
       <div class="catalogo__texto">
         <h2>{{ tarea.nombre }}</h2>
         <p class="catalogo__datos">
@@ -42,7 +65,11 @@
     {% endfor %}
   </ul>
   {% else %}
+  {% if con_filtros %}
+  <p class="aviso-vacio" role="status">No hay ninguna tarea con «{{ texto|default:'ese ámbito' }}». <a href="{% url 'tareas:catalogo' %}">Ver todas</a></p>
+  {% else %}
   <p class="aviso-vacio">Todavía no hay ninguna tarea creada.</p>
+  {% endif %}
   {% endif %}
 </div>
 {% include "_paginador.html" with de="catalogo" que="Más tareas" only %}

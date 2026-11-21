@@ -14,6 +14,19 @@
 {% block sub %}<span class="barra__sub">Pulsa uno para cambiar cómo ve su agenda</span>{% endblock %}
 
 {% block contenido %}
+{# Buscador (retrospectiva del 19/11). Solo si hay alumnos que buscar. #}
+{% if total %}
+<form class="admin__filtros admin__filtros--fila" method="get" role="search" aria-label="Buscar entre mis alumnos">
+  <div class="campo">
+    <label for="filtro-q">Buscar alumno</label>
+    <input type="search" id="filtro-q" name="q" value="{{ texto }}" maxlength="80" placeholder="Nombre, apellidos o código">
+  </div>
+  <div class="admin__filtros-botones">
+    <button class="boton--aux" type="submit">Buscar</button>
+    {% if texto %}<a class="boton boton--aux" href="{% url 'perfil:lista' %}">Ver todos</a>{% endif %}
+  </div>
+</form>
+{% endif %}
 <div class="encaja">
   {% if estudiantes %}
   <ul class="perfil-estudiantes" id="alumnos" aria-labelledby="titulo" data-paginar>
@@ -29,6 +42,8 @@
     </li>
     {% endfor %}
   </ul>
+  {% elif texto %}
+  <p class="aviso-vacio" role="status">Ningún alumno coincide con «{{ texto }}». <a href="{% url 'perfil:lista' %}">Ver todos</a></p>
   {% else %}
   <p class="aviso-vacio">Todavía no tienes ningún alumno vinculado. Pídeselo al administrador del centro.</p>
   {% endif %}

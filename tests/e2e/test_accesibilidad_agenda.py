@@ -97,7 +97,12 @@ def test_confirmar_terminar_en_ventana_con_teclado(live_server, page, lucia, mon
 
 
 def test_empezar_aparece_solo_al_llegar_la_hora(live_server, page, lucia, monkeypatch):
-    """Sin recargar: la zona del botón se vuelve a pedir cada 30 s hasta que se puede empezar."""
+    """Sin recargar: la zona del botón se vuelve a pedir cada 30 s hasta que se puede empezar.
+
+    Desde la retrospectiva del 19/11 no hay margen (se empieza cuando se quiera); la prueba
+    pone uno de 15 minutos para seguir comprobando el mecanismo, por si el centro lo vuelve
+    a pedir."""
+    monkeypatch.setattr(servicios, "MARGEN_EMPEZAR_ANTES", timedelta(minutes=15))
     desde = a_las(17) - servicios.MARGEN_EMPEZAR_ANTES  # Leer un cuento: 17:00
     monkeypatch.setattr(servicios, "ahora", lambda: desde - timedelta(minutes=1))
     page.clock.install()
