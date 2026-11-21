@@ -1,5 +1,5 @@
 {% load temporizador %}
-{% datos_temporizador fin=fin perfil=perfil as temp %}
+{% datos_temporizador fin=fin perfil=perfil inicio=inicio|default:None as temp %}
 <section
   class="tiempo"
   aria-label="Tiempo restante de la tarea"

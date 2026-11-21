@@ -138,7 +138,14 @@ def test_mi_horario_marca_el_dia_de_hoy_y_no_repite_el_dia_elegido(client, datos
     """Revisión de la rama correcciones-profesora: junto a los botones de los días salía otra
     vez la forma y el nombre del día elegido. Ahora «hoy» va en el botón de su día."""
     miercoles = date(2026, 11, 18)
-    monkeypatch.setattr("apps.horario.views.timezone.localdate", lambda: miercoles)
+    from datetime import datetime, time
+
+    from django.utils import timezone
+
+    from apps.horario import servicios as horario
+
+    a_las_diez = timezone.make_aware(datetime.combine(miercoles, time(10, 0)))
+    monkeypatch.setattr(horario, "ahora", lambda: a_las_diez)
     client.force_login(Estudiante.objects.get(codigo_estudiante="A01").usuario)
 
     html = client.get(reverse("horario:mi_horario"), {"dia": 1}).content.decode()
@@ -148,7 +155,9 @@ def test_mi_horario_marca_el_dia_de_hoy_y_no_repite_el_dia_elegido(client, datos
     assert 'href="?dia=3"' in boton_hoy and "aria-current" not in boton_hoy
     # El título del día elegido ya no repite la forma con la letra.
     titulo = html.split('id="dia-titulo">')[1].split("</h2>")[0]
-    assert titulo.strip() == "Lunes" and "dia-forma" not in titulo
+    assert titulo.strip().startswith("Lunes") and "dia-forma" not in titulo
+    # Retrospectiva del 19/11: dice por dónde vamos (en el móvil, junto al título).
+    assert "ya ha pasado" in titulo and "Ya ha pasado. Hoy es miércoles." in html
 
     # Mirando el día de hoy, el título lo dice (es lo que se ve en el móvil).
     html = client.get(reverse("horario:mi_horario")).content.decode()

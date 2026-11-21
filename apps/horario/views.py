@@ -99,19 +99,33 @@ def mi_horario(request):
 
     Por defecto, hoy (o el lunes si es fin de semana); ?dia=1…5 para otro día.
     """
-    hoy = timezone.localdate().isoweekday()
+    ahora = servicios.ahora()
+    hoy = ahora.isoweekday()
     dia = servicios.dia_por_defecto(_numero(request.GET.get("dia")), hoy)
     clase = request.estudiante.clase
+    es_hoy = dia == hoy
+    casillas = list(servicios.del_dia(clase, dia))
+    # Retrospectiva del 19/11: que se sepa por dónde vamos. Hoy, cada clase dice si ya ha
+    # pasado, si es ahora o si viene después (y la flecha «Ahora» avanza); otro día, una frase.
+    if es_hoy:
+        filas = servicios.momentos(casillas, ahora.time())
+    else:
+        filas = [(c, "") for c in casillas]
+    inicio = next((c for c, m in filas if m in ("ahora", "despues")), None)
     return render(
         request,
         "horario/mi_horario.html",
         {
             "clase": clase,
             "dia": DiaLectivo(dia),
-            "es_hoy": dia == hoy,
+            "es_hoy": es_hoy,
             "hoy": hoy,
             "dias": servicios.dias(),
-            "casillas": servicios.del_dia(clase, dia),
-            "ahora": timezone.localtime(),
+            "casillas": casillas,
+            "filas": filas,
+            "inicio": inicio,
+            "donde_estamos": "" if es_hoy else servicios.donde_estamos(dia, hoy),
+            "donde_corto": "" if es_hoy else servicios.donde_estamos_corto(dia, hoy),
+            "ahora": ahora,
         },
     )
