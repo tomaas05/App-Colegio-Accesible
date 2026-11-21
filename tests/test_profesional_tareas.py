@@ -1,15 +1,28 @@
 """HU-03-08 · Restricciones y gestión de tareas para el rol Profesional."""
 
-from datetime import time
+from datetime import datetime, time, timedelta
 
 import pytest
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.agenda import servicios as agenda_servicios
 from apps.tareas.models import Ambito, Asignacion, Tarea
 from apps.usuarios.models import Atencion, Estudiante, Usuario
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture(autouse=True)
+def asegurar_dia_lectivo(monkeypatch):
+    """El profesional solo programa en días lectivos (L-V); si el test corre en sábado o
+    domingo, fija la fecha de hoy al próximo lunes."""
+    hoy = timezone.localdate()
+    if hoy.isoweekday() > 5:
+        lunes = hoy + timedelta(days=8 - hoy.isoweekday())
+        momento = timezone.make_aware(datetime.combine(lunes, time(8, 0)))
+        monkeypatch.setattr(timezone, "localdate", lambda *a, **kw: lunes)
+        monkeypatch.setattr(agenda_servicios, "ahora", lambda: momento)
 
 
 @pytest.fixture
