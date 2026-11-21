@@ -381,7 +381,7 @@ def test_7_si_se_empieza_antes_tiene_lo_que_dura_la_tarea(client, lucia, hora):
     hora(12, 30)
     html = client.get(reverse("agenda:detalle", args=[cuento.pk])).content.decode()
     assert 'data-restante-seg="1320"' in html  # 22 minutos
-    assert "tienes hasta las 12:52" in html
+    assert "Tienes hasta las 12:52" in html
     t = servicios.tarea_del_dia(lucia, cuento.pk, a_las(12, 53))
     assert t.estado == "tiempo_agotado"
 
