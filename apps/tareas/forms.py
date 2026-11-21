@@ -145,8 +145,13 @@ class AsignacionForm(forms.ModelForm):
             "tarea": forms.Select(attrs={"class": "form-select"}),
             "hora_inicio": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
             "hora_fin": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
-            "vigencia_desde": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "vigencia_hasta": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            # format ISO: <input type="date"> no entiende «21/11/2026».
+            "vigencia_desde": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}, format="%Y-%m-%d"
+            ),
+            "vigencia_hasta": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}, format="%Y-%m-%d"
+            ),
         }
 
     def __init__(self, *args, usuario=None, **kwargs):

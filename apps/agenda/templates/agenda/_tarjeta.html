@@ -2,11 +2,16 @@
 {# se puede abrir, enlace. inicio: la página de la línea de tiempo empieza en esta tarea. #}
 {# Una cancelada (HU-03-05) se ve tachada y no se abre: no hay nada que hacer en ella, y  #}
 {# así no gasta una parada del barrido.                                                   #}
-<li{% if t.destacada %} class="linea__ahora"{% endif %}{% if inicio %} data-pag-inicio{% endif %}>
-  {% if enlace and t.estado != 'cancelada' %}<a class="tarjeta{% if t.destacada %} tarjeta--ahora{% endif %}{% if t.estado == 'hecha' %} tarjeta--hecha{% endif %}" href="{{ enlace }}"{% if t.destacada %} aria-current="true"{% endif %}>{% else %}<div class="tarjeta{% if t.destacada %} tarjeta--ahora{% endif %}{% if t.estado == 'hecha' %} tarjeta--hecha{% endif %}{% if t.estado == 'cancelada' %} tarjeta--cancelada{% endif %}">{% endif %}
+{# data-inicio/fin: la flecha «Ahora» avanza por la línea según la hora (agenda.js).      #}
+<li{% if t.destacada %} class="linea__ahora"{% endif %}{% if inicio %} data-pag-inicio{% endif %} data-inicio="{{ t.inicio|time:'H:i' }}" data-fin="{{ t.fin|time:'H:i' }}">
+  {% if enlace and t.estado != 'cancelada' %}<a class="tarjeta{% if t.destacada %} tarjeta--ahora{% endif %}{% if t.estado == 'hecha' %} tarjeta--hecha{% elif t.estado == 'vencida' or t.estado == 'no_realizable' %} tarjeta--no-hecha{% endif %}" href="{{ enlace }}"{% if t.destacada %} aria-current="true"{% endif %}>{% else %}<div class="tarjeta{% if t.destacada %} tarjeta--ahora{% endif %}{% if t.estado == 'hecha' %} tarjeta--hecha{% elif t.estado == 'vencida' or t.estado == 'no_realizable' %} tarjeta--no-hecha{% endif %}{% if t.estado == 'cancelada' %} tarjeta--cancelada{% endif %}">{% endif %}
     <span class="tarjeta__hora">De {{ t.inicio|time:"H:i" }} a {{ t.fin|time:"H:i" }}</span>
     <img class="tarjeta__imagen" src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
     <span class="tarjeta__nombre">{{ t.tarea.nombre }}{% if t.es_plan_b %} (plan B){% endif %}</span>
     <span class="chip chip--{{ t.estado }}"><span aria-hidden="true">{{ t.simbolo }}</span> {{ t.etiqueta }}</span>
+    {# Retrospectiva del 19/11: hecha y no hecha se distinguen de un vistazo. Sello en la   #}
+    {# esquina (✓ o ✕, forma y no solo color) además de la etiqueta, que es lo que se lee.  #}
+    {% if t.estado == 'hecha' %}<span class="tarjeta__sello tarjeta__sello--hecha" aria-hidden="true">{% include "_icono.html" with nombre="check" only %}</span>
+    {% elif t.estado == 'vencida' or t.estado == 'no_realizable' %}<span class="tarjeta__sello tarjeta__sello--no-hecha" aria-hidden="true">{% include "_icono.html" with nombre="x" only %}</span>{% endif %}
   {% if enlace and t.estado != 'cancelada' %}</a>{% else %}</div>{% endif %}
 </li>

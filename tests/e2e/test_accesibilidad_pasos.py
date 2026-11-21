@@ -131,7 +131,8 @@ def test_seguir_todos_los_pasos_con_teclado(live_server, page, mochila):
     assert dialogo.is_visible()
     sin_errores_axe(page)
     dialogo.get_by_role("button", name="Sí").click()
-    page.get_by_text("¡Hecha!").wait_for()
+    # Retrospectiva del 19/11: al terminar, la pantalla de «¡Bravo!».
+    page.get_by_role("heading", name="¡Bravo!").wait_for()
     assert mochila.ejecuciones.get(fecha=timezone.localdate()).estado == "hecha"
 
 

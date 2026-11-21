@@ -4,6 +4,7 @@ axe WCAG 2.2 AA, sin scroll horizontal y sin scroll vertical (decisión 0005) en
 tableta y ordenador, entrando como la tutora Ana o como un profesional con datos de prueba.
 """
 
+import re
 from datetime import date, time, timedelta
 
 import pytest
@@ -193,18 +194,28 @@ def test_el_aviso_de_un_cambio_al_estudiante(live_server, page, client, datos, n
     page.get_by_role("heading", name="Tareas de hoy").wait_for()
 
 
-def test_plan_b_ordenar_con_teclado_y_el_foco_vuelve_al_boton(live_server, page, tutor_logueado):
-    """B42: «Subir» recarga la página y el foco vuelve al mismo botón (no se pierde)."""
+def test_plan_b_ordenar_con_teclado_y_el_foco_vuelve_a_la_tarjeta(
+    live_server, page, tutor_logueado
+):
+    """B42 (retrospectiva del 19/11, opción A): «Primera» pone una alternativa la primera y,
+    al tocar una tarjeta de la biblioteca, el foco vuelve a esa misma tarjeta."""
     page.set_viewport_size({"width": 1280, "height": 800})
     page.goto(live_server.url + PANTALLAS["plan-b"]())
-    page.get_by_role("button", name="Subir «Leer un cuento»").click()
-    page.get_by_text("«Leer un cuento» es ahora la número 1.").wait_for()
-    enfocado = page.evaluate(
-        "[document.activeElement.textContent, document.activeElement.getAttribute('aria-disabled')]"
-    )
-    assert enfocado == ["Subir «Leer un cuento»", "true"]
+    page.get_by_role("button", name=re.compile(r"^Primera.*«Leer un cuento» la primera")).click()
+    page.get_by_text("«Leer un cuento» es ahora la primera.").wait_for()
     regar = Tarea.objects.get(nombre="Regar las plantas")
     assert [a.nombre for a in regar.alternativas] == ["Leer un cuento", "Escuchar música"]
+    biblioteca = page.locator("#biblioteca-plan-b")
+    musica = biblioteca.get_by_role("button", name=re.compile(r"^Escuchar música"))
+    musica.focus()
+    with page.expect_navigation():
+        page.keyboard.press("Enter")
+    page.wait_for_load_state()
+    enfocado = page.evaluate(
+        "[document.activeElement.innerText, document.activeElement.getAttribute('aria-pressed')]"
+    )
+    assert "Escuchar música" in enfocado[0] and enfocado[1] == "false"
+    assert [a.nombre for a in regar.alternativas] == ["Leer un cuento"]
 
 
 # --- Buscador de pictogramas (decisión 0004) ---------------------------------------

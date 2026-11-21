@@ -34,6 +34,7 @@ from apps.perfil.models import (
 )
 from apps.tareas import planificacion
 from apps.tareas.models import Ambito, Asignacion, Paso, PlanB, Tarea
+from apps.usuarios import avatares
 from apps.usuarios.acceso import establecer_contrasena_imagenes
 from apps.usuarios.models import Atencion, Clase, Estudiante, ImagenAcceso, Rol, Usuario
 
@@ -62,12 +63,6 @@ CONTRASENA_MATEO = "mateo2026"
 
 # Colores oscuros: el texto blanco encima cumple contraste AA.
 COLORES = ["#0B3C49", "#1F6F6B", "#7A3E9D", "#B54708", "#1D4ED8", "#9F1239", "#3F6212", "#5B21B6"]
-
-
-AVATARES = [
-    "gato", "tortuga", "mariposa", "ballena", "león", "conejo",
-    "pájaro", "caballo", "elefante", "jirafa", "pez", "perro",
-]  # fmt: skip
 
 
 def imagen(texto, color, nombre, redonda=False, picto=None):
@@ -405,17 +400,10 @@ class Command(BaseCommand):
             tutor=tutor,
             fecha_alta_tutor=hoy - timedelta(days=60),
         )
-        estudiante.avatar.save(
-            f"{codigo.lower()}.png",
-            imagen(
-                nombre[0],
-                COLORES[color % len(COLORES)],
-                codigo.lower(),
-                redonda=True,
-                picto=AVATARES[color % len(AVATARES)],
-            ),
-            save=False,
-        )
+        # Avatares de su propia galería, distintos de las imágenes de la contraseña
+        # (retrospectiva del 19/11): A01 el primero, A02 el segundo…
+        archivo = avatares.archivo(avatares.de_codigo(codigo), codigo)
+        estudiante.avatar.save(archivo.name, archivo, save=False)
         estudiante.save()
         return estudiante
 

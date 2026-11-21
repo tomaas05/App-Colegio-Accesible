@@ -18,7 +18,7 @@
 </div>
 {% else %}
 <div class="encaja encaja--centro">
-  <ol class="linea" id="tareas" aria-labelledby="titulo" data-paginar data-max="{% if agenda.alcance == 'actual_sig' %}2{% else %}{{ perfil_activo.max_tarjetas|default:6 }}{% endif %}">
+  <ol class="linea" id="tareas" aria-labelledby="titulo" data-paginar data-max="{% if agenda.alcance == 'actual_sig' %}2{% else %}{{ perfil_activo.max_tarjetas|default:6 }}{% endif %}" data-ahora="{{ ahora|time:'H:i' }}">
     {% for t in agenda.en_alcance %}
     {% url 'agenda:detalle' t.asignacion.pk as enlace %}
     {% if t == agenda.actual or not agenda.actual and t == agenda.siguiente %}

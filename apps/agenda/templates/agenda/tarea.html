@@ -24,7 +24,12 @@
 <div class="encaja">
 {# data-pag-variable: las dos partes miden muy distinto («Hacerla» es mucho más alta) y cada #}
 {# una se mide por separado; si una no cabe sola, se desplaza <main> en vez de solaparse.   #}
-<div class="ejec" id="partes" data-paginar data-pag-variable data-estado="Parte {n} de {total}">
+{# Retrospectiva del 19/11: en cuanto empieza una tarea con pasos, los pasos se quedan con #}
+{# toda la pantalla (modo «pasos»): arriba el tiempo, en medio el paso que toca, grande, y #}
+{# abajo el botón principal. «Qué es» ya lo ha visto antes de empezar (y sigue «Escuchar»). #}
+{% with modo_pasos=t.en_curso %}
+<div class="ejec{% if modo_pasos and t.pasos %} ejec--pasos{% endif %}" id="partes" data-paginar data-pag-variable data-estado="Parte {n} de {total}">
+  {% if not modo_pasos or not t.pasos %}
   <div class="col col--que" data-titulo="Qué es">
     <div class="ficha">
       <img class="ficha__imagen" src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="96" height="96">
@@ -50,8 +55,12 @@
       {% include "perfil/_temporizador.html" with fin=t.fin perfil=perfil %}
     {% endif %}
   </div>
+  {% endif %}
 
   <div class="col col--hacer" data-titulo="Hacerla"{% if t.en_curso %} data-pag-inicio{% endif %}>
+    {% if modo_pasos and t.pasos %}
+      {% include "perfil/_temporizador.html" with fin=t.fin perfil=perfil %}
+    {% endif %}
     {% if t.pasos %}
     {# HU-02-05 · Seguir los pasos. Con la tarea en marcha, el paso que toca se destaca  #}
     {# y es el único con botón «Hecho»: los demás no se pueden pulsar (RF2.4.3, RF2.4.4). #}
@@ -67,6 +76,10 @@
         <p class="pasos__cuenta"><span aria-hidden="true">✓</span> Todos los pasos hechos</p>
         {% else %}
         <p class="pasos__cuenta">{{ t.pasos|length }} paso{{ t.pasos|length|pluralize }}</p>
+        {% endif %}
+        {% if modo_pasos and ofrecer_voz %}
+        {# En modo «pasos» no se ve «Qué es»: «Escuchar» (nombre, descripción y pasos) va aquí. #}
+        <button type="button" class="boton boton--aux pasos__escuchar" data-escuchar data-texto="{{ t.texto_para_escuchar }}" data-parar="Parar" hidden><span aria-hidden="true">🔊</span> <span class="desc__texto-boton">Escuchar<span class="visualmente-oculto"> la tarea</span></span></button>
         {% endif %}
         {# Dónde voy, de un vistazo: una marca por paso. Lo mismo dice el texto «Paso 2 de 4». #}
         <span class="pasos__marcas" aria-hidden="true">{% for p in t.pasos %}<span class="pasos__marca{% if p.hecho %} pasos__marca--hecha{% elif p == t.paso_actual %} pasos__marca--actual{% endif %}">{% if p.hecho %}✓{% else %}{{ forloop.counter }}{% endif %}</span>{% endfor %}</span>
@@ -146,6 +159,7 @@
     </div>
   </div>
 </div>
+{% endwith %}
 </div>
 {% include "_paginador.html" with de="partes" que="Partes de la tarea" anterior="Qué es" siguiente="Hacerla" only %}
 

@@ -326,7 +326,17 @@ main:focus {
   color: var(--petroleo);
 }
 .barra__fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
   font-size: var(--letra-xs);
+}
+/* La forma del día en la barra (retrospectiva del 19/11): en em, crece con la letra. */
+.barra__fecha .dia-forma {
+  font-size: 1em; /* la letra del día, como la fecha (≥ 16 px) */
+  width: 1.8em;
+  height: 1.8em;
+  margin-block: -0.3em; /* no hace la barra más alta que la línea de la fecha */
 }
 .barra__quien {
   display: inline-flex;
@@ -790,6 +800,99 @@ fieldset.parte:not(.parte--caja) {
   }
 }
 
+/* --- Flecha «Ahora» (retrospectiva del 19/11) ---
+ * En la línea de «Tareas de hoy» y de «Mi horario» (de hoy), una flecha marca la hora: dentro
+ * de la tarjeta de ahora avanza según lo que lleva (agenda.js pone --avance de 0 a 1) y, entre
+ * dos tarjetas, se queda en el hueco. Es decorativa (aria-hidden): la hora está en la barra y
+ * la tarjeta de ahora ya dice «Ahora». La línea deja sitio para la flecha (en em, crece con la
+ * letra) y la flecha no tapa nada que se pulse (pointer-events: none). */
+.linea[data-ahora] {
+  --alto-flecha: 0rem;
+}
+/* En vertical (móvil) la flecha se pone sobre la línea, sin quitar sitio a las tarjetas: un
+   triángulo que apunta a la tarjeta, con la punta en el borde derecho de la línea. */
+.linea__flecha {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--avance, 0) * 100%);
+  left: -0.45rem;
+  width: 1.35rem;
+  height: 1.4rem;
+  margin-top: -0.7rem;
+  pointer-events: none;
+  background: var(--petroleo);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.linea__flecha--hueco {
+  top: 0;
+  margin-top: -1rem; /* en el hueco de 0,6rem entre dos tarjetas */
+}
+.linea__flecha-texto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (min-width: 48rem) {
+  .linea[data-ahora] {
+    --alto-flecha: 2.2em;
+  }
+  .linea[data-ahora] > li {
+    padding: calc(1.9rem + var(--alto-flecha)) 0 0;
+  }
+  .linea[data-ahora]::before {
+    top: calc(0.5rem + var(--alto-flecha));
+    left: 0;
+  }
+  .linea[data-ahora] > li::after {
+    top: var(--alto-flecha);
+    left: calc(50% - 0.625rem);
+  }
+  .linea[data-ahora] > li.linea__ahora::after {
+    top: calc(var(--alto-flecha) - 0.25rem);
+    left: calc(50% - 0.875rem);
+  }
+  .linea__flecha {
+    top: 0;
+    left: calc(var(--avance, 0) * 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: auto;
+    height: calc(var(--alto-flecha) + 0.5rem);
+    margin: 0;
+    background: none;
+    clip-path: none;
+    transform: translateX(-50%);
+  }
+  .linea__flecha--hueco {
+    left: -0.375rem; /* en el hueco de 0,75rem entre dos tarjetas */
+  }
+  .linea__flecha::after {
+    content: "";
+    flex: none;
+    width: 1.3rem;
+    height: 0.95rem;
+    background: var(--petroleo);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  .linea__flecha-texto {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    font-family: var(--fuente-titulos);
+    font-size: var(--letra-xs);
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--petroleo);
+  }
+}
+
 /* --- Día de la semana: letra dentro de una forma con color (boceto B30) --- */
 .dia-forma {
   --c: var(--dia-f);
@@ -876,7 +979,8 @@ fieldset.parte:not(.parte--caja) {
   display: flex;
   align-items: center;
   min-height: var(--toque);
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--letra-s); /* «Biblioteca de tareas» y «Tareas planificadas» en una línea */
   border: 2px solid transparent;
   border-radius: 0.75rem;
   color: var(--petroleo);
@@ -1016,4 +1120,23 @@ fieldset.parte:not(.parte--caja) {
   display: inline-flex;
   align-items: center;
   text-decoration: none;
+}
+
+/* Tableta en vertical: con la forma del día, la fecha larga ya no cabía junto al título y
+   la barra ganaba una fila. Ahí va la fecha corta («Sáb 21 nov»), que con la forma dice lo
+   mismo y ocupa menos que antes. */
+@media (min-width: 30.01rem) and (max-width: 63.99rem) {
+  .barra__fecha .barra__fecha-larga {
+    display: none;
+  }
+  .barra__fecha .barra__fecha-corta {
+    display: inline;
+  }
+}
+/* En el móvil con letra 24 o 32, la forma del día de la barra no cabe sin añadir una fila
+   (y entonces la pantalla no cabe): se quita. Es decorativa; la fecha sigue escrita. */
+@media (max-width: 30rem) {
+  html:is([data-letra="24"], [data-letra="32"]) .barra__fecha .dia-forma {
+    display: none;
+  }
 }

@@ -14,17 +14,6 @@
 <form class="formulario formulario--estudiante encaja encaja--fija" method="post" novalidate>
   {% csrf_token %}
 
-  {% if form.errors %}
-  {# PA5: mensaje con pictograma. No dice qué imagen o qué letra ha fallado. #}
-  <div class="aviso-error aviso-error--estudiante" role="alert">
-    <svg class="aviso-error__picto" viewBox="0 0 64 64" width="40" height="40" aria-hidden="true" focusable="false">
-      <path d="M50 22A21 21 0 1 0 53 34" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-      <path d="M52 8v15H37" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <p>{% for error in form.non_field_errors %}{{ error }}{% empty %}{% for campo in form %}{% for error in campo.errors %}{{ error }}{% endfor %}{% endfor %}{% endfor %}</p>
-  </div>
-  {% endif %}
-
   {% if con_imagenes %}
   <fieldset class="rejilla-acceso" data-rejilla-acceso>
     <legend class="visualmente-oculto">Tus 3 imágenes, en cualquier orden</legend>
@@ -54,6 +43,19 @@
     </div>
   </div>
   {% endwith %}
+  {% endif %}
+
+  {% if form.errors %}
+  {# PA5: mensaje con pictograma. No dice qué imagen o qué letra ha fallado.            #}
+  {# Retrospectiva del 19/11: va debajo de la contraseña, junto a «Entrar», donde mira  #}
+  {# el estudiante, y no arriba. role="alert" lo anuncia igual.                        #}
+  <div class="aviso-error aviso-error--estudiante" role="alert">
+    <svg class="aviso-error__picto" viewBox="0 0 64 64" width="40" height="40" aria-hidden="true" focusable="false">
+      <path d="M50 22A21 21 0 1 0 53 34" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+      <path d="M52 8v15H37" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <p>{% for error in form.non_field_errors %}{{ error }}{% empty %}{% for campo in form %}{% for error in campo.errors %}{{ error }}{% endfor %}{% endfor %}{% endfor %}</p>
+  </div>
   {% endif %}
 
   <input type="hidden" name="next" value="{{ next }}">

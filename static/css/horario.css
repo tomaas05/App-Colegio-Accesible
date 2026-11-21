@@ -312,3 +312,27 @@
 .mi-horario__vacio {
   font-size: var(--letra-m);
 }
+
+/* Móvil con letra grande: «Mi horario» es la pantalla de inicio y lleva «Tareas de hoy» al
+   pie (retrospectiva del 19/11). Para que quepa al menos una clase, el dibujo es algo más
+   pequeño y la hora no se parte. */
+@media (max-width: 30rem) {
+  html:is([data-letra="24"], [data-letra="32"]) .mi-horario__casilla {
+    column-gap: 0.5rem;
+    padding-inline: 0.5rem;
+  }
+  html:is([data-letra="24"], [data-letra="32"]) .mi-horario__casilla .tarjeta__imagen {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  html:is([data-letra="24"], [data-letra="32"]) .mi-horario .linea > li {
+    padding-left: 1.5rem;
+  }
+  html:is([data-letra="24"], [data-letra="32"]) .mi-horario__cab {
+    row-gap: 0.25rem;
+  }
+  html:is([data-letra="24"], [data-letra="32"]) .mi-horario__hoy {
+    margin: 0;
+    line-height: 1.15;
+  }
+}

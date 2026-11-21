@@ -27,10 +27,15 @@
 
       {# Sin JavaScript se ven todos los bloques; con él, solo los del rol elegido. #}
       <fieldset class="parte parte--caja" data-solo="estudiante">
-        <legend><span class="sin-js">Si es estudiante: </span>Clase y avatar</legend>
+        <legend><span class="sin-js">Si es estudiante: </span>Clase</legend>
         <div class="campo">{{ form.clase.as_field_group }}</div>
-        <div class="campo">{{ form.avatar.as_field_group }}</div>
         <p class="admin__nota">El código de estudiante (A01, A02…) se asigna solo.</p>
+      </fieldset>
+
+      <fieldset class="parte parte--caja" data-solo="estudiante">
+        <legend><span class="sin-js">Si es estudiante: </span>{{ form.avatar_galeria.label }}</legend>
+        {% include "usuarios/_galeria_avatares.html" with campo=form.avatar_galeria only %}
+        <div class="campo">{{ form.avatar.as_field_group }}</div>
       </fieldset>
 
       <fieldset class="parte parte--caja" data-solo="estudiante">

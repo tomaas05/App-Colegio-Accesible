@@ -10,7 +10,7 @@
 {# grupo («Imagen de la tarea», «Paso 2») se repite en cada pantalla donde sale uno suyo.    #}
 {# «Guardar tarea» está en la última pantalla, en el sitio de «Siguiente».                    #}
 {% block pantalla %}pantalla--estrecha{% endblock %}
-{% block volver %}{% url 'tareas:catalogo' as atras %}{% include "_volver.html" with url=atras texto="Tareas creadas" etiqueta="Volver a Tareas creadas" only %}{% endblock %}
+{% block volver %}{% url 'tareas:catalogo' as atras %}{% include "_volver.html" with url=atras texto="Biblioteca" etiqueta="Biblioteca de tareas: volver" only %}{% endblock %}
 {% block h1 %}Crear tarea{% endblock %}
 
 {% block contenido %}
@@ -75,7 +75,7 @@
 
   {# Lo que pasa con los pasos («Paso 2 añadido»): siempre a la vista, encima del pie. #}
   <p class="pie__estado" role="status" data-pasos-estado></p>
-  {# Para dejarla sin guardar, «‹ Tareas creadas» de la barra de título. #}
+  {# Para dejarla sin guardar, «‹ Biblioteca de tareas» de la barra de título. #}
   <div class="pie pie--pasos">
     {% include "_paginador.html" with de="bloques" que="Partes del formulario" final=True only %}
     <div class="pie__acciones">

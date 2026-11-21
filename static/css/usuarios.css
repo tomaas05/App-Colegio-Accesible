@@ -228,6 +228,25 @@
   width: 100%;
   max-width: 5rem;
 }
+/* Galería de avatares (crear y editar cuenta): losetas pequeñas, tantas como quepan. */
+.losetas--avatares {
+  grid-template-columns: repeat(auto-fill, minmax(5.5em, 1fr));
+  gap: var(--separacion);
+  margin: 0.5rem 0;
+}
+.losetas--avatares .loseta {
+  min-height: var(--toque-grande);
+  padding: 0.3rem;
+}
+.losetas--avatares .loseta--marcar .loseta__imagen {
+  max-width: 3.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+}
+.losetas--avatares .loseta__nombre {
+  font-size: var(--letra-xs);
+}
 /* Dentro de un bloque de formulario (crear cuenta), siempre 4 columnas. */
 .parte .losetas--acceso {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -338,26 +357,45 @@
   opacity: 0;
   cursor: pointer;
 }
+/* Retrospectiva del 19/11: la contraseña tiene que destacar más. Sin elegir, la imagen
+   lleva un borde de 3 px; elegida, la loseta lleva un borde grueso continuo, fondo menta,
+   la imagen enmarcada y una marca ✓ grande (forma + borde + color, no solo color). */
+.loseta--marcar .loseta__imagen {
+  border-width: 3px;
+}
 .loseta--marcar:has(input:checked) {
   background: var(--menta);
-  border-width: 0.375rem;
-  border-style: double;
+  border-width: 0.4rem;
+  border-style: solid;
+  box-shadow: inset 0 0 0 0.2rem var(--blanco);
+}
+.loseta--marcar:has(input:checked) .loseta__imagen {
+  border-width: 0.3rem;
+}
+/* La marca es un SVG, no un glifo: en Android un glifo puede salir como un cuadro.
+   ::after es el círculo y ::before el ✓ (máscara), cada uno con su token de color, así
+   funciona también con el tema oscuro. */
+.loseta--marcar:has(input:checked)::after,
+.loseta--marcar:has(input:checked)::before {
+  content: "";
+  position: absolute;
+  top: -0.7rem;
+  right: -0.7rem;
+  width: max(2.5rem, 1.6em);
+  height: max(2.5rem, 1.6em);
+  border-radius: 50%;
 }
 .loseta--marcar:has(input:checked)::after {
-  content: "✓";
-  position: absolute;
-  top: -0.6rem;
-  right: -0.6rem;
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  font-size: var(--letra-m);
-  font-weight: 800;
-  color: var(--blanco);
   background: var(--petroleo);
-  border: 2px solid var(--blanco);
-  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--blanco);
+}
+.loseta--marcar:has(input:checked)::before {
+  z-index: 1;
+  background: var(--blanco);
+  -webkit-mask: center / 65% no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  mask: center / 65% no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
 }
 .loseta--marcar:has(input:focus-visible) {
   outline: var(--foco-grosor) solid var(--focus);
@@ -386,6 +424,28 @@
   width: min(26rem, 100%);
   margin-inline: auto;
 }
+/* Retrospectiva del 19/11: el recuadro de la contraseña del estudiante destaca: más alto,
+   borde de 4 px, letra grande y un fondo que lo separa de la pantalla. */
+.formulario--estudiante .campo label {
+  font-size: var(--letra-l);
+}
+.formulario--estudiante .campo__fila {
+  padding: 0.5rem;
+  background: var(--menta);
+  border: 2px solid var(--petroleo);
+  border-radius: 1.1rem;
+}
+.formulario--estudiante .campo input {
+  min-height: var(--toque-grande);
+  padding-inline: 1rem;
+  font-size: var(--letra-l);
+  letter-spacing: 0.08em;
+  border-width: 4px;
+  border-radius: 0.85rem;
+}
+.formulario--estudiante .campo__fila .boton--aux {
+  min-height: var(--toque-grande);
+}
 .pie--entrar {
   justify-content: center;
 }
@@ -394,6 +454,11 @@
 }
 .pie--entrar .contador {
   margin: 0;
+}
+/* Con contraseña, el aviso va debajo del campo y con su mismo ancho (retrospectiva 19/11). */
+.formulario--estudiante:not(:has(.rejilla-acceso)) .aviso-error--estudiante {
+  width: min(26rem, 100%);
+  margin-inline: auto;
 }
 .aviso-error--estudiante {
   align-items: center;
@@ -622,6 +687,15 @@
   .admin__filtros {
     grid-template-columns: 2fr 1fr 1fr auto;
   }
+}
+/* Un solo campo y sus botones (buscar alumno): el campo se lleva el ancho. */
+@media (min-width: 40rem) {
+  .admin__filtros--fila {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+.admin__filtros--fila {
+  margin-bottom: var(--separacion);
 }
 .admin__filtros input[type="search"] {
   min-height: var(--toque);

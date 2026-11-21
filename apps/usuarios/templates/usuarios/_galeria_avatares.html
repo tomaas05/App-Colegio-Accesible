@@ -1,0 +1,18 @@
+{# Galería de avatares (retrospectiva del 19/11): caras alegres, distintas de las imágenes  #}
+{# de la contraseña. Recibe: campo (ChoiceField con RadioSelect de apps/usuarios/avatares). #}
+{# Cada opción es una loseta con su dibujo y su nombre; elegida = ✓ + borde + fondo.        #}
+{% load static %}
+{% if campo.errors %}<p class="campo__error" id="{{ campo.auto_id }}_error">{{ campo.errors.0 }}</p>{% endif %}
+<p class="admin__nota" id="{{ campo.auto_id }}_ayuda">{{ campo.help_text }}</p>
+<ul class="losetas losetas--avatares" id="{{ campo.auto_id }}" aria-describedby="{{ campo.auto_id }}_ayuda">
+  {% for clave, nombre in campo.field.choices %}
+  <li>
+    <label class="loseta loseta--marcar">
+      <input type="radio" name="{{ campo.html_name }}" value="{{ clave }}"{% if campo.value == clave %} checked{% endif %}>
+      <img class="loseta__imagen" src="{% static 'img/avatares/' %}{{ clave }}.png" alt="" width="64" height="64">
+      <span class="loseta__nombre">{{ nombre }}</span>
+    </label>
+  </li>
+  {% endfor %}
+</ul>
+<p class="admin__nota">Avatares: «Fun Emoji» de Davis Uche (DiceBear), licencia CC BY 4.0.</p>

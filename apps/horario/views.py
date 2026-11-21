@@ -112,5 +112,6 @@ def mi_horario(request):
             "hoy": hoy,
             "dias": servicios.dias(),
             "casillas": servicios.del_dia(clase, dia),
+            "ahora": timezone.localtime(),
         },
     )

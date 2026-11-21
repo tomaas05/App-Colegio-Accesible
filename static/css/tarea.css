@@ -409,9 +409,16 @@
 .planificadas__filtros .admin__filtros {
   margin-top: 0.5rem;
 }
+/* Dos campos y «Ver»: el botón en su columna justa (antes se partía en «V / er»). */
+@media (min-width: 48rem) {
+  .planificadas__filtros .admin__filtros {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+}
 .planificadas {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+  /* 20rem: dos columnas también en la tableta (con la franja del alumno arriba). */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
   align-content: start;
   gap: 0.75rem;
   margin: 0;
@@ -431,6 +438,29 @@
 }
 .planificada--cancelada .planificada__nombre {
   text-decoration: line-through;
+}
+/* De quién es (retrospectiva del 19/11): una franja con avatar y nombre, arriba de la tarjeta. */
+.planificada__quien {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: -0.6rem -0.75rem 0;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 2px solid var(--menta-hover);
+  border-radius: 0.9rem 0.9rem 0 0;
+  background: var(--menta);
+  font-family: var(--fuente-titulos);
+  font-size: var(--letra-s);
+  font-weight: 800;
+  color: var(--petroleo);
+  overflow-wrap: anywhere;
+}
+.planificada__quien img {
+  flex: none;
+  width: 2em;
+  height: 2em;
+  border-radius: 50%;
+  background: var(--blanco);
 }
 .planificada__cab {
   display: flex;
@@ -584,12 +614,16 @@
     padding: 0 0.35rem;
     background: var(--blanco);
   }
+}
 
-/* --- Corrección estricta de desbordamiento horizontal y pasos en pantallas móviles (≤ 30rem / 480px) --- */
+/* --- Corrección estricta de desbordamiento horizontal y pasos en pantallas móviles (≤ 30rem / 480px) ---
+ * Auditoría de la rama (21/11): faltaba la «}» del bloque de arriba, así que todo lo que venía
+ * detrás (este bloque y el resto del archivo) estaba dentro de «min-width: 30.01rem» y en el
+ * móvil no se aplicaba nunca. Se cierra el bloque y se quita .encaja de aquí: con
+ * overflow hidden recortaría el foco de 4 px y engañaría a paginar.js al medir. */
 @media (max-width: 30rem) {
   .formulario,
   #contenedor-pasos,
-  .encaja,
   .paso-item,
   .grupo {
     max-width: 100% !important;
@@ -619,4 +653,161 @@
     width: 100% !important;
     text-align: center !important;
   }
+}
+
+/* --- Plan B de una tarea (B42), retrospectiva del 19/11: opción A ---
+ * Arriba el buscador; luego «así lo verá el alumno» (las alternativas numeradas) y las
+ * tarjetas de la biblioteca: tocar = añadir o quitar. En el plan: borde grueso, fondo menta
+ * y su número en un círculo relleno (no solo color); fuera: un «+» en un círculo vacío. */
+.plan-b__buscar {
+  margin-bottom: var(--separacion);
+}
+.plan-b__busqueda {
+  font-weight: 700;
+  color: var(--gris);
+}
+.plan-b-vista__lista {
+  display: grid;
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-b-vista__fila {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--menta);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.plan-b-vista__fila img {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: contain;
+  background: #ffffff;
+  border-radius: 0.6rem;
+}
+.plan-b-vista__fila form {
+  margin: 0;
+}
+.plan-b-vista__nombre {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  color: var(--petroleo);
+  overflow-wrap: anywhere;
+}
+.plan-b-vista__primera {
+  font-size: var(--letra-xs);
+  font-weight: 700;
+  color: var(--verde-oscuro);
+}
+.plan-b-num,
+.plan-b-elegir__marca {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.9em;
+  height: 1.9em;
+  font-family: var(--fuente-titulos);
+  font-size: var(--letra-s);
+  font-weight: 800;
+  line-height: 1;
+  border: 2px solid var(--petroleo);
+  border-radius: 50%;
+}
+.plan-b-num {
+  color: var(--blanco);
+  background: var(--petroleo);
+}
+.plan-b-elegir {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5em), 1fr));
+  gap: var(--separacion);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-b-elegir form {
+  height: 100%;
+  margin: 0;
+}
+.plan-b-elegir__tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  height: 100%;
+  min-height: var(--toque-grande);
+  padding: 0.5rem 0.4rem;
+  font: inherit;
+  color: var(--texto);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--blanco);
+  border: 2px solid var(--petroleo);
+  border-radius: 1rem;
+}
+.plan-b-elegir__tarjeta:hover {
+  background: var(--menta-hover);
+}
+.plan-b-elegir__tarjeta img {
+  width: min(4.5rem, 12dvh);
+  height: min(4.5rem, 12dvh);
+  object-fit: contain;
+}
+.plan-b-elegir__nombre {
+  font-family: var(--fuente-titulos);
+  font-size: var(--letra-s);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--petroleo);
+  overflow-wrap: anywhere;
+}
+.plan-b-elegir__marca {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 1.7em;
+  height: 1.7em;
+  font-size: var(--letra-xs);
+  color: var(--petroleo);
+  background: var(--blanco);
+}
+.plan-b-elegir__marca .icono {
+  width: 70%;
+  height: 70%;
+}
+.plan-b-elegir__tarjeta[aria-pressed="true"] {
+  background: var(--menta);
+  border-width: 0.3rem;
+}
+.plan-b-elegir__tarjeta[aria-pressed="true"] .plan-b-elegir__marca {
+  color: var(--blanco);
+  background: var(--petroleo);
+}
+.plan-b-elegir__nueva {
+  border-style: dashed;
+}
+.plan-b-elegir__mas {
+  display: grid;
+  place-items: center;
+  width: 2.4em;
+  height: 2.4em;
+  color: var(--petroleo);
+  border: 2px dashed var(--petroleo);
+  border-radius: 50%;
+}
+.plan-b-elegir__mas .icono {
+  width: 60%;
+  height: 60%;
+}
+.plan-b-elegir__vacio {
+  grid-column: 1 / -1;
 }

@@ -119,7 +119,7 @@ def test_rejilla_no_deja_marcar_una_cuarta_imagen(live_server, page, datos):
     assert page.locator("input[name=imagenes]:disabled").count() == 0
     loseta("sol").click()
     page.click("button[type=submit]")
-    page.wait_for_url("**/agenda/")
+    page.wait_for_url("**/horario/mi-horario/")  # su inicio (retrospectiva del 19/11)
 
 
 @pytest.mark.parametrize("nombre", RESOLUCIONES)
@@ -182,9 +182,10 @@ def test_crear_un_estudiante_desde_el_navegador(live_server, page, client, datos
     page.fill("#id_nombre", "Noa")
     ir_a(page, "#id_clase")
     page.select_option("#id_clase", label="PTVAL 1 (2026-2027)")
-    ir_a(page, "label.loseta--marcar")
+    # #id_imagenes: las de la contraseña (la galería de avatares también son losetas).
+    ir_a(page, "#id_imagenes label.loseta--marcar")
     for palabra in ("luna", "pez", "casa"):
-        page.locator("label.loseta--marcar", has_text=palabra).click()
+        page.locator("#id_imagenes label.loseta--marcar", has_text=palabra).click()
     ir_a(page, "main form button[type=submit]:not([hidden])")
     page.click("main form button[type=submit]:not([hidden])")
     page.wait_for_url("**/usuarios/?clase=*")

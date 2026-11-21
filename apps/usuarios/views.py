@@ -62,9 +62,13 @@ BACKEND_ESTUDIANTE = "django.contrib.auth.backends.ModelBackend"
 
 
 def destino_tras_entrar(usuario):
-    """A dónde va cada usuario al entrar: el estudiante a su agenda, el adulto a su panel."""
+    """A dónde va cada usuario al entrar: el estudiante a su horario de clase, el adulto a su panel.
+
+    Retrospectiva del 19/11: el estudiante empieza viendo su horario de clase de hoy; sus
+    tareas están a un botón («Tareas de hoy»).
+    """
     if usuario.es_estudiante:
-        return reverse("agenda:dia")
+        return reverse("horario:mi_horario")
     return reverse("usuarios:panel")
 
 
@@ -94,7 +98,7 @@ def panel(request):
     opción así, aquí mismo. Así el panel cabe sin desplazarse (decisión 0005).
     """
     if request.user.es_estudiante:
-        return redirect("agenda:dia")
+        return redirect(destino_tras_entrar(request.user))
     estudiantes = None
     if lista_estudiantes_en_el_panel(request.user.rol):
         estudiantes = estudiantes_de(request.user)
@@ -213,7 +217,7 @@ def entrar_estudiante(request, codigo):
         if form.is_valid():
             login(request, estudiante.usuario, backend=BACKEND_ESTUDIANTE)
             # PA7: entra en su propia agenda; la agenda solo enseña la del usuario con sesión.
-            return redirect(_siguiente(request) or "agenda:dia")
+            return redirect(_siguiente(request) or destino_tras_entrar(estudiante.usuario))
     else:
         form = Formulario(usuario=estudiante.usuario)
 

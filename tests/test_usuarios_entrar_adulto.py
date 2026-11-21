@@ -180,12 +180,12 @@ def test_un_estudiante_no_entra_por_la_pantalla_de_adultos(client, datos):
     assert "Esta entrada es para adultos" in respuesta.content.decode()
 
 
-def test_un_estudiante_con_sesion_que_abre_el_panel_va_a_su_agenda(client, datos):
+def test_un_estudiante_con_sesion_que_abre_el_panel_va_a_su_horario(client, datos):
     estudiante = Usuario.objects.filter(rol="estudiante").first()
     client.force_login(estudiante)
     respuesta = client.get(reverse("usuarios:panel"))
     assert respuesta.status_code == 302
-    assert respuesta["Location"] == reverse("agenda:dia")
+    assert respuesta["Location"] == reverse("horario:mi_horario")
 
 
 def test_quien_ya_ha_entrado_no_ve_otra_vez_el_formulario(client, datos):

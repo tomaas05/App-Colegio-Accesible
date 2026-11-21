@@ -48,10 +48,33 @@ SIN_PICTOGRAMA = (
 @gestiona_tareas
 @require_GET
 def catalogo_tareas(request):
+    """Biblioteca de tareas (HU-03-01), con buscador por nombre y filtro por ámbito.
+
+    Retrospectiva del 19/11: el tutor busca una tarea en lugar de pasar páginas. Los filtros
+    van por GET y se aplican al pulsar «Buscar» (nada cambia solo al escribir, WCAG 3.2.2).
+    """
+    texto = (request.GET.get("q") or "").strip()[:80]
+    ambito = request.GET.get("ambito") or ""
+    if ambito not in Ambito.values:
+        ambito = ""
     tareas = Tarea.objects.annotate(
         n_pasos=Count("pasos", distinct=True), n_planes_b=Count("planes_b", distinct=True)
     ).order_by("-id")
-    return render(request, "tareas/catalogo.html", {"tareas": tareas})
+    if texto:
+        tareas = tareas.filter(Q(nombre__icontains=texto) | Q(descripcion__icontains=texto))
+    if ambito:
+        tareas = tareas.filter(ambito=ambito)
+    return render(
+        request,
+        "tareas/catalogo.html",
+        {
+            "tareas": tareas,
+            "texto": texto,
+            "ambito": ambito,
+            "ambitos": Ambito.choices,
+            "con_filtros": bool(texto or ambito),
+        },
+    )
 
 
 def _poner_pictograma(objeto, identificador):
@@ -187,7 +210,10 @@ def asignar_tarea(request, tarea_id=None):
             messages.success(request, f"La tarea «{datos['tarea'].nombre}» se ha asignado.")
             return redirect("tareas:catalogo")
     else:
-        inicial = {"tarea": tarea_inicial} if tarea_inicial else {}
+        # Retrospectiva del 19/11: «Desde» sale con la fecha de hoy (se puede cambiar).
+        inicial = {"vigencia_desde": timezone.localdate()}
+        if tarea_inicial:
+            inicial["tarea"] = tarea_inicial
         form = AsignacionForm(initial=inicial, usuario=request.user)
 
     return render(request, "tareas/asignar_tarea.html", {"form": form, "tarea": tarea_inicial})
@@ -626,6 +652,42 @@ def plan_b(request, tarea_id):
     accion = request.POST.get("accion")
     foco = ""
 
+    # Retrospectiva del 19/11 (opción A elegida por el equipo): se toca una tarjeta de la
+    # biblioteca para añadirla al plan B o quitarla («alternar»), y «Primera» pone una
+    # alternativa la primera. Las acciones de antes (subir, bajar, quitar, añadir) se
+    # mantienen para quien no tenga la pantalla nueva y para las pruebas.
+    texto_buscar = (request.GET.get("q") or request.POST.get("q") or "").strip()[:80]
+    volver = reverse("tareas:plan_b", args=[tarea.pk])
+    if texto_buscar:
+        volver += "?" + urlencode({"q": texto_buscar})
+
+    if request.method == "POST" and accion in ("alternar", "primera"):
+        alternativa = get_object_or_404(
+            Tarea.objects.exclude(pk=tarea.pk), pk=_numero_o_nada(request.POST.get("alternativa"))
+        )
+        with transaction.atomic():
+            lista = list(tarea.planes_b.select_for_update().order_by("orden", "pk"))
+            plan = next((p for p in lista if p.alternativa_id == alternativa.pk), None)
+            if accion == "alternar" and plan:
+                lista.remove(plan)
+                plan.delete()
+                texto = f"«{alternativa.nombre}» ya no está en el plan B."
+            elif accion == "alternar":
+                plan = PlanB.objects.create(
+                    tarea=tarea, alternativa=alternativa, orden=len(lista) + 1
+                )
+                lista.append(plan)
+                texto = f"«{alternativa.nombre}» se ha añadido al plan B (número {len(lista)})."
+            elif plan:
+                lista.remove(plan)
+                lista.insert(0, plan)
+                texto = f"«{alternativa.nombre}» es ahora la primera."
+            else:
+                raise Http404
+            _renumerar(lista)
+        messages.success(request, texto)
+        return redirect(f"{volver}{'&' if '?' in volver else '?'}foco=t-{alternativa.pk}")
+
     if request.method == "POST" and accion in ("subir", "bajar", "quitar"):
         plan = get_object_or_404(PlanB, tarea=tarea, alternativa_id=request.POST.get("alternativa"))
         nombre = plan.alternativa.nombre
@@ -680,18 +742,38 @@ def plan_b(request, tarea_id):
                 messages.success(request, f"«{nombre}» se ha creado y se ha añadido al plan B.")
                 return redirect("tareas:plan_b", tarea_id=tarea.pk)
 
+    planes = list(tarea.planes_b.select_related("alternativa").order_by("orden", "pk"))
+    numero_de = {p.alternativa_id: i for i, p in enumerate(planes, start=1)}
+    biblioteca = Tarea.objects.exclude(pk=tarea.pk).order_by("nombre")
+    if texto_buscar:
+        biblioteca = biblioteca.filter(
+            Q(nombre__icontains=texto_buscar) | Q(descripcion__icontains=texto_buscar)
+        )
+    tarjetas = [(t, numero_de.get(t.pk)) for t in biblioteca]
+    foco = request.GET.get("foco", "")
     return render(
         request,
         "tareas/plan_b.html",
         {
             "tarea": tarea,
-            "planes": tarea.planes_b.select_related("alternativa").order_by("orden", "pk"),
+            "planes": planes,
+            "tarjetas": tarjetas,
+            "texto_buscar": texto_buscar,
+            "nueva": accion == "crear" or request.GET.get("nueva") == "1",
+            "foco_tarjeta": int(foco[2:]) if foco.startswith("t-") and foco[2:].isdigit() else None,
             "anadir": anadir,
             "crear": crear,
             "accion": accion,
-            **_foco(request.GET.get("foco", "")),
+            **_foco(foco),
         },
     )
+
+
+def _numero_o_nada(valor):
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return None
 
 
 def _foco(valor):

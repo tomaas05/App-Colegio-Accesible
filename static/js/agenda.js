@@ -1,12 +1,13 @@
 /*
  * Despega · Pantallas de la agenda del estudiante (B06 y B07).
- * Cuatro cosas, todas opcionales: sin JavaScript las pantallas siguen funcionando.
+ * Cinco cosas, todas opcionales: sin JavaScript las pantallas siguen funcionando.
  *  1. (El reloj pasó a base.js: ahora está en la barra de título de todas las pantallas.)
  *  2. «Escuchar la descripción» con la voz del dispositivo (HU-02-02). Solo suena al
  *     pulsarlo; el botón sigue oculto si el navegador no tiene voz.
  *  3. Confirmación de «Terminar» en un <dialog> (B08, RF2.5.1). Sin JavaScript, el
  *     enlace lleva a la misma pregunta en una página.
  *  4. Pasos (HU-02-05): tras «Hecho», el foco pasa al paso siguiente o a «Terminar».
+ *  5. Flecha «Ahora» que avanza por la línea de tiempo de hoy (retrospectiva del 19/11).
  */
 (function () {
   "use strict";
@@ -374,4 +375,54 @@
     }
   }
 
+  // 5. Flecha «Ahora» (retrospectiva del 19/11): en la línea de tiempo de hoy (agenda y «Mi
+  //    horario»), una flecha marca la hora y avanza sola. La hora de partida es la del
+  //    servidor (data-ahora, «10:32»), así coincide con el reloj de la barra y con las pruebas.
+  function minutos(texto) {
+    var p = String(texto || "").split(":");
+    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+  }
+  function minutosDelReloj() {
+    var d = new Date();
+    return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".linea[data-ahora]"), function (linea) {
+    var desfase = minutos(linea.dataset.ahora) - Math.floor(minutosDelReloj());
+    if (isNaN(desfase)) return;
+    var flecha = document.createElement("span");
+    flecha.className = "linea__flecha";
+    flecha.setAttribute("aria-hidden", "true");
+    flecha.innerHTML = '<span class="linea__flecha-texto">Ahora</span>';
+
+    function colocar() {
+      var ahora = minutosDelReloj() + desfase;
+      var items = Array.prototype.filter.call(linea.children, function (li) {
+        return li.dataset.inicio && li.dataset.fin;
+      });
+      if (!items.length) return;
+      var destino = items[items.length - 1];
+      var avance = 1;
+      var hueco = false;
+      for (var i = 0; i < items.length; i++) {
+        var inicio = minutos(items[i].dataset.inicio);
+        var fin = minutos(items[i].dataset.fin);
+        if (ahora < inicio) {
+          destino = items[i];
+          avance = 0;
+          hueco = i > 0; // entre la anterior y esta; antes de la primera, a su principio
+          break;
+        }
+        if (ahora < fin) {
+          destino = items[i];
+          avance = fin > inicio ? (ahora - inicio) / (fin - inicio) : 0;
+          break;
+        }
+      }
+      if (flecha.parentNode !== destino) destino.appendChild(flecha);
+      flecha.classList.toggle("linea__flecha--hueco", hueco);
+      flecha.style.setProperty("--avance", String(Math.max(0, Math.min(1, avance))));
+    }
+    colocar();
+    window.setInterval(colocar, 30000);
+  });
 })();

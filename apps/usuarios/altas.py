@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw
 from apps.comun.fuentes import fuente_titulos
 from apps.perfil.models import MetodoAcceso, Perfil
 
+from . import avatares
 from .acceso import establecer_contrasena_imagenes
 from .models import Estudiante, Rol, Usuario
 
@@ -102,6 +103,7 @@ def crear_estudiante(
     contrasena="",
     usa_lector_pantalla=False,
     avatar=None,
+    avatar_galeria=None,
 ):
     """Estudiante con su código, su avatar, su clase y su forma de entrar.
 
@@ -126,9 +128,11 @@ def crear_estudiante(
     if avatar:
         estudiante.avatar.save(f"{codigo.lower()}-{avatar.name}", avatar, save=False)
     else:
-        estudiante.avatar.save(
-            f"{codigo.lower()}.png", avatar_por_defecto(nombre, codigo), save=False
-        )
+        # Sin avatar subido: el elegido en la galería o, si no, el que le toca por su código
+        # (retrospectiva del 19/11: avatares distintos de las imágenes de la contraseña).
+        clave = avatar_galeria or avatares.de_codigo(codigo)
+        archivo = avatares.archivo(clave, codigo)
+        estudiante.avatar.save(archivo.name, archivo, save=False)
     estudiante.save()
 
     Perfil.objects.update_or_create(

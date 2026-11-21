@@ -150,7 +150,7 @@ def test_recorrido_con_teclado_en_ordenador(live_server, page, client, datos):
         "Inicio",
         "Seguimiento de hoy",
         "Crear una tarea",
-        "Tareas creadas",
+        "Biblioteca de tareas",
         "Tareas planificadas",
         "Alumnos",
         "Reprografía",

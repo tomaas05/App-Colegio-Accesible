@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}¡Bravo! Has terminado {{ t.tarea.nombre }} · Despega{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'css/agenda.css' %}">{% endblock %}
+
+{# Retrospectiva del 19/11: al terminar bien una tarea, una pantalla de enhorabuena.      #}
+{# Pictograma de la tarea con su ✓, una frase corta y cuántas lleva hoy. Sin sonido y sin #}
+{# animación si el sistema pide menos movimiento. Una salida abajo, siempre en el mismo   #}
+{# sitio: la siguiente tarea (si la hay) o «Mis tareas».                                 #}
+{% block pantalla %}pantalla--ancha agenda{% endblock %}
+{% block volver %}{% url 'agenda:dia' as atras %}{% include "_volver.html" with url=atras texto="Tareas" etiqueta="Volver a las tareas" only %}{% endblock %}
+{% block h1 %}¡Bravo!{% endblock %}
+
+{% block contenido %}
+<div class="encaja encaja--centro">
+  <section class="bravo" aria-labelledby="bravo-frase">
+    <div class="bravo__dibujo">
+      {# Estrellas decorativas alrededor del pictograma. #}
+      <svg class="bravo__estrellas" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+        <path d="M30 40l5 11 12 2-9 8 2 12-10-6-10 6 2-12-9-8 12-2z"/>
+        <path d="M168 30l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z"/>
+        <path d="M172 150l4 8 9 1-7 6 2 9-8-4-8 4 2-9-7-6 9-1z"/>
+        <path d="M22 160l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z"/>
+      </svg>
+      <img class="bravo__imagen" src="{{ t.tarea.imagen.url }}" alt="{{ t.tarea.descripcion_imagen }}" width="160" height="160">
+      <span class="bravo__marca" aria-hidden="true">{% include "_icono.html" with nombre="check" only %}</span>
+    </div>
+    <p class="bravo__frase" id="bravo-frase" role="status">¡Muy bien, {{ estudiante.usuario.first_name }}! Has terminado «{{ t.tarea.nombre }}».</p>
+    {% if total %}
+    <p class="bravo__cuenta">Hoy llevas <b>{{ hechas }} de {{ total }}</b> tarea{{ total|pluralize }} hecha{{ total|pluralize }}.</p>
+    {% endif %}
+  </section>
+</div>
+
+<div class="pie pie--bravo">
+  {# «‹ Tareas» de la barra ya vuelve a la agenda: aquí solo el siguiente paso. En el móvil #}
+  {# se ve «Siguiente» y el nombre de la tarea se sigue leyendo (empieza igual, WCAG 2.5.3). #}
+  {% if siguiente %}
+  <a class="boton boton--principal" href="{% url 'agenda:detalle' siguiente.asignacion.pk %}">
+    <img class="bravo__siguiente-img" src="{{ siguiente.tarea.imagen.url }}" alt="" width="40" height="40">
+    <span>Siguiente<span class="solo-ancho">: {{ siguiente.tarea.nombre }}</span></span>
+  </a>
+  {% else %}
+  <a class="boton boton--principal" href="{% url 'agenda:dia' %}">Mis tareas</a>
+  {% endif %}
+</div>
+{% endblock %}

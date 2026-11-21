@@ -204,6 +204,50 @@ a.tarjeta:hover {
     margin-block: auto;
   }
 }
+/* Modo «pasos» (retrospectiva del 19/11): la tarea ya ha empezado y tiene pasos. Una sola
+   columna a todo el ancho: el tiempo arriba (compacto), el paso que toca grande en medio y el
+   botón principal abajo, siempre en el mismo sitio. */
+.ejec--pasos {
+  display: flex;
+}
+.ejec--pasos .col--hacer {
+  gap: var(--separacion);
+}
+.ejec--pasos .tiempo {
+  flex: none;
+  padding-block: 0.4rem;
+}
+.ejec--pasos .pasos-zona {
+  flex: 1 1 auto;
+}
+.pasos__escuchar {
+  flex: none;
+}
+.js .ejec--pasos .pasos > .paso .paso__texto {
+  font-size: var(--letra-l);
+}
+.js .ejec--pasos .pasos > .paso img {
+  width: min(7rem, 18dvh);
+  height: min(7rem, 18dvh);
+}
+.js .ejec--pasos .pasos > .paso {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+@media (min-width: 48rem) {
+  .js .ejec--pasos .pasos > .paso {
+    grid-template-columns: auto 1fr auto;
+    padding: 1rem 1.25rem;
+  }
+  .js .ejec--pasos .pasos > .paso img {
+    width: min(14rem, 22dvh);
+    height: min(14rem, 22dvh);
+  }
+  .js .ejec--pasos .pasos > .paso .paso__boton {
+    min-height: var(--toque-muy-grande);
+    padding-inline: 2rem;
+    font-size: var(--letra-l);
+  }
+}
 .ficha {
   display: flex;
   align-items: center;
@@ -669,6 +713,64 @@ dialog.confirmar::backdrop {
 
 /* --- Tarea cancelada (HU-03-05): tachada y más clara; la etiqueta «✕ Cancelada» --- */
 /* --- dice lo mismo con texto, así que el color no es la única señal (RNF4.1.3).  --- */
+/* Hecha y no hecha (retrospectiva del 19/11), de un vistazo y nunca solo por el color:
+   hecha = borde continuo verde, etiqueta rellena y sello ✓; no hecha (vencida o no se ha
+   podido) = borde discontinuo, etiqueta naranja oscuro y sello ✕. */
+.tarjeta {
+  position: relative;
+}
+.tarjeta--hecha {
+  border-color: var(--verde-oscuro);
+  border-width: 4px;
+}
+.tarjeta--no-hecha {
+  border-style: dashed;
+  border-color: var(--error);
+}
+.tarjeta--no-hecha .tarjeta__imagen {
+  opacity: 0.7;
+}
+.chip--hecha {
+  color: var(--blanco);
+  background: var(--verde-oscuro);
+  border-style: solid;
+  border-color: var(--verde-oscuro);
+}
+.tarjeta__sello {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: grid;
+  place-items: center;
+  width: 1.9em;
+  height: 1.9em;
+  font-size: var(--letra-s);
+  color: var(--blanco);
+  border-radius: 50%;
+}
+.tarjeta__sello .icono {
+  width: 65%;
+  height: 65%;
+  stroke-width: 3.5;
+}
+.tarjeta__sello--hecha {
+  background: var(--verde-oscuro);
+}
+/* Que el sello no tape la hora ni el nombre. */
+.tarjeta:has(.tarjeta__sello) {
+  padding-right: 2.6rem;
+}
+@media (min-width: 48rem) {
+  .linea .tarjeta:has(.tarjeta__sello) {
+    padding-inline: 0.5rem;
+  }
+  .linea .tarjeta:has(.tarjeta__sello) .tarjeta__hora {
+    padding-inline: 2.1em;
+  }
+}
+.tarjeta__sello--no-hecha {
+  background: var(--error);
+}
 .tarjeta--cancelada .tarjeta__nombre,
 .tarjeta--cancelada .tarjeta__hora {
   text-decoration: line-through;
@@ -1083,5 +1185,127 @@ dialog.confirmar::backdrop {
     overflow: hidden;
     clip: rect(0 0 0 0);
     white-space: nowrap;
+  }
+}
+
+/* --- «¡Bravo!» al terminar una tarea (retrospectiva del 19/11) ---
+ * Pictograma grande con un ✓ (forma + texto, no solo color), estrellas decorativas y la
+ * frase. La única animación (aparecer) solo si el sistema no pide menos movimiento. */
+.bravo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--separacion);
+  text-align: center;
+}
+.bravo__dibujo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(15rem, 28dvh);
+  aspect-ratio: 1;
+}
+.bravo__estrellas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--naranja);
+  stroke: var(--petroleo);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.bravo__imagen {
+  width: 68%;
+  height: 68%;
+  object-fit: contain;
+  padding: 6%;
+  background: #ffffff;
+  border: 0.3rem solid var(--petroleo);
+  border-radius: 50%;
+}
+.bravo__marca {
+  position: absolute;
+  right: 12%;
+  bottom: 12%;
+  display: grid;
+  place-items: center;
+  width: 28%;
+  aspect-ratio: 1;
+  color: var(--blanco);
+  background: var(--verde-oscuro);
+  border: 0.25rem solid var(--blanco);
+  border-radius: 50%;
+}
+.bravo__marca .icono {
+  width: 60%;
+  height: 60%;
+  stroke-width: 3.5;
+}
+.bravo__frase {
+  margin: 0;
+  max-width: 30em;
+  font-family: var(--fuente-titulos);
+  font-size: var(--letra-xl);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--petroleo);
+}
+/* Si no cabe (letra 32 en un móvil), <main> se desplaza en vez de montarse bajo el pie. */
+.js .encaja:has(> .bravo) {
+  flex: 1 0 auto;
+}
+@media (max-width: 30rem) {
+  .bravo__dibujo {
+    width: min(15rem, 20dvh);
+  }
+  .bravo__frase {
+    font-size: var(--letra-l);
+  }
+  .bravo__siguiente-img {
+    display: none;
+  }
+}
+/* Móvil pequeño con letra grande: la cuenta del día es lo que sobra (la agenda ya la dice). */
+@media (max-width: 30rem) and (max-height: 44rem) {
+  html:is([data-letra="24"], [data-letra="32"]) .bravo__cuenta {
+    display: none;
+  }
+}
+.bravo__cuenta {
+  margin: 0;
+  font-size: var(--letra-m);
+}
+.pie--bravo {
+  justify-content: center;
+}
+.pie--bravo .boton--principal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  flex: 0 1 26rem;
+  justify-content: center;
+}
+.bravo__siguiente-img {
+  flex: none;
+  width: 1.8em;
+  height: 1.8em;
+  object-fit: contain;
+  background: #ffffff;
+  border-radius: 0.4em;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bravo__dibujo {
+    animation: bravo-aparece 0.5s ease-out both;
+  }
+}
+@keyframes bravo-aparece {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

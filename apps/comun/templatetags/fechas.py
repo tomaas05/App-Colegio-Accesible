@@ -41,3 +41,9 @@ def fecha_corta(fecha=None):
 @register.simple_tag
 def fecha_iso(fecha=None):
     return _hoy(fecha).isoformat()
+
+
+@register.simple_tag
+def dia_semana(fecha=None):
+    """1 = lunes … 7 = domingo, para `_dia_forma.html` («{% dia_semana as n %}»)."""
+    return _hoy(fecha).isoweekday()

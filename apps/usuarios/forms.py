@@ -15,6 +15,7 @@ from django.db.models import Q
 
 from apps.perfil.models import MetodoAcceso
 
+from . import avatares
 from .acceso import IMAGENES_POR_CONTRASENA, comprobar_contrasena_imagenes
 from .altas import PREFIJO_ESTUDIANTE, crear_adulto, crear_estudiante
 from .edicion import motivo_para_no_desactivar
@@ -155,10 +156,17 @@ class CrearCuentaForm(forms.Form):
         required=False,
         empty_label="Elige una clase",
     )
-    avatar = forms.ImageField(
-        label="Avatar (opcional)",
+    avatar_galeria = forms.ChoiceField(
+        label="Elige su avatar",
         required=False,
-        help_text="Un dibujo, nunca una foto. Si no subes ninguno, se dibuja uno con su inicial.",
+        choices=avatares.opciones,
+        widget=forms.RadioSelect,
+        help_text="Si no eliges ninguno, se le pone uno de la galería.",
+    )
+    avatar = forms.ImageField(
+        label="O sube un dibujo (opcional)",
+        required=False,
+        help_text="Un dibujo, nunca una foto. Si lo subes, se usa este.",
     )
     metodo_acceso = forms.ChoiceField(
         label="Cómo entra",
@@ -286,6 +294,7 @@ class CrearCuentaForm(forms.Form):
                 contrasena=datos.get("contrasena_estudiante", ""),
                 usa_lector_pantalla=datos.get("usa_lector_pantalla", False),
                 avatar=datos.get("avatar"),
+                avatar_galeria=datos.get("avatar_galeria") or None,
             ).usuario
         return crear_adulto(
             rol=datos["rol"],
@@ -336,11 +345,20 @@ class EditarCuentaForm(forms.Form):
                 initial=cuenta.estudiante.clase_id,
                 error_messages={"required": "Elige la clase."},
             )
-            self.fields["avatar"] = forms.ImageField(
-                label="Cambiar el avatar (opcional)",
+            self.fields["avatar_galeria"] = forms.ChoiceField(
+                label="Cambiar su avatar",
                 label_suffix="",
                 required=False,
-                help_text="Un dibujo, nunca una foto. Si no eliges ninguno, se queda el que tiene.",
+                choices=avatares.opciones,
+                widget=forms.RadioSelect,
+                initial=avatares.clave_de(cuenta.estudiante),
+                help_text="Si no eliges otro, se queda el que tiene.",
+            )
+            self.fields["avatar"] = forms.ImageField(
+                label="O sube un dibujo (opcional)",
+                label_suffix="",
+                required=False,
+                help_text="Un dibujo, nunca una foto. Si lo subes, se usa este.",
             )
         else:
             self.fields["usuario"] = forms.CharField(
@@ -419,12 +437,17 @@ class EditarCuentaForm(forms.Form):
             if estudiante.clase_id != datos["clase"].pk:
                 cambios.append("clase")
                 estudiante.clase = datos["clase"]
+            codigo = estudiante.codigo_estudiante.lower()
+            galeria = datos.get("avatar_galeria")
             if datos.get("avatar"):
                 cambios.append("avatar")
-                codigo = estudiante.codigo_estudiante.lower()
                 estudiante.avatar.save(
                     f"{codigo}-{datos['avatar'].name}", datos["avatar"], save=False
                 )
+            elif galeria and galeria != avatares.clave_de(estudiante):
+                cambios.append("avatar")
+                archivo = avatares.archivo(galeria, codigo)
+                estudiante.avatar.save(archivo.name, archivo, save=False)
             estudiante.save()
         else:
             if cuenta.username != datos["usuario"]:

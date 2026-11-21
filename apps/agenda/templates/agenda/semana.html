@@ -33,10 +33,11 @@
   </div>
 </div>
 <div class="pie">
-  {% include "_paginador.html" with de="semana" que="Más días de la semana" only %}
+  {# «Antes / Después», como en «Tareas de hoy»: caben en una fila también con la letra 32. #}
+  {% include "_paginador.html" with de="semana" que="Más días de la semana" anterior="Antes" siguiente="Después" only %}
   <div class="pie__acciones">
     {# PA4 y PA5: el horario de la clase, de hoy y de la semana, solo para ver (HU-03-11, Javi). #}
-    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="reloj" only %}</span> Mi horario de clase</a>
+    <a class="boton boton--aux" href="{% url 'horario:mi_horario' %}"><span class="icono-boton" aria-hidden="true">{% include "_icono.html" with nombre="reloj" only %}</span> Mi horario<span class="solo-ancho"> de clase</span></a>
   </div>
 </div>
 {% endblock %}

@@ -90,7 +90,6 @@ PLANTILLAS_QUITAR = [
     "apps/centro/templates/centro/reprografia_form.html",
     "apps/horario/templates/horario/cargar.html",
     "apps/tareas/templates/tareas/_paso.html",
-    "apps/tareas/templates/tareas/plan_b.html",
     "apps/usuarios/templates/usuarios/mis_estudiantes.html",
     "apps/usuarios/templates/usuarios/vinculos.html",
 ]

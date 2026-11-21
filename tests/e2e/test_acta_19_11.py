@@ -5,7 +5,7 @@ del perfil) están en test_encuadre.py; aquí, lo concreto de cada fallo.
 Se lanzan con:  pytest -m e2e tests/e2e/test_acta_19_11.py
 """
 
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 import pytest
 from django.urls import reverse
@@ -103,6 +103,8 @@ def test_c_el_aviso_de_la_tarea_es_grande_y_va_centrado(
     live_server, page, client, datos, monkeypatch, nombre
 ):
     monkeypatch.setattr(servicios, "ahora", lambda: a_las(10, 32))
+    # Sin margen desde la retrospectiva del 19/11; con uno de 15 min sale el aviso.
+    monkeypatch.setattr(servicios, "MARGEN_EMPEZAR_ANTES", timedelta(minutes=15))
     hugo = Estudiante.objects.get(codigo_estudiante="A04")
     con_sesion(page, live_server, client, hugo.usuario)
     cuento = hugo.asignaciones.get(tarea__nombre__icontains="cuento")
